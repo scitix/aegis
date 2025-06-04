@@ -1,0 +1,23 @@
+apiVersion: aegis.io/v1alpha1
+kind: AegisOpsTemplate
+metadata:
+  name: nodehasemergencyevent
+spec:
+  manifest: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: Workflow
+    spec:
+      ttlSecondsAfterFinished: 60
+      serviceAccountName: aegis-workflow
+      entrypoint: start
+      templates:
+      - name: start
+        retryStrategy:
+          limit: 1
+        container:
+          image: bitnami/kubectl:latest
+          command:
+          - /bin/bash
+          - -c
+          - |
+            kubectl cordon {{.node}}

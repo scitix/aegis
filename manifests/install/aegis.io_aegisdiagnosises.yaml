@@ -1,0 +1,118 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: aegisdiagnosises.aegis.io
+spec:
+  group: aegis.io
+  names:
+    kind: AegisDiagnosis
+    listKind: AegisDiagnosisList
+    plural: aegisdiagnosises
+    singular: aegisdiagnosis
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: AegisDiagnosis describe a diagnosis
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AegisDiagnosisSpec defines the diagnosis details.
+            properties:
+              object:
+                properties:
+                  kind:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  node:
+                    type: string
+                type: object
+              timeout:
+                type: string
+              ttlStrategy:
+                description: TTLStrategy limits the lifetime of a alert
+                properties:
+                  secondsAfterCompletion:
+                    description: SecondsAfterCompletion is the number of seconds to
+                      live after completion
+                    format: int32
+                    type: integer
+                  secondsAfterFailure:
+                    description: SecondsAfterFailure is the number of seconds to live
+                      after failure
+                    format: int32
+                    type: integer
+                  secondsAfterSuccess:
+                    description: SecondsAfterSuccess is the number of seconds to live
+                      after success
+                    format: int32
+                    type: integer
+                type: object
+            type: object
+          status:
+            description: AegisDiagnosisStatus defines the diagnosis status.
+            properties:
+              completionTime:
+                format: date-time
+                type: string
+              errorResult:
+                type: string
+              explain:
+                type: string
+              phase:
+                description: Phase is the diagnosis phase.
+                type: string
+              result:
+                properties:
+                  failures:
+                    items:
+                      type: string
+                    type: array
+                  infos:
+                    items:
+                      type: string
+                    type: array
+                  status:
+                    type: string
+                  warnings:
+                    items:
+                      type: string
+                    type: array
+                type: object
+              startTime:
+                format: date-time
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    additionalPrinterColumns:
+    - name: Phase
+      type: string
+      jsonPath: .status.phase
+    - name: Age
+      type: date
+      jsonPath: .status.startTime

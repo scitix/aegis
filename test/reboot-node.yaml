@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: reboot
+  namespace: default
+spec:
+  containers:
+  - command:
+    - /bin/bash
+    - -c
+    - |
+      set -e
+      set -x
+      nsenter -m/proc/1/ns/mnt -- reboot
+    image: distribute-images:v1
+    imagePullPolicy: Always
+    name: reboot
+    securityContext:
+      privileged: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  hostNetwork: true
+  hostPID: true
+  nodeName: cygnus348
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300

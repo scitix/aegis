@@ -1,0 +1,135 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aegis
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - configmaps
+  verbs:
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods/log
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+  - update
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - get
+  - list
+  - update
+- apiGroups:
+  - coordination.k8s.io
+  resourceNames:
+  - aegis
+  resources:
+  - leases
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - aegis.io
+  resources:
+  - aegisalerts
+  - aegisalerts/status
+  verbs:
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - aegis.io
+  resources:
+  - aegisalertopsrules
+  - aegisalertopsrules/status
+  - aegisopstemplates
+  - aegisopstemplates/status
+  - aegisdiagnosises
+  - aegisdiagnosises/status
+  - aegisnodehealthchecks
+  - aegisnodehealthchecks/status
+  - aegisclusterhealthchecks
+  - aegisclusterhealthchecks/status
+  verbs:
+  - create
+  - update
+  - get
+  - list
+  - watch
+  - delete
+- apiGroups:
+  - argoproj.io
+  resources:
+  - workflows
+  - workflows/finalizer
+  - workflowtasksets
+  - workflowtasksets/finalizer
+  verbs:
+  - create
+  - update
+  - get
+  - list
+  - watch
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aegis
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: aegis
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: aegis
+subjects:
+- kind: ServiceAccount
+  name: aegis
+  namespace: monitoring
