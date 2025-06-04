@@ -1,0 +1,61 @@
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisAlertOpsRule
+metadata:
+  name: clean-argo-workflows
+  namespace: alert
+spec:
+  alertConditions:
+  - status: Firing
+    type: EtcdBackendQuotaLowSpace
+  opsTemplate:
+    apiVersion: aegis.io/v1alpha1
+    kind: AegisOpsTemplate
+    name: clean-argo-workflows
+    namespace: alert
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisOpsTemplate
+metadata:
+  name: clean-argo-workflows
+  namespace: alert
+spec:
+  manifest: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: Workflow
+    spec:
+      activeDeadlineSeconds: 3600
+      ttlStrategy:
+        secondsAfterCompletion: 259200
+        secondsAfterSuccess: 259200
+        secondsAfterFailure: 259200
+      retryStrategy:
+        limit: 1
+      serviceAccountName: aegis-workflow
+      entrypoint: workflow-ops
+      templates:
+      - name: workflow-ops
+        steps:
+        - - name: start
+            template: start
+        - - name: pod-ops
+            template: pod-ops
+      - name: start
+        container: 
+          image: k8s/aegis:clean-argo-workflows
+          imagePullPolicy: Always
+          command:
+          - /bin/bash
+          - -c
+          - |
+            echo "deal with alert {{.AlertNamespace}}/{{.AlertName}}"
+      - name: pod-ops
+        container:
+          image: k8s/aegis:clean-argo-workflows
+          imagePullPolicy: Always
+          command:
+          - /bin/bash
+          - -c
+          - |
+            chmod +x /clean-argo-workflow.sh
+            /clean-argo-workflow.sh

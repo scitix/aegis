@@ -1,0 +1,22 @@
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisDiagnosis
+metadata:
+  name: diagnose-node
+  namespace: alert
+spec:
+  object:
+    kind: Node
+    name: node1
+    node: node1
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisDiagnosis
+metadata:
+  name: diagnose-pod
+  namespace: monitoring
+spec:
+  object:
+    kind: Pod
+    name: ib-hca-exporter-f2jfc
+    namespace: monoitoring

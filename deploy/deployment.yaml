@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: aegis
+  name: aegis
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      component: aegis
+  template:
+    metadata:
+      labels:
+        component: aegis
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: component
+                operator: In
+                values:
+                - aegis
+            topologyKey: component
+      containers:
+      - args:
+        - --http-port=8080
+        - --enable-leader-election=true
+        - --election-id=aegis
+        - --alert.enable=true
+        - --alert.publish-namespace=monitoring
+        - --alert.system-parameters=cluster:dev
+        - --alert.ttl-after-succeed=86400
+        - --alert.ttl-after-failed=259200
+        - --alert.ttl-after-noops=86400
+        - --healthcheck.enable=false
+        - --diagnosis.enable=false
+        - --web.route-prefix=/
+        - --v=4
+        command:
+        - /aegis/aegis
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: registry-ap-southeast.scitix.ai/k8s/aegis:v3.0.0
+        imagePullPolicy: Always
+        name: aegis
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        securityContext:
+          privileged: false
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      serviceAccount: aegis
+      serviceAccountName: aegis
