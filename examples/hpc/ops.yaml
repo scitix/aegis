@@ -1,0 +1,78 @@
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisAlertOpsRule
+metadata:
+  name: nodecriticalissue
+spec:
+  alertConditions:
+  - type: NodeCriticalIssue
+    status: Firing
+  opsTemplate:
+    kind: AegisOpsTemplate
+    apiVersion: aegis.io/v1alpha1
+    namespace: monitoring
+    name: nodecriticalissue
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisAlertOpsRule
+metadata:
+  name: nodecriticalissuedisappeared
+spec:
+  alertConditions:
+  - type: NodeCriticalIssueDisappeared
+    status: Firing
+  opsTemplate:
+    kind: AegisOpsTemplate
+    apiVersion: aegis.io/v1alpha1
+    namespace: monitoring
+    name: nodecriticalissuedisappeared
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisOpsTemplate
+metadata:
+  name: nodecriticalissue
+  namespace: monitoring
+spec:
+  manifest: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: Workflow
+    spec:
+      serviceAccountName: aegis-workflow
+      ttlSecondsAfterFinished: 60
+      entrypoint: start
+      templates:
+      - name: start
+        retryStrategy:
+          limit: 1
+        container:
+          image: bitnami/kubectl:latest
+          command:
+          - /bin/bash
+          - -c
+          - |
+            kubectl cordon {{.node}}
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisOpsTemplate
+metadata:
+  name: nodecriticalissuedisappeared
+  namespace: monitoring
+spec:
+  manifest: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: Workflow
+    spec:
+      serviceAccountName: aegis-workflow
+      ttlSecondsAfterFinished: 60
+      entrypoint: start
+      templates:
+      - name: start
+        retryStrategy:
+          limit: 1
+        container:
+          image: bitnami/kubectl:latest
+          command:
+          - /bin/bash
+          - -c
+          - |
+            kubectl uncordon {{.node}}

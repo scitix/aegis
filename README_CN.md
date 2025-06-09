@@ -22,6 +22,7 @@ Aegis 是一个运行于 Kubernetes 平台上基于告警事件驱动的云原�
   - [制作运维规则](#制作运维规则)
   - [部署运维规则](#部署运维规则)
 - [触发自动化运维](#触发自动化运维)
+- [典型场景案例](#典型场景案例)
 
 # 核心能力
 
@@ -266,3 +267,8 @@ default-nodehasemergencyevent-9njt4-s82rh-start-4152452869                    0/
 $ kubectl -n monitoring logs default-nodehasemergencyevent-9njt4-s82rh-start-4152452869
 node/dev1 cordoned
 ```
+
+# 典型场景案例
+
+- [内存压力自动 DropCache](examples/dropcache/README.md)
+- [AI HPC 集群故障节点屏蔽与解除](examples/gpc/README.md)

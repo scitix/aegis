@@ -1,0 +1,145 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: thanos-ruler
+  name: node-gpu-rules
+  namespace: monitoring
+spec:
+  groups:
+  - name: node.gpu.rules
+    rules:
+    - expr: |
+        label_replace(
+          label_replace(
+            sum without (instance, resource, unit) (kube_node_status_capacity{resource="nvidia_com_gpu"} - kube_node_status_allocatable{resource="nvidia_com_gpu"} > 0),
+            "type", "gpu", "node", "(.*)"),
+          "condition", "GpuRegisterFailed", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (
+              label_replace(label_replace(label_replace(DCGM_FI_DEV_GPU_TEMP > 80, "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")
+            ),
+          "condition", "HighGpuTemp", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (
+              label_replace(label_replace(label_replace(DCGM_FI_DEV_MEMORY_TEMP > 95, "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")
+            ),
+          "condition", "HighGpuMemoryTemp", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (label_replace(label_replace(label_replace(DCGM_FI_DEV_XID_ERRORS == 48 or DCGM_FI_DEV_XID_ERRORS == 63 or DCGM_FI_DEV_XID_ERRORS == 64 or DCGM_FI_DEV_XID_ERRORS == 92 or DCGM_FI_DEV_XID_ERRORS == 95,
+            "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")),
+          "condition", "XIDECCMemoryErr", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            label_replace(aegis_node_gpu_xid_error{code=~"48|63|64|92|95"}, "type", "gpu", "node", "(.*)"),
+          "condition", "XIDECCMemoryErr", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (label_replace(label_replace(label_replace(DCGM_FI_DEV_XID_ERRORS == 74 or DCGM_FI_DEV_XID_ERRORS == 79,
+            "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")),
+          "condition", "XIDHWSystemErr", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            label_replace(aegis_node_gpu_xid_error{code=~"74|79"}, "type", "gpu", "node", "(.*)"),
+          "condition", "XIDHWSystemErr", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (label_replace(label_replace(label_replace(DCGM_FI_DEV_XID_ERRORS != 45 and DCGM_FI_DEV_XID_ERRORS != 48 and DCGM_FI_DEV_XID_ERRORS != 63 and DCGM_FI_DEV_XID_ERRORS != 64 and DCGM_FI_DEV_XID_ERRORS != 92 and DCGM_FI_DEV_XID_ERRORS != 95 and DCGM_FI_DEV_XID_ERRORS != 13 and DCGM_FI_DEV_XID_ERRORS != 31 and DCGM_FI_DEV_XID_ERRORS != 0 and DCGM_FI_DEV_XID_ERRORS != 43 and DCGM_FI_DEV_XID_ERRORS != 79 and DCGM_FI_DEV_XID_ERRORS != 74,
+            "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")),
+          "condition", "XIDUnclassifiedErr", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            label_replace(aegis_node_gpu_xid_error{code!~"13|31|0|43|45|74|79|48|63|64|92|95"}, "type", "gpu", "node", "(.*)"),
+          "condition", "XIDUnclassifiedErr", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (label_replace(label_replace(label_replace(DCGM_FI_DEV_ROW_REMAP_FAILURE > 0,
+            "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")),
+          "condition", "GpuRowRemappingFailure", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (label_replace(label_replace(label_replace(DCGM_FI_DEV_RETIRED_DBE + DCGM_FI_DEV_RETIRED_SBE >= 64,
+            "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")),
+          "condition", "GpuTooManyPageRetired", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (label_replace(label_replace(label_replace(DCGM_FI_DEV_ECC_DBE_AGG_SRM > 4,
+            "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")),
+          "condition", "GpuAggSramUncorrectable", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (label_replace(label_replace(label_replace(DCGM_FI_DEV_ECC_DBE_VOL_SRM > 0,
+            "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")),
+          "condition", "GpuVolSramUncorrectable", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (label_replace(label_replace(label_replace(DCGM_FI_DEV_ECC_DBE_VOL_TOTAL - DCGM_FI_DEV_ECC_DBE_VOL_SRM > 60,
+            "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")),
+          "condition", "GpuVolDramUncorrectable", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (label_replace(label_replace(label_replace(DCGM_FI_DEV_ECC_SBE_VOL_TOTAL -  DCGM_FI_DEV_ECC_SBE_VOL_SRM > 1000,
+            "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")),
+          "condition", "GpuVolDramCorrectable", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (label_replace(label_replace(label_replace((DCGM_FI_DEV_CLOCKS_EVENT_REASONS % 16 == 8) and (DCGM_FI_DEV_CLOCKS_EVENT_REASONS offset 5m % 16 == 8),
+            "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")),
+          "condition", "GPUHWSlowdown", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+            sum without (Hostname, instance, UUID, namespace, pod, exported_namespace, exported_pod, container, exported_container, device, gpu, modelName) (label_replace(label_replace(label_replace(DCGM_FI_DEV_PERSISTENCE_MODE == 0,
+            "type", "gpu", "Hostname", "(.*)"), "node", "$1", "Hostname", "(.*)"), "id", "$1", "gpu", "(.*)")),
+          "condition", "GPUPersistenceModeNotEnabled", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(label_replace(
+            (sum by (node) (label_replace(count by (Hostname) (DCGM_FI_DEV_GPU_UTIL), "node", "$1", "Hostname", "(.*)")) < sum by (node) (kube_node_status_capacity{resource=~"instance_aegis_com_g.*"} / 100)) and (sum by (node) (label_replace(count by (Hostname) (DCGM_FI_DEV_FB_USED), "node", "$1", "Hostname", "(.*)")) < sum by (node) (kube_node_status_capacity{resource=~"instance_aegis_com_g.*"} / 100)),
+            "type", "gpu", "node", "(.*)"),
+          "condition", "GpuDown", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+# sichek
+    - expr: |
+        label_replace(
+            label_replace(label_replace(sichek_nvidia_remapping_pending != 0, "type", "gpu", "node", "(.*)"), "id", "$1", "index", "(.*)"),
+          "condition", "GPURowRemappingPending", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    

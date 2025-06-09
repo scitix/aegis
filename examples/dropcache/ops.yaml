@@ -1,0 +1,48 @@
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisAlertOpsRule
+metadata:
+  name: nodehasmemorypressure
+spec:
+  alertConditions:
+  - type: NodeHasMemoryPressure
+    status: Firing
+  opsTemplate:
+    kind: AegisOpsTemplate
+    apiVersion: aegis.io/v1alpha1
+    namespace: monitoring
+    name: nodehasmemorypressure
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisOpsTemplate
+metadata:
+  name: nodehasmemorypressure
+  namespace: monitoring
+spec:
+  manifest: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: Workflow
+    spec:
+      serviceAccountName: aegis-workflow
+      ttlSecondsAfterFinished: 60
+      entrypoint: start
+      templates:
+      - name: start
+        retryStrategy:
+          limit: 1
+        container:
+          securityContext:
+            privileged: true
+          image: busybox:latest
+          command:
+          - /bin/sh
+          - -c
+          - |
+            node={{.node}}
+            echo "befor drop"
+            free -g
+
+            nsenter -m/proc/1/ns/mnt -- /bin/sh -c 'echo 3 > /proc/sys/vm/drop_caches'
+
+            echo "after drop"
+            free -g

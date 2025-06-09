@@ -1,0 +1,33 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: thanos-ruler
+    type: internal
+  name: node-issue-rulers
+  namespace: monitoring
+spec:
+  groups:
+  - name: node-issue-rulers
+    rules:
+    - alert: NodeCriticalIssue
+      expr: aegis_node_status_condition
+      for: 5s
+      annotations:
+        summary: NodeCriticalIssue
+        description: "Node {{ $labels.node }}} has critical issue {{ $labels.condition }}"
+      labels:
+        severity: critical
+        webhook: "false"
+        kind: Node
+    - alert: NodeCriticalIssueDisappeared
+      expr: (count by (node) (aegis_node_status_condition{condition!="NodeCordon"} offset 2m)) unless (count by (node) (aegis_node_status_condition{condition!="NodeCordon"}))
+      for: 5s
+      annotations:
+        summary: NodeCriticalIssueDisappeared
+        description: "Node {{ $labels.node }} critical issue diappeared"
+      labels:
+        severity: critical
+        webhook: "false"
+        kind: Node

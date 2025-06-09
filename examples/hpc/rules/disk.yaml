@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: thanos-ruler
+  name: node-disk-rules
+  namespace: monitoring
+spec:
+  groups:
+  - name: node.disk.rules
+    rules:
+    - expr: |
+        label_replace(
+           sum by (node, id, type) (
+             label_replace(label_replace(ipmi_sensor_state{job="ipmi-exporter", type="Drive Slot"} > 0, "id", "$1", "name", "(.*)"), "type", "disk", "node", "(.*)")
+           ),
+         "condition", "DiskUnhealthy", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+           sum by (node, type) (
+             label_replace(ipmi_chassis_drive_fault_state{job="ipmi-exporter"} == 0, "type", "disk", "node", "(.*)")
+           ),
+         "condition", "DiskUnhealthy", "node", "(.*)"
+        )
+      record: aegis_node_status_condition

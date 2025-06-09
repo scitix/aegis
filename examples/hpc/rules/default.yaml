@@ -1,0 +1,56 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: thanos-ruler
+  name: node-rules
+  namespace: monitoring
+spec:
+  groups:
+  - name: node.rules
+    rules:
+    - expr: |
+        label_replace(
+          label_replace(
+            count without (instance, condition, status) (kube_node_status_condition{condition="Ready", status="true"} == 0),
+            "type", "default", "node", "(.*)"),
+          "condition", "NodeNotReady", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+          label_replace(
+            count without (instance, container) (kube_node_spec_unschedulable{node!~".*miniossd.*"} == 1),
+            "type", "default", "node", "(.*)"),
+          "condition", "NodeCordon", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+          sum without (involved_object_name) (
+            label_replace(label_replace(count by (involved_object_name) (kube_event_count{reason="Rebooted"}), "type", "deault", "involved_object_name", "(.*)"), "node", "$1", "involved_object_name", "(.*)")),
+          "condition", "NodeHasRestarted", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+          sum by (node, type) (
+            label_replace(kube_pod_container_status_terminated_reason{reason="StartError", namespace=~"ai-infra-user.*"} *on (namespace, pod) group_left(node) (kube_pod_info{namespace=~"ai-infra-user.*"}), "type", "deault", "node", "(.*)")),
+          "condition", "KubeletFailedCreatePodContainer", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+        sum without (involved_object_name) (
+          label_replace(label_replace(count by (involved_object_name) (kube_event_count{involved_object_kind="Node", reason="NodeNotReady"}) > 2, "type", "deault", "involved_object_name", "(.*)"), "node", "$1", "involved_object_name", "(.*)")),
+        "condition", "NodeFrequentDown", "node", "(.*)"
+         )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+          label_replace(
+            count by (cluster, node) ((kube_node_labels{label_aegis_io_disable="true"} offset 10m) unless (kube_node_labels{label_aegis_io_disable="true"})),
+            "type", "default", "node", "(.*)"),
+          "condition", "NodeInhibitAll", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
