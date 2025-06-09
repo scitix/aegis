@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: thanos-ruler
+  name: node-cpu-rules
+  namespace: monitoring
+spec:
+  groups:
+  - name: node.cpu.rules
+    rules:
+    - expr: |
+        label_replace(
+           sum by (node, id, type) (
+             label_replace(label_replace(count by (node, name, type) (ipmi_sensor_state{job="ipmi-exporter", type="Processor"} > 0), "id", "$1", "name", "(.*)"), "type", "cpu", "node", "(.*)")
+           ),
+         "condition", "CpuUnhealthy", "node", "(.*)"
+        )
+      record: aegis_node_status_condition

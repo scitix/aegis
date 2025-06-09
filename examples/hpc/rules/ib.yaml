@@ -1,0 +1,72 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: thanos-ruler
+  name: node-ib-rules
+  namespace: monitoring
+spec:
+  groups:
+  - name: node.ib.rules
+    rules:
+    - expr: "label_replace(\n  sum without (instance, namespace, container, port, pod, device) (\n    label_replace(label_replace(label_replace(increase(node_infiniband_port_errors_received_total{job=\"node-exporter\"}[24h]) + increase(node_infiniband_port_receive_switch_relay_errors_total{job=\"node-exporter\"}[24h]) + increase(node_infiniband_port_constraint_errors_received_total{job=\"node-exporter\"}[24h]) + increase(node_infiniband_port_receive_remote_physical_errors_total{job=\"node-exporter\"}[24h]) > 1000, \"id\", \"$1\", \"device\", \"(.*)\"), \"node\", \"$1\", \"instance\", \"(.*)\"), \"type\", \"ib\", \"node\", \"(.*)\")\n  ), \n  \"condition\", \"IBReceivedError\", \"node\", \"(.*)\"\n)\n"
+      record: aegis_node_status_condition
+    - expr: "label_replace(\n  sum without (instance, namespace, container, port, pod, device) (\n    label_replace(label_replace(label_replace(increase(node_infiniband_port_discards_transmitted_total{job=\"node-exporter\"}[24h]) + increase(node_infiniband_port_constraint_errors_transmitted_total{job=\"node-exporter\"}[24h]) > 1000, \"id\", \"$1\", \"device\", \"(.*)\"), \"node\", \"$1\", \"instance\", \"(.*)\"), \"type\", \"ib\", \"node\", \"(.*)\")\n  ), \n  \"condition\", \"IBTrasmittedError\", \"node\", \"(.*)\"\n)\n"
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+          label_replace(
+            count without (instance, resource, unit) (kube_node_status_capacity{resource="rdma_hca_shared_devices_all"} == 0),
+            "type", "ib", "node", "(.*)"),
+          "condition", "IBRegisterFailed", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+          label_replace(
+            count by (node) (aegis_node_health_status{condition="IBDeviceMountFailed"} == 1),
+            "type", "ib", "node", "(.*)"),
+          "condition", "IBRegisterFailed", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+# sickek
+    - expr: |
+        label_replace(
+          label_replace(
+            sum by (node) (sichek_infiniband_hca_pci_num != 9),
+            "type", "ib", "node", "(.*)"),
+          "condition", "IBDown", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+          label_replace(
+            sum by (node, id) (label_replace(increase(sichek_infiniband_counter{counter_name="link_downed"}[24h]) > 3, "id", "$1", "ib_dev", "(.*)")),
+            "type", "ib", "node", "(.*)"),
+          "condition", "IBLinkFrequentDown", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+          label_replace(
+            sum by (node, id) (label_replace(increase(sichek_infiniband_counter{counter_name="symbol_error"}[24h]) > 1000, "id", "$1", "ib_dev", "(.*)")),
+            "type", "ib", "node", "(.*)"),
+          "condition", "IBSymbolError", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+          label_replace(
+            sum by (node, id) (label_replace(sichek_infiniband_pcie_speed{ib_dev=~"mlx5_[0-7]"} != 32, "id", "$1", "ib_dev", "(.*)")),
+            "type", "ib", "node", "(.*)"),
+          "condition", "IBPcieDowngraded", "node", "(.*)"
+        )
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+          label_replace(
+            sum by (node, id) (label_replace(sichek_infiniband_pcie_speed{ib_dev="mlx5_8"} != 16, "id", "$1", "ib_dev", "(.*)")),
+            "type", "ib", "node", "(.*)"),
+          "condition", "IBPcieDowngraded", "node", "(.*)"
+        )
+      record: aegis_node_status_condition

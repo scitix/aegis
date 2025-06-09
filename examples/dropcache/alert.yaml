@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: node-rulers
+spec:
+  groups:
+  - name: node-rulers
+    rules:
+    - alert: NodeHasMemoryPressure
+      expr: 100 - (sum by (node) (kube_node_status_allocatable{resource="memory"}) + sum by (node)(kube_node_status_capacity{resource="memory"} * 0.05) - sum by (node) (container_memory_working_set_bytes{container="",id="/kubepods.slice"})) / sum by (node) (kube_node_status_capacity{resource="memory"}) * 100 > 90
+      for: 0m
+      annotations:
+        summary: NodeHasMemoryPressure
+        description: "Node {{ $labels.node }} has memory pressure, value = {{ $value }}, kubelet will evicted pod if over 95%"
+      labels:
+        severity: emergency
+        kind: Node

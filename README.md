@@ -22,6 +22,7 @@
     - [Define Ops Rule](#define-ops-rule)
     - [Deploy Rule](#deploy-rule)
 - [Trigger Automated Ops](#trigger-automated-ops)
+- [Typical Scenario Examples](#typical-scenario-examples)
 
 # Core Capabilities
 
@@ -264,3 +265,8 @@ default-nodehasemergencyevent-9njt4-s82rh-start-4152452869                    0/
 $ kubectl -n monitoring logs default-nodehasemergencyevent-9njt4-s82rh-start-4152452869
 node/dev1 cordoned
 ```
+
+# Typical Scenario Examples
+
+- [Automatic DropCache under Memory Pressure](examples/dropcache/README.md)
+- [Isolation and Recovery of Faulty Nodes in AI HPC Clusters](examples/hpc/README.md)

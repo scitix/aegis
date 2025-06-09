@@ -1,0 +1,56 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: thanos-ruler
+  name: node-baseboard-rules
+  namespace: monitoring
+spec:
+  groups:
+  - name: node.baseboard.rules
+    rules:
+    - expr: |
+        label_replace(
+             label_replace(label_replace(count by (node) ((ipmi_sensor_state{job="ipmi-exporter", name=~"SysHealth_Stat|Sys_Health"} > 0) AND  (ipmi_sensor_state{job="ipmi-exporter", name=~"SysHealth_Stat|Sys_Health"} offset 3h > 0)), "type", "baseboard", "node", "(.*)"), "id", "sysHealth", "node", "(.*)"),
+         "condition", "BaseBoardCriticalIssue", "node", "(.*)")
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+             label_replace(label_replace(count by (node) (ipmi_fan_speed_state{job="ipmi-exporter"} > 0 and (ipmi_fan_speed_state{job="ipmi-exporter"} offset 3h > 0)), "type", "baseboard", "node", "(.*)"), "id", "fan", "node", "(.*)"),
+         "condition", "BaseBoardCriticalIssue", "node", "(.*)")
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+             label_replace(label_replace(count by (node) (ipmi_sensor_state{job="ipmi-exporter", type="Fan", name!~"FAN_Redundant|.*_R_Status"} > 0 and (ipmi_sensor_state{job="ipmi-exporter", type="Fan", name!~"FAN_Redundant|.*_R_Status"} offset 3h > 0)), "type", "baseboard", "node", "(.*)"), "id", "fan", "node", "(.*)"),
+         "condition", "BaseBoardCriticalIssue", "node", "(.*)")
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+             label_replace(label_replace(count by (node) (ipmi_temperature_state{job="ipmi-exporter"} > 1 and (ipmi_temperature_state{job="ipmi-exporter"} offset 3h > 1)), "type", "baseboard", "node", "(.*)"), "id", "temperature", "node", "(.*)"),
+         "condition", "BaseBoardCriticalIssue", "node", "(.*)")
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+             label_replace(label_replace(count by (node) (ipmi_voltage_state{job="ipmi-exporter"} > 1 and (ipmi_voltage_state{job="ipmi-exporter"} offset 3h > 1)), "type", "baseboard", "node", "(.*)"), "id", "voltage", "node", "(.*)"),
+         "condition", "BaseBoardCriticalIssue", "node", "(.*)")
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+             label_replace(label_replace(count by (node) (ipmi_power_state{job="ipmi-exporter"} > 1 and (ipmi_power_state{job="ipmi-exporter"} offset 3h > 1)), "type", "baseboard", "node", "(.*)"), "id", "power", "node", "(.*)"),
+         "condition", "BaseBoardCriticalIssue", "node", "(.*)")
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+             label_replace(label_replace(count by (node) (ipmi_sensor_state{job="ipmi-exporter", type=~"Power.*", name!~".*Redundant|.*Redundancy"} > 1 and (ipmi_sensor_state{job="ipmi-exporter", type=~"Power.*", name!~".*Redundant|.*Redundancy"} offset 3h > 1)), "type", "baseboard", "node", "(.*)"), "id", "power", "node", "(.*)"),
+         "condition", "BaseBoardCriticalIssue", "node", "(.*)")
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+             label_replace(label_replace(count by (node) (ipmi_current_state{job="ipmi-exporter"} > 1 and (ipmi_current_state{job="ipmi-exporter"} offset 3h > 1)), "type", "baseboard", "node", "(.*)"), "id", "current", "node", "(.*)"),
+         "condition", "BaseBoardCriticalIssue", "node", "(.*)")
+      record: aegis_node_status_condition
+    - expr: |
+        label_replace(
+             label_replace(label_replace(count by (node) (ipmi_sensor_state{name="PCIe_Status", job="ipmi-exporter"} > 0 and (ipmi_sensor_state{name="PCIe_Status", job="ipmi-exporter"} offset 3h > 0)), "type", "baseboard", "node", "(.*)"), "id", "pcie", "node", "(.*)"),
+         "condition", "BaseBoardCriticalIssue", "node", "(.*)")
+      record: aegis_node_status_condition
