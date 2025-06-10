@@ -46,8 +46,8 @@ Aegis supports converting alert messages from sources (currently AlertManager an
 
 Defines diagnostic objects through the `AegisDiagnosis` CRD, supporting LLM-based summary diagnosis. Currently supported types:
 
-* Node
-* Pod
+* [Node](docs/node-diagnosis.md)
+* [Pod](docs/pod-diagnosis.md)
 
 Planned support for:
 

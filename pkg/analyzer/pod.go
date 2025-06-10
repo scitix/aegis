@@ -5,11 +5,13 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/k8sgpt-ai/k8sgpt/pkg/analyzer"
 	kcommon "github.com/k8sgpt-ai/k8sgpt/pkg/common"
 	"github.com/k8sgpt-ai/k8sgpt/pkg/kubernetes"
 	"github.com/k8sgpt-ai/k8sgpt/pkg/util"
+	ai "gitlab.scitix-inner.ai/k8s/aegis/pkg/ai"
 	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer/common"
 	"gitlab.scitix-inner.ai/k8s/aegis/pkg/prom"
 	v1 "k8s.io/api/core/v1"
@@ -21,14 +23,19 @@ type PodAnalyzer struct {
 	prometheus *prom.PromAPI
 }
 
-func NewPodAnalyzer() PodAnalyzer {
+func NewPodAnalyzer(enable_prom bool) PodAnalyzer {
+	var promAPI *prom.PromAPI
+	if enable_prom {
+		promAPI = prom.GetPromAPI()
+	} else {
+		promAPI = nil
+	}
 	return PodAnalyzer{
-		prometheus: prom.GetPromAPI(),
+		prometheus: promAPI,
 	}
 }
 
 func (p PodAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
-
 	kind := "Pod"
 
 	analyzer.AnalyzerErrorsMetric.DeletePartialMatch(map[string]string{
@@ -71,56 +78,29 @@ func (p PodAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 
 	var warnings []common.Warning
 	// 全量 event
-	events, err := p.prometheus.GetEventWithRange(a.Context, "Pod", pod.Namespace, pod.Name, "", "7d")
+	rawEvents, err := FetchEvents(a.Context, a.EnableProm, p.prometheus, a.Client, kind, pod.Namespace, pod.Name, "", "7d")
 	if err != nil {
-		klog.Warningf("error get pod events from prometheus: %s", err)
+		klog.Warningf("fetch pod events failed: %v", err)
 	} else {
-		for _, event := range events {
-			warnings = append(warnings, podEventWarning(pod.Name, event))
+		if a.EnableProm {
+			for _, event := range rawEvents.([]prom.Event) {
+				warnings = append(warnings, podEventWarning(pod.Name, event))
+			}
+		} else {
+			for _, event := range rawEvents.([]v1.Event) {
+				warnings = append(warnings, podEventWarningLegacy(pod.Name, event))
+			}
 		}
 	}
 
 	var infos []common.Info
-	findFunc := func(name string, containerStatuses []v1.ContainerStatus) *v1.ContainerStatus {
-		for _, status := range containerStatuses {
-			if name == status.Name {
-				return &status
-			}
-		}
-
-		return nil
+	enablePodLog := true
+	if a.EnablePodLog != nil {
+		enablePodLog = *a.EnablePodLog
 	}
 
-	for _, c := range pod.Spec.InitContainers {
-		name := c.Name
-		containerStatus := findFunc(name, pod.Status.InitContainerStatuses)
-		if containerStatus == nil { // not created
-			continue
-		}
-
-		logs, err := getContainerLogs(a.Context, a.Client, pod, &c, containerStatus)
-		if err != nil || len(logs) == 0 {
-			continue
-		}
-		infos = append(infos, common.Info{
-			Text: fmt.Sprintf("pod %s init container %s logs: %s", pod.Name, name, strings.Join(logs, "\n")),
-		})
-	}
-
-	for _, c := range pod.Spec.Containers {
-		name := c.Name
-		containerStatus := findFunc(name, pod.Status.ContainerStatuses)
-		if containerStatus == nil { // not created
-			continue
-		}
-
-		logs, err := getContainerLogs(a.Context, a.Client, pod, &c, containerStatus)
-		if err != nil || len(logs) == 0 {
-			continue
-		}
-		infos = append(infos, common.Info{
-			Text: fmt.Sprintf("pod %s container %s logs: %s", pod.Name, name, strings.Join(logs, "\n")),
-		})
+	if enablePodLog && shouldFetchLog(pod) {
+		infos = append(infos, fetchContainerLogs(a.Context, a.Client, pod)...)
 	}
 
 	result := &common.Result{
@@ -139,6 +119,46 @@ func (p PodAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 	}
 
 	return result, nil
+}
+
+func shouldFetchLog(pod *v1.Pod) bool {
+	statuses := append(pod.Status.InitContainerStatuses, pod.Status.ContainerStatuses...)
+	for _, status := range statuses {
+		if status.State.Terminated != nil && status.State.Terminated.ExitCode != 0 {
+			return true
+		}
+		if status.State.Waiting != nil && status.State.Waiting.Reason == "CrashLoopBackOff" {
+			return true
+		}
+	}
+	return false
+}
+
+func fetchContainerLogs(ctx context.Context, client *kubernetes.Client, pod *v1.Pod) []common.Info {
+	var infos []common.Info
+
+	findStatus := func(name string, list []v1.ContainerStatus) *v1.ContainerStatus {
+		for _, s := range list {
+			if s.Name == name {
+				return &s
+			}
+		}
+		return nil
+	}
+
+	for _, c := range append(pod.Spec.InitContainers, pod.Spec.Containers...) {
+		status := findStatus(c.Name, append(pod.Status.InitContainerStatuses, pod.Status.ContainerStatuses...))
+		if status == nil {
+			continue
+		}
+		if logs, err := getContainerLogs(ctx, client, pod, &c, status); err == nil && len(logs) > 0 {
+			infos = append(infos, common.Info{
+				Text: fmt.Sprintf("pod %s container %s logs:\n%s", pod.Name, c.Name, strings.Join(logs, "\n")),
+			})
+		}
+	}
+
+	return infos
 }
 
 func analyzeContainerStatusFailures(a common.Analyzer, statuses []v1.ContainerStatus, name string, namespace string, statusPhase string) []kcommon.Failure {
@@ -240,6 +260,23 @@ func podEventWarning(podName string, event prom.Event) common.Warning {
 	}
 }
 
+func podEventWarningLegacy(podName string, event v1.Event) common.Warning {
+	timestamp := event.LastTimestamp.Time
+	if timestamp.IsZero() {
+		timestamp = event.EventTime.Time
+	}
+	return common.Warning{
+		Text: fmt.Sprintf("Pod %s has %s event at %s %s(%s) count %d", podName, event.Type, timestamp.Format(time.RFC3339), event.Reason, event.Message, event.Count),
+		Sensitive: []kcommon.Sensitive{
+			{
+				Unmasked: podName,
+				Masked:   util.MaskString(podName),
+			},
+		},
+	}
+}
+
+
 func getContainerLogs(ctx context.Context, client *kubernetes.Client, pod *v1.Pod, container *v1.Container, containerStatus *v1.ContainerStatus) ([]string, error) {
 	containerId := strings.TrimPrefix(strings.TrimPrefix(containerStatus.ContainerID, "docker://"), "containerd://")
 	reason := ""
@@ -275,40 +312,33 @@ func getContainerLogs(ctx context.Context, client *kubernetes.Client, pod *v1.Po
 
 func (p PodAnalyzer) Prompt(result *common.Result) (prompt string) {
 	if result == nil || (len(result.Error) == 0 && len(result.Warning) == 0) {
-		return
+		return ""
 	}
 
-	prompt = `你是一个很有帮助的 Kubernetes 集群故障诊断专家，接下来你需要根据我给出的现象（如果没有有效信息，请直接返回正常）帮忙诊断问题，一定需要使用中文来回答.`
-
-	if len(result.Error) > 0 {
-		failureText := ""
-		for _, e := range result.Error {
-			failureText = failureText + e.Text + "\n"
-		}
-		prompt += fmt.Sprintf("\n异常信息：%s", failureText)
+	errorInfo := ""
+	for _, e := range result.Error {
+		errorInfo += e.Text + "\n"
 	}
 
-	if len(result.Warning) > 0 {
-		warningText := ""
-		for _, e := range result.Warning {
-			warningText = warningText + e.Text + "\n"
-		}
-		prompt += fmt.Sprintf("\n一些 Pod 历史事件（如果认为有帮助，可以使用，或者忽略）：%s", warningText)
+	eventInfo := ""
+	for _, e := range result.Warning {
+		eventInfo += e.Text + "\n"
 	}
 
-	if len(result.Info) > 0 {
-		infoText := ""
-		for _, e := range result.Info {
-			infoText = infoText + e.Text + "\n"
-		}
-		prompt += fmt.Sprintf("\n一些 Pod 日志信息（如果认为有帮助，可以使用，或者忽略）：%s", infoText)
+	logInfo := ""
+	for _, e := range result.Info {
+		logInfo += e.Text + "\n"
 	}
 
-	prompt += `
-请按以下格式给出回答，不超过 512 字:
-Healthy: {Yes 或者 No，代表是否有异常}
-Error: {在这里解释错误}
-Solution: {在这里给出分步骤的解决方案}`
+	data := ai.PromptData{
+		ErrorInfo: errorInfo,
+		EventInfo: eventInfo,
+		LogInfo:   logInfo,
+	}
 
-	return
+	prompt, err := ai.GetRenderedPrompt("Pod", data)
+	if err != nil {
+		return err.Error()
+	}
+	return prompt
 }
