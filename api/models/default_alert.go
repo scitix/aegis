@@ -51,6 +51,14 @@ func (a *Alert) validateObject() error {
 	return nil
 }
 
+func (a *Alert) validateFingerPrint() error {
+	if a.FingerPrint == "" {
+		return fmt.Errorf("empty fingerprint")
+	}
+
+	return nil
+}
+
 func (a *Alert) Validate() error {
 	var err error
 	if err = a.validateType(); err != nil {
@@ -62,6 +70,10 @@ func (a *Alert) Validate() error {
 	}
 
 	if err = a.validateObject(); err != nil {
+		return err
+	}
+
+	if err = a.validateFingerPrint(); err != nil {
 		return err
 	}
 

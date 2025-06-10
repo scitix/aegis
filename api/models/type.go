@@ -5,6 +5,7 @@ type AlertSourceType string
 const (
 	DefaultAlertSource      AlertSourceType = "Default"
 	AlertManagerAlertSource AlertSourceType = "AlertManager"
+	AIAlertSource           AlertSourceType = "AI"
 )
 
 const (
