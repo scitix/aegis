@@ -88,16 +88,17 @@ func generateFingerprint(alert *models.Alert) (string, error) {
 	}
 	sort.Strings(labelNames)
 
-	data := ""
+	var builder strings.Builder
 	for _, labelName := range labelNames {
 		if alert.Details[labelName] == "" {
 			continue
 		}
-		data += labelName
-		data += string(alert.Details[labelName])
-		data += ":"
+		builder.WriteString(labelName)
+		builder.WriteString(alert.Details[labelName])
+		builder.WriteString(":")
 	}
 
+	data := builder.String()
 	if data == "" {
 		return "", fmt.Errorf("no valid data to generate fingerprint")
 	}
