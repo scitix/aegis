@@ -22,8 +22,8 @@ import (
 	"context"
 	"time"
 
-	v1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/template/v1alpha1"
-	scheme "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/clientset/versioned/scheme"
+	v1alpha1 "github.com/scitix/aegis/pkg/apis/template/v1alpha1"
+	scheme "github.com/scitix/aegis/pkg/generated/template/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

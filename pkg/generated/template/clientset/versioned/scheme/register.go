@@ -19,7 +19,7 @@ limitations under the License.
 package scheme
 
 import (
-	aegisv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/template/v1alpha1"
+	aegisv1alpha1 "github.com/scitix/aegis/pkg/apis/template/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

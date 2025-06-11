@@ -1,7 +1,7 @@
 package diagnosis
 
 import (
-	v1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/diagnosis/v1alpha1"
+	v1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

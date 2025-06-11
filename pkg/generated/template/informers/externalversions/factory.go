@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/clientset/versioned"
-	internalinterfaces "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/informers/externalversions/internalinterfaces"
-	template "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/informers/externalversions/template"
+	versioned "github.com/scitix/aegis/pkg/generated/template/clientset/versioned"
+	internalinterfaces "github.com/scitix/aegis/pkg/generated/template/informers/externalversions/internalinterfaces"
+	template "github.com/scitix/aegis/pkg/generated/template/informers/externalversions/template"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

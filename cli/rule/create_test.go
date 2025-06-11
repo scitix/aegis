@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	_name "github.com/google/go-containerregistry/pkg/name"
-	"gitlab.scitix-inner.ai/k8s/aegis/tools"
+	"github.com/scitix/aegis/tools"
 )
 
 func TestRenderWorkflowTemplate(t *testing.T) {

@@ -11,12 +11,12 @@ import (
 	"github.com/k8sgpt-ai/k8sgpt/pkg/kubernetes"
 	"github.com/k8sgpt-ai/k8sgpt/pkg/util"
 	cache "github.com/patrickmn/go-cache"
+	"github.com/scitix/aegis/pkg/analyzer"
+	"github.com/scitix/aegis/pkg/analyzer/common"
 	"github.com/spf13/viper"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer/common"
 	"k8s.io/klog/v2"
 
-	diagnosisv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/diagnosis/v1alpha1"
+	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
 )
 
 type Diagnosis struct {

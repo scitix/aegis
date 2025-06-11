@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"time"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/version"
+	"github.com/scitix/aegis/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	discovery "k8s.io/apimachinery/pkg/version"

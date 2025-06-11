@@ -3,7 +3,7 @@ package nodecheck
 import (
 	v1 "k8s.io/api/core/v1"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/nodecheck/v1alpha1"
+	"github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
 )
 
 func IsNodeCheckFinished(nodecheck *v1alpha1.AegisNodeHealthCheck) bool {

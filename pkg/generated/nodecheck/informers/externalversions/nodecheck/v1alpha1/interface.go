@@ -19,7 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	internalinterfaces "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/informers/externalversions/internalinterfaces"
+	internalinterfaces "github.com/scitix/aegis/pkg/generated/nodecheck/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to all the informers in this group version.

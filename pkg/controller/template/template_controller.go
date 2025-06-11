@@ -19,10 +19,10 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	templatev1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/template/v1alpha1"
-	clientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/clientset/versioned"
-	informers "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/informers/externalversions/template/v1alpha1"
-	listers "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/listers/template/v1alpha1"
+	templatev1alpha1 "github.com/scitix/aegis/pkg/apis/template/v1alpha1"
+	clientset "github.com/scitix/aegis/pkg/generated/template/clientset/versioned"
+	informers "github.com/scitix/aegis/pkg/generated/template/informers/externalversions/template/v1alpha1"
+	listers "github.com/scitix/aegis/pkg/generated/template/listers/template/v1alpha1"
 )
 
 func init() {

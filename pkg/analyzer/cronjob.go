@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	kanalyzer "github.com/k8sgpt-ai/k8sgpt/pkg/analyzer"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer/common"
+	"github.com/scitix/aegis/pkg/analyzer/common"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

@@ -5,10 +5,10 @@ import (
 	"io"
 	"net/http"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/api"
-	"gitlab.scitix-inner.ai/k8s/aegis/api/models"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/ai"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/metrics"
+	"github.com/scitix/aegis/api"
+	"github.com/scitix/aegis/api/models"
+	"github.com/scitix/aegis/pkg/ai"
+	"github.com/scitix/aegis/pkg/metrics"
 	"k8s.io/klog/v2"
 )
 
@@ -48,14 +48,14 @@ func aiAlertHandler(rw http.ResponseWriter, r *http.Request, callback func(ctx c
 	}
 
 	if aiAlertParser == nil {
-        klog.Warningf("AIAlertParser not configured, skip AI parsing")
-        metrics.RecordAPIParseFailure(source, "AIAlertParserNotConfigured")
-        response = api.CommonResponse{
-            Code:    api.RequestParamError,
-            Message: "AIAlertParser 未配置，无法解析告警",
-        }
-        return
-    }
+		klog.Warningf("AIAlertParser not configured, skip AI parsing")
+		metrics.RecordAPIParseFailure(source, "AIAlertParserNotConfigured")
+		response = api.CommonResponse{
+			Code:    api.RequestParamError,
+			Message: "AIAlertParser 未配置，无法解析告警",
+		}
+		return
+	}
 
 	alerts, err := aiAlertParser.Parse(r.Context(), raw)
 	if err != nil {
@@ -85,4 +85,3 @@ func aiAlertHandler(rw http.ResponseWriter, r *http.Request, callback func(ctx c
 		metrics.RecordCreateSuccess(source)
 	}
 }
-

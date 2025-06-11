@@ -4,9 +4,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/internal/k8s"
-	ruleclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/rule/clientset/versioned"
-	templateclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/clientset/versioned"
+	"github.com/scitix/aegis/internal/k8s"
+	ruleclientset "github.com/scitix/aegis/pkg/generated/rule/clientset/versioned"
+	templateclientset "github.com/scitix/aegis/pkg/generated/template/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 )
 

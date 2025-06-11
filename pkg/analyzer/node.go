@@ -7,8 +7,8 @@ import (
 	"github.com/k8sgpt-ai/k8sgpt/pkg/analyzer"
 	kcommon "github.com/k8sgpt-ai/k8sgpt/pkg/common"
 	"github.com/k8sgpt-ai/k8sgpt/pkg/util"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer/common"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/prom"
+	"github.com/scitix/aegis/pkg/analyzer/common"
+	"github.com/scitix/aegis/pkg/prom"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 

@@ -19,8 +19,8 @@ limitations under the License.
 package clustercheck
 
 import (
-	v1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/clustercheck/informers/externalversions/clustercheck/v1alpha1"
-	internalinterfaces "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/clustercheck/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/scitix/aegis/pkg/generated/clustercheck/informers/externalversions/clustercheck/v1alpha1"
+	internalinterfaces "github.com/scitix/aegis/pkg/generated/clustercheck/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.

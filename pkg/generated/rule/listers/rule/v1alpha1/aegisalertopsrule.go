@@ -19,7 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/rule/v1alpha1"
+	v1alpha1 "github.com/scitix/aegis/pkg/apis/rule/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"

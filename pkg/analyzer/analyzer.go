@@ -1,7 +1,7 @@
 package analyzer
 
 import (
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer/common"
+	"github.com/scitix/aegis/pkg/analyzer/common"
 )
 
 var customAnalyzerMap = map[string]common.IAnalyzer{}

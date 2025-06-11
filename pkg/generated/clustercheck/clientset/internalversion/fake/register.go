@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	clustercheckinternalversion "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/clustercheck"
+	clustercheckinternalversion "github.com/scitix/aegis/pkg/apis/clustercheck"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

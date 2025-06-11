@@ -9,13 +9,13 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/crane"
 	_name "github.com/google/go-containerregistry/pkg/name"
+	"github.com/scitix/aegis/cli/config"
+	"github.com/scitix/aegis/tools"
 	"github.com/spf13/cobra"
-	"gitlab.scitix-inner.ai/k8s/aegis/cli/config"
-	"gitlab.scitix-inner.ai/k8s/aegis/tools"
 	"k8s.io/klog/v2"
 
-	rulev1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/rule/v1alpha1"
-	templatev1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/template/v1alpha1"
+	rulev1alpha1 "github.com/scitix/aegis/pkg/apis/rule/v1alpha1"
+	templatev1alpha1 "github.com/scitix/aegis/pkg/apis/template/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
