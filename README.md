@@ -1,11 +1,10 @@
-# Aegis
+# Aegis - Cloud-Native AIOps Framework for Kubernetes
 
 **Aegis** is an event-driven, cloud-native automated operations system running on Kubernetes. It is designed to automatically respond to and handle various abnormal states in the cluster. By connecting alerts to standardized operations (SOPs), it significantly improves operational efficiency and failure response speed. Through the integration of custom resources (CRDs) and workflow engines (e.g., Argo Workflows), Aegis forms a complete closed-loop from alert reception, rule matching, automatic template rendering, workflow execution, to status feedback. Additional features include AI-HPC cluster diagnostics and periodic node health checks.
 
 ![Aegis Overview](./docs/aegis.png)
 
 # Table of Contents
-- [Aegis](#aegis)
 - [Core Capabilities](#core-capabilities)
   - [Automated Cluster Operations](#automated-cluster-operations)
   - [Cluster Diagnosis (Experimental)](#cluster-diagnosis-experimental)

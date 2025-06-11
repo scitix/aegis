@@ -1,4 +1,4 @@
-# Aegis
+# Aegis - Cloud-Native AIOps Framework for Kubernetes
 
 Aegis 是一个运行于 Kubernetes 平台上基于告警事件驱动的云原生自动化运维系统，旨在自动响应并处理集群中的各种异常状态，将告警与运维标准操作流程（SOP）衔接，显著提升运维效率与故障响应速度。通过自定义资源（CRD）与工作流引擎（如 Argo Workflows）集成，实现了从告警接收、规则匹配、自动渲染、执行运维工作流到状态反馈的完整闭环处理。除此之外还包括 AI-HPC 集群故障诊断和集群节点巡检功能。
 
@@ -6,7 +6,6 @@ Aegis 是一个运行于 Kubernetes 平台上基于告警事件驱动的云原�
 
 # 目录
 
-- [Aegis](#aegis)
 - [核心能力](#核心能力)
   - [集群自动化运维](#集群自动化运维)
   - [集群诊断（Experimental）](#集群诊断experimental)

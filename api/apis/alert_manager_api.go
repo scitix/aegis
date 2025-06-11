@@ -17,7 +17,7 @@ func init() {
 func alertmanager(rw http.ResponseWriter, r *http.Request, callback func(ctx context.Context, alert *models.Alert) error,
 	metrics *metrics.MetricsController,
 ) {
-	source := "alertManager"
+	source := "alertmanager"
 
 	response := api.CommonResponse{
 		Code: api.OK,
