@@ -21,7 +21,7 @@ package internalversion
 import (
 	"fmt"
 
-	alertinternalversion "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/alert/clientset/internalversion/typed/alert/internalversion"
+	alertinternalversion "github.com/scitix/aegis/pkg/generated/alert/clientset/internalversion/typed/alert/internalversion"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/clustercheck/clientset/internalversion"
-	clustercheckinternalversion "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/clustercheck/clientset/internalversion/typed/clustercheck/internalversion"
-	fakeclustercheckinternalversion "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/clustercheck/clientset/internalversion/typed/clustercheck/internalversion/fake"
+	clientset "github.com/scitix/aegis/pkg/generated/clustercheck/clientset/internalversion"
+	clustercheckinternalversion "github.com/scitix/aegis/pkg/generated/clustercheck/clientset/internalversion/typed/clustercheck/internalversion"
+	fakeclustercheckinternalversion "github.com/scitix/aegis/pkg/generated/clustercheck/clientset/internalversion/typed/clustercheck/internalversion/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

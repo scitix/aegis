@@ -1,8 +1,8 @@
 package rule
 
 import (
+	"github.com/scitix/aegis/cli/config"
 	"github.com/spf13/cobra"
-	"gitlab.scitix-inner.ai/k8s/aegis/cli/config"
 )
 
 func NewCommand(config *config.AegisCliConfig) *cobra.Command {

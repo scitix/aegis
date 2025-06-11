@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/nodecheck"
+	"github.com/scitix/aegis/pkg/apis/nodecheck"
 )
 
 // SchemeGroupVersion is group version used to register these objects

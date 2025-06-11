@@ -26,15 +26,15 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	nodecheckv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/nodecheck/v1alpha1"
-	nodecheckclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/clientset/versioned"
-	nodecheckInformer "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/informers/externalversions/nodecheck/v1alpha1"
-	nodecheckLister "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/listers/nodecheck/v1alpha1"
+	nodecheckv1alpha1 "github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
+	nodecheckclientset "github.com/scitix/aegis/pkg/generated/nodecheck/clientset/versioned"
+	nodecheckInformer "github.com/scitix/aegis/pkg/generated/nodecheck/informers/externalversions/nodecheck/v1alpha1"
+	nodecheckLister "github.com/scitix/aegis/pkg/generated/nodecheck/listers/nodecheck/v1alpha1"
 
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/controller"
+	"github.com/scitix/aegis/pkg/controller"
 	nativecontroller "k8s.io/kubernetes/pkg/controller"
 )
 

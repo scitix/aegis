@@ -19,8 +19,8 @@ limitations under the License.
 package rule
 
 import (
-	internalinterfaces "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/rule/informers/externalversions/internalinterfaces"
-	v1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/rule/informers/externalversions/rule/v1alpha1"
+	internalinterfaces "github.com/scitix/aegis/pkg/generated/rule/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/scitix/aegis/pkg/generated/rule/informers/externalversions/rule/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

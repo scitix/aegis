@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/clustercheck/v1alpha1"
+	"github.com/scitix/aegis/pkg/apis/clustercheck/v1alpha1"
 )
 
 func IsClusterCheckFinsihed(check *v1alpha1.AegisClusterHealthCheck) bool {

@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	v1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/clientset/versioned/typed/nodecheck/v1alpha1"
+	v1alpha1 "github.com/scitix/aegis/pkg/generated/nodecheck/clientset/versioned/typed/nodecheck/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )

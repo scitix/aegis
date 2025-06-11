@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/clientset/internalversion"
-	templateinternalversion "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/clientset/internalversion/typed/template/internalversion"
-	faketemplateinternalversion "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/clientset/internalversion/typed/template/internalversion/fake"
+	clientset "github.com/scitix/aegis/pkg/generated/template/clientset/internalversion"
+	templateinternalversion "github.com/scitix/aegis/pkg/generated/template/clientset/internalversion/typed/template/internalversion"
+	faketemplateinternalversion "github.com/scitix/aegis/pkg/generated/template/clientset/internalversion/typed/template/internalversion/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

@@ -9,17 +9,17 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/api/models"
-	"gitlab.scitix-inner.ai/k8s/aegis/internal/k8s"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/alert/v1alpha1"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/controller"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/controller/alert"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/controller/clustercheck"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/controller/diagnosis"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/controller/nodecheck"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/controller/rule"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/controller/template"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/metrics"
+	"github.com/scitix/aegis/api/models"
+	"github.com/scitix/aegis/internal/k8s"
+	"github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
+	"github.com/scitix/aegis/pkg/controller"
+	"github.com/scitix/aegis/pkg/controller/alert"
+	"github.com/scitix/aegis/pkg/controller/clustercheck"
+	"github.com/scitix/aegis/pkg/controller/diagnosis"
+	"github.com/scitix/aegis/pkg/controller/nodecheck"
+	"github.com/scitix/aegis/pkg/controller/rule"
+	"github.com/scitix/aegis/pkg/controller/template"
+	"github.com/scitix/aegis/pkg/metrics"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -30,24 +30,24 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/klog/v2"
 
-	alertv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/alert/v1alpha1"
-	alertclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/alert/clientset/versioned"
-	alertInformers "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/alert/informers/externalversions"
+	alertv1alpha1 "github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
+	alertclientset "github.com/scitix/aegis/pkg/generated/alert/clientset/versioned"
+	alertInformers "github.com/scitix/aegis/pkg/generated/alert/informers/externalversions"
 
-	ruleclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/rule/clientset/versioned"
-	ruleInformers "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/rule/informers/externalversions"
+	ruleclientset "github.com/scitix/aegis/pkg/generated/rule/clientset/versioned"
+	ruleInformers "github.com/scitix/aegis/pkg/generated/rule/informers/externalversions"
 
-	templateclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/clientset/versioned"
-	templateinformers "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/informers/externalversions"
+	templateclientset "github.com/scitix/aegis/pkg/generated/template/clientset/versioned"
+	templateinformers "github.com/scitix/aegis/pkg/generated/template/informers/externalversions"
 
-	diagnosisclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/diagnosis/clientset/versioned"
-	diagnosisInformers "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/diagnosis/informers/externalversions"
+	diagnosisclientset "github.com/scitix/aegis/pkg/generated/diagnosis/clientset/versioned"
+	diagnosisInformers "github.com/scitix/aegis/pkg/generated/diagnosis/informers/externalversions"
 
-	nodecheckclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/clientset/versioned"
-	nodecheckInformers "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/informers/externalversions"
+	nodecheckclientset "github.com/scitix/aegis/pkg/generated/nodecheck/clientset/versioned"
+	nodecheckInformers "github.com/scitix/aegis/pkg/generated/nodecheck/informers/externalversions"
 
-	clustercheckclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/clustercheck/clientset/versioned"
-	clustercheckInformers "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/clustercheck/informers/externalversions"
+	clustercheckclientset "github.com/scitix/aegis/pkg/generated/clustercheck/clientset/versioned"
+	clustercheckInformers "github.com/scitix/aegis/pkg/generated/clustercheck/informers/externalversions"
 
 	wfclientset "github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned"
 	wfInformers "github.com/argoproj/argo-workflows/v3/pkg/client/informers/externalversions"
@@ -355,7 +355,7 @@ func (c *AegisController) run(ctx context.Context) error {
 			errChan <- fmt.Errorf("error running clustercheck controller: %s", err.Error())
 		}
 	}()
-	
+
 	wg.Wait()
 
 	// close chan

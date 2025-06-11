@@ -6,8 +6,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	alertv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/alert/v1alpha1"
-	"gitlab.scitix-inner.ai/k8s/aegis/tools"
+	alertv1alpha1 "github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
+	"github.com/scitix/aegis/tools"
 )
 
 type MetricsController struct {

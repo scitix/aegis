@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/internal/k8s"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/alert/clientset/versioned/scheme"
+	"github.com/scitix/aegis/internal/k8s"
+	"github.com/scitix/aegis/pkg/generated/alert/clientset/versioned/scheme"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"

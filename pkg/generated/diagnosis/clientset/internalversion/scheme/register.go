@@ -19,7 +19,7 @@ limitations under the License.
 package scheme
 
 import (
-	diagnosis "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/diagnosis/install"
+	diagnosis "github.com/scitix/aegis/pkg/apis/diagnosis/install"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

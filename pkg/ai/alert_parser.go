@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	kai "github.com/k8sgpt-ai/k8sgpt/pkg/ai"
-	"gitlab.scitix-inner.ai/k8s/aegis/api/models"
+	"github.com/scitix/aegis/api/models"
 )
 
 type AlertParser interface {

@@ -22,17 +22,17 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	clustercheckv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/clustercheck/v1alpha1"
-	clustercheckclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/clustercheck/clientset/versioned"
-	clustercheckInformer "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/clustercheck/informers/externalversions/clustercheck/v1alpha1"
-	clustercheckLister "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/clustercheck/listers/clustercheck/v1alpha1"
+	clustercheckv1alpha1 "github.com/scitix/aegis/pkg/apis/clustercheck/v1alpha1"
+	clustercheckclientset "github.com/scitix/aegis/pkg/generated/clustercheck/clientset/versioned"
+	clustercheckInformer "github.com/scitix/aegis/pkg/generated/clustercheck/informers/externalversions/clustercheck/v1alpha1"
+	clustercheckLister "github.com/scitix/aegis/pkg/generated/clustercheck/listers/clustercheck/v1alpha1"
 
-	nodecheckv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/nodecheck/v1alpha1"
-	nodecheckclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/clientset/versioned"
-	nodecheckInformer "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/informers/externalversions/nodecheck/v1alpha1"
-	nodecheckLister "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/listers/nodecheck/v1alpha1"
+	nodecheckv1alpha1 "github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
+	nodecheckclientset "github.com/scitix/aegis/pkg/generated/nodecheck/clientset/versioned"
+	nodecheckInformer "github.com/scitix/aegis/pkg/generated/nodecheck/informers/externalversions/nodecheck/v1alpha1"
+	nodecheckLister "github.com/scitix/aegis/pkg/generated/nodecheck/listers/nodecheck/v1alpha1"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/controller"
+	"github.com/scitix/aegis/pkg/controller"
 	nativecontroller "k8s.io/kubernetes/pkg/controller"
 )
 

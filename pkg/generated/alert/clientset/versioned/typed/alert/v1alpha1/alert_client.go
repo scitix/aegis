@@ -19,8 +19,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/alert/v1alpha1"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/alert/clientset/versioned/scheme"
+	v1alpha1 "github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
+	"github.com/scitix/aegis/pkg/generated/alert/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 

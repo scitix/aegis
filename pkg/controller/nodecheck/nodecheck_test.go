@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	nodecheckv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/nodecheck/v1alpha1"
+	nodecheckv1alpha1 "github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
 	"gopkg.in/yaml.v3"
 )
 

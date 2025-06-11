@@ -19,8 +19,8 @@ limitations under the License.
 package template
 
 import (
-	internalinterfaces "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/informers/externalversions/internalinterfaces"
-	v1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/informers/externalversions/template/v1alpha1"
+	internalinterfaces "github.com/scitix/aegis/pkg/generated/template/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/scitix/aegis/pkg/generated/template/informers/externalversions/template/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

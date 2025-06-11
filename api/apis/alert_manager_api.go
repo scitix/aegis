@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/api"
-	"gitlab.scitix-inner.ai/k8s/aegis/api/models"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/metrics"
+	"github.com/scitix/aegis/api"
+	"github.com/scitix/aegis/api/models"
+	"github.com/scitix/aegis/pkg/metrics"
 	"k8s.io/klog/v2"
 )
 

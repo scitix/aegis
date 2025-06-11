@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/cli"
+	"github.com/scitix/aegis/cli"
 	"k8s.io/klog/v2"
 )
 
