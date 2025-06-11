@@ -79,9 +79,11 @@ kubectl apply -f manifest/deploy/ -n monitoring
 
 # 配置告警源接入
 
-当前支持两种风格的告警：
--  `Alertmanager` HTTP POST。
-- 系统自定义的一种告警格式。（便利三方系统主动触发告警）
+当前支持三种风格的告警接入：
+
+* `/ai/alert`：通过 [AIAlertParser](docs/ai-alert-parse_CN.md) 调用 LLM 自动解析各类告警消息，转化为统一的 AegisAlert 格式。
+* `/alertmanager/alert`：支持标准的 `Alertmanager` HTTP POST 格式。
+* `/alert`：支持自定义的 JSON 格式，方便三方系统主动触发告警。
 
 ## Alertmanager
 

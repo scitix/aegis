@@ -82,10 +82,13 @@ kubectl apply -f manifest/deploy/ -n monitoring
 
 # Alert Source Integration
 
-Currently supports two alert formats:
+<!-- Currently supports two alert formats: -->
 
-* **Alertmanager** HTTP POST format.
-* **Custom JSON format** for external system integrations.
+Support three apis for alert message parse
+
+* `/ai/alert`: [**AIAlertParser**](docs/ai-alert-parse.md), uses LLM to parse various alert messages into the unified Aegis format.
+* `/alertmanager/alert`: **Alertmanager** HTTP POST format.
+* `/alert`: **Custom JSON format** for external system integrations.
 
 ## Alertmanager
 
