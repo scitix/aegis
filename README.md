@@ -34,7 +34,7 @@ Aegis defines several Kubernetes CRDs:
 * **AegisAlertOpsRule**: Defines rules for alert-triggered workflows. On one hand, it specifies matching conditions for `AegisAlert` resources based on type, status, and labels. On the other hand, it references `AegisOpsTemplate`.
 * **AegisOpsTemplate**: Contains Argo Workflow templates for automated operations.
 
-Aegis supports converting alert messages from sources (currently AlertManager and a default custom format) into `AegisAlert` resources. These alerts are matched against `AegisAlertOpsRule`, which then triggers the rendering and execution of an `AegisOpsTemplate`.
+Aegis supports converting alert messages from sources (now support for the different alert source parsed by AI, such as AlertManager, Datadog, Zabbix and so on) into `AegisAlert` resources. These alerts are matched against `AegisAlertOpsRule`, which then triggers the rendering and execution of an `AegisOpsTemplate`.
 
 * **Unified alert access**: Supports alerts from AlertManager and a default custom format via webhook.
 * **Event-driven response**: Alerts are converted into `AegisAlert` objects to drive workflows.
@@ -82,10 +82,13 @@ kubectl apply -f manifest/deploy/ -n monitoring
 
 # Alert Source Integration
 
-Currently supports two alert formats:
+<!-- Currently supports two alert formats: -->
 
-* **Alertmanager** HTTP POST format.
-* **Custom JSON format** for external system integrations.
+Support three apis for alert message parse
+
+* `/ai/alert`: [**AIAlertParser**](docs/ai-alert-parse.md), uses LLM to parse various alert messages into the unified Aegis format.
+* `/alertmanager/alert`: **Alertmanager** HTTP POST format.
+* `/alert`: **Custom JSON format** for external system integrations.
 
 ## Alertmanager
 

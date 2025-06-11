@@ -10,12 +10,17 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"gitlab.scitix-inner.ai/k8s/aegis/api/models"
+	"gitlab.scitix-inner.ai/k8s/aegis/pkg/metrics"
 	"k8s.io/klog/v2"
 )
 
-var handlerMap map[string]interface{} = make(map[string]interface{})
+type HandlerWithMetrics = func(http.ResponseWriter, *http.Request,
+	func(ctx context.Context, alert *models.Alert) error,
+	*metrics.MetricsController)
 
-func RegisterHandler(path string, handler func(http.ResponseWriter, *http.Request, func(ctx context.Context, alert *models.Alert) error)) {
+var handlerMap map[string]HandlerWithMetrics = make(map[string]HandlerWithMetrics)
+
+func RegisterHandler(path string, handler HandlerWithMetrics) {
 	if _, ok := handlerMap[path]; !ok {
 		handlerMap[path] = handler
 		klog.Infof("Succeeded register route %s", path)
@@ -25,8 +30,9 @@ func RegisterHandler(path string, handler func(http.ResponseWriter, *http.Reques
 }
 
 func RunHttpServer(port, routePrefix string,
-	createAlertHandler func(ctx context.Context, alert *models.Alert) error) {
-
+	createAlertHandler func(ctx context.Context, alert *models.Alert) error,
+	metrics *metrics.MetricsController,
+) {
 	klog.Infof("Starting http server on port %s", port)
 	mux := http.NewServeMux()
 
@@ -35,8 +41,8 @@ func RunHttpServer(port, routePrefix string,
 	for path, handler := range handlerMap {
 		func(path string, handler interface{}) {
 			mux.HandleFunc(routePrefix+path, func(rw http.ResponseWriter, r *http.Request) {
-				h := handler.(func(http.ResponseWriter, *http.Request, func(ctx context.Context, alert *models.Alert) error))
-				h(rw, r, createAlertHandler)
+				h := handler.(HandlerWithMetrics)
+				h(rw, r, createAlertHandler, metrics)
 			})
 		}(path, handler)
 	}

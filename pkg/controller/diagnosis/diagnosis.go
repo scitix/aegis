@@ -169,7 +169,7 @@ func (d *Diagnosis) RunDiagnosis(ctx context.Context, kind, namespace, name stri
 	response, err := d.AIClient.GetCompletion(ctx, prompt)
 	if err != nil {
 		klog.Errorf("Failed to get AI completion: %v", err)
-		return dresult, "", fmt.Errorf("failed to get explain")
+		return dresult, "", fmt.Errorf("failed to get explain: %v", err)
 	}
 
 	if !d.NoCache {

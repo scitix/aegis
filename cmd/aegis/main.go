@@ -12,9 +12,11 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"gitlab.scitix-inner.ai/k8s/aegis/api"
-	_ "gitlab.scitix-inner.ai/k8s/aegis/api/apis"
+	"gitlab.scitix-inner.ai/k8s/aegis/api/apis"
 	"gitlab.scitix-inner.ai/k8s/aegis/internal/controller"
 	"gitlab.scitix-inner.ai/k8s/aegis/internal/k8s"
+	"gitlab.scitix-inner.ai/k8s/aegis/pkg/ai"
+	"gitlab.scitix-inner.ai/k8s/aegis/pkg/metrics"
 	"gitlab.scitix-inner.ai/k8s/aegis/tools"
 	"gitlab.scitix-inner.ai/k8s/aegis/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -77,8 +79,21 @@ func main() {
 	})
 
 	// run api
+	metricsController := metrics.NewMetricsController()
 	if port > 0 {
-		go api.RunHttpServer(strconv.Itoa(port), routePrefix, aegisController.CreateOrUpdateAlert)
+		go api.RunHttpServer(strconv.Itoa(port), routePrefix, aegisController.CreateOrUpdateAlert, metricsController)
+	}
+
+	// AIClient for parser
+	if conf.AiBackend != "" {
+		providerFactory := &ai.DefaultFactory{}
+		client, _, err := providerFactory.Load(conf.AiBackend, nil)
+		if err != nil {
+			klog.Fatalf("Failed to load AI client: %v", err)
+		}
+		apis.SetAIAlertParser(ai.NewDefaultAIAlertParserWithClient(client))
+	} else {
+		klog.Infof("AI backend not configured, skip injecting AIAlertParser")
 	}
 
 	// run controller

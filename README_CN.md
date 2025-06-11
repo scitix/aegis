@@ -33,7 +33,7 @@ Aegis 是一个运行于 Kubernetes 平台上基于告警事件驱动的云原�
 - **AegisAlertOpsRule**: 定义告警工作流规则。一方面，包含对 `AegisAlert` 告警类型、状态和 Label 的匹配条件；另一方面，包含对 `AegisOpsTemplate` 索引。
 - **AegisOpsTemplate**: 包含一个 Argo Workflow 执行模板。
 
-Aegis 支持将告警源（目前支持 AlertManager 和缺省源）的告警消息转换成 `AegisAlert` 资源，匹配对应的 `AegisAlertOpsRule` 规则并实例化 `AegisOpsTemplate` 模板，创建运维工作流。
+Aegis 支持将告警源（现支持通过AI解析来自不同告警源的告警消息，例如AlertManger、Datadog、Zabbix等）的告警消息转换成 `AegisAlert` 资源，匹配对应的 `AegisAlertOpsRule` 规则并实例化 `AegisOpsTemplate` 模板，创建运维工作流。
 
 - 告警统一接入：支持 AlertManager、默认数据源等，通过 webhook 接收告警。
 - 事件驱动响应：告警被转化为 AegisAlert 对象驱动整个工作流。
@@ -79,9 +79,11 @@ kubectl apply -f manifest/deploy/ -n monitoring
 
 # 配置告警源接入
 
-当前支持两种风格的告警：
--  `Alertmanager` HTTP POST。
-- 系统自定义的一种告警格式。（便利三方系统主动触发告警）
+当前支持三种风格的告警接入：
+
+* `/ai/alert`：通过 [AIAlertParser](docs/ai-alert-parse_CN.md) 调用 LLM 自动解析各类告警消息，转化为统一的 AegisAlert 格式。
+* `/alertmanager/alert`：支持标准的 `Alertmanager` HTTP POST 格式。
+* `/alert`：支持自定义的 JSON 格式，方便三方系统主动触发告警。
 
 ## Alertmanager
 

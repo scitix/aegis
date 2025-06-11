@@ -80,6 +80,34 @@ var (
 		Name:      "execute_seconds",
 		Help:      "Ops execute takes seconds",
 	}, []string{"name", "type", "sub_type", "namespace", "status"})
+
+	alertAPIParseSuccessCount = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "aegis_alert",
+		Subsystem: "api",
+		Name:      "parse_success_total",
+		Help:      "Count of alert messages successfully parsed by API",
+	}, []string{"source"})
+
+	alertAPIParseFailureCount = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "aegis_alert",
+		Subsystem: "api",
+		Name:      "parse_failure_total",
+		Help:      "Count of alert messages failed to parse in API",
+	}, []string{"source", "reason"})
+
+	alertAPICreateFailureCount = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "aegis_alert",
+		Subsystem: "api",
+		Name:      "create_failure_total",
+		Help:      "Count of alert creation failures (CreateOrUpdateAlert returns error)",
+	}, []string{"source"})
+
+	alertAPICreateSuccessCount = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "aegis_alert",
+		Subsystem: "api",
+		Name:      "create_success_total",
+		Help:      "Count of alert creations successfully handled by API",
+	}, []string{"source"})
 )
 
 func getSubType(alert *alertv1alpha1.AegisAlert) string {
@@ -89,6 +117,22 @@ func getSubType(alert *alertv1alpha1.AegisAlert) string {
 	default:
 		return alert.Spec.Type
 	}
+}
+
+func (m *MetricsController) RecordAPIParseSuccess(source string) {
+	alertAPIParseSuccessCount.WithLabelValues(source).Inc()
+}
+
+func (m *MetricsController) RecordAPIParseFailure(source, reason string) {
+	alertAPIParseFailureCount.WithLabelValues(source, reason).Inc()
+}
+
+func (m *MetricsController) RecordCreateFailure(source string) {
+	alertAPICreateFailureCount.WithLabelValues(source).Inc()
+}
+
+func (m *MetricsController) RecordCreateSuccess(source string) {
+	alertAPICreateSuccessCount.WithLabelValues(source).Inc()
 }
 
 func (m *MetricsController) OnCreate(alert *alertv1alpha1.AegisAlert) error {
