@@ -2,7 +2,7 @@
 
 **Aegis** is an event-driven, cloud-native automated operations system running on Kubernetes. It is designed to automatically respond to and handle various abnormal states in the cluster. By connecting alerts to standardized operations (SOPs), it significantly improves operational efficiency and failure response speed. Through the integration of custom resources (CRDs) and workflow engines (e.g., Argo Workflows), Aegis forms a complete closed-loop from alert reception, rule matching, automatic template rendering, workflow execution, to status feedback. Additional features include AI-HPC cluster diagnostics and periodic node health checks.
 
-![Aegis Overview](./docs/aegis.png)
+![Aegis Overview](./docs/assets/aegis-architecture.png)
 
 # Table of Contents
 - [Core Capabilities](#core-capabilities)
@@ -43,15 +43,17 @@ Aegis supports converting alert messages from sources (now support for the diffe
 
 ## Cluster Diagnosis (Experimental)
 
-Defines diagnostic objects through the `AegisDiagnosis` CRD, supporting LLM-based summary diagnosis. Currently supported types:
+Provides intelligent diagnostic capabilities via the `AegisDiagnosis` CRD, enabling LLM-based summary diagnosis. Currently supported object types include:
 
-* Node
-* Pod
+* **Node**
+* **Pod**
+* [**PytorchJob**](docs/pytorchjob-diagnosis.md) (as defined by [Kubeflow](https://www.kubeflow.org/docs/components/trainer/legacy-v1/user-guides/pytorch/))
 
-Planned support for:
+Planned support:
 
-* Argo Workflow
-* PytorchJob
+* **Argo Workflow**
+
+This feature also provides an API interface that allows third-party systems to initiate a diagnosis for these objects. Detailed instructions can be found [here](docs/diagnosis-API-guide.md).
 
 ## Cluster Health Checks (Experimental)
 
