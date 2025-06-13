@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -60,6 +61,9 @@ type AegisDiagnosisSpec struct {
 
 	// TTLStrategy limits the lifetime of a alert
 	TTLStrategy *TTLStrategy `json:"ttlStrategy,omitempty" protobuf:"bytes,8,opt,name=ttlStrategy"`
+
+	// CollectorConfig allows customization of the collector pod (optional)
+	CollectorConfig *CollectorConfig `json:"collectorConfig,omitempty" protobuf:"bytes,9,opt,name=collectorConfig"`
 }
 
 type DiagnosisObjectKind string
@@ -135,4 +139,21 @@ type DiagnosisResult struct {
 	Failures []string `json:"failures,omitempty" protobuf:"bytes,2,rep,name=failures"`
 	Warnings []string `json:"warnings,omitempty" protobuf:"bytes,3,rep,name=warnings"`
 	Infos    []string `json:"infos,omitempty" protobuf:"bytes,1,rep,name=infos"`
+}
+
+type CollectorConfig struct {
+	// Image of the collector pod
+	Image string `json:"image,omitempty" protobuf:"bytes,1,opt,name=image"`
+
+	// Optional command override
+	Command []string `json:"command,omitempty" protobuf:"bytes,2,rep,name=command"`
+
+	// Optional env variables
+	Env []corev1.EnvVar `json:"env,omitempty" protobuf:"bytes,3,rep,name=env"`
+
+	// Optional additional volume mounts
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty" protobuf:"bytes,4,rep,name=volumeMounts"`
+
+	// Optional additional volumes
+	Volumes []corev1.Volume `json:"volumes,omitempty" protobuf:"bytes,5,rep,name=volumes"`
 }

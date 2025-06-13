@@ -45,7 +45,8 @@ Aegis supports converting alert messages from sources (now support for the diffe
 
 Defines diagnostic objects through the `AegisDiagnosis` CRD, supporting LLM-based summary diagnosis. Currently supported types:
 
-* [Node](docs/node-diagnosis.md)
+* [Node](docs/node-diagnosis.md) 
+  > ⚠️ **Before using Node Diagnosis, you must provide a suitable Collector Pod image and ensure proper permissions are configured. See [Collector Pod Guide](docs/node-diagnosis.md#collector-pod-guide) for details.**
 * [Pod](docs/pod-diagnosis.md)
 
 Planned support for:

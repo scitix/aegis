@@ -112,24 +112,6 @@ func (n NodeAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 	}, nil
 }
 
-// func fetchLogs(res *elastic.SearchResult) ([]string, error) {
-// 	results := make([]string, 0)
-// 	for _, hit := range res.Hits.Hits {
-// 		type Log struct {
-// 			Log string `json:"log"`
-// 		}
-
-// 		var log Log
-// 		err := json.Unmarshal(hit.Source, &log)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		results = append(results, log.Log)
-// 	}
-
-// 	return results, nil
-// }
-
 func nodeStatusFailure(nodeName string, status prom.AegisNodeStatus) kcommon.Failure {
 	return kcommon.Failure{
 		Text: fmt.Sprintf("condition %s type=%s id=%s value=%d", status.Condition, status.Type, status.ID, status.Value),
