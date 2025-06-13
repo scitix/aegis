@@ -53,7 +53,8 @@ Planned support:
 
 * **Argo Workflow**
 
-This feature also provides an API interface that allows third-party systems to initiate a diagnosis for these objects. Detailed instructions can be found [here](docs/diagnosis-API-guide.md).
+> This feature also provides a mechanism that enables third-party systems to trigger diagnoses for these objects by creating corresponding resources. Detailed instructions can be found [here](docs/diagnosis-integration-guide.md).
+
 
 ## Cluster Health Checks (Experimental)
 

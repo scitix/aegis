@@ -46,11 +46,13 @@ Aegis 支持将告警源（现支持通过AI解析来自不同告警源的告警
 
 - Node
 - Pod
+- [PytorchJob](docs/pytorchjob-diagnosis_CN.md) (as defined by [Kubeflow](https://www.kubeflow.org/docs/components/trainer/legacy-v1/user-guides/pytorch/))
 
 待支持的诊断对象类型：
 
 - Argo Workflow（待支持）
-- PytorchJob（待支持）
+
+> 该功能提供了一种机制，使第三方系统可以通过创建相应的资源来触发对这些对象的诊断。详细使用说明请参考 [这里](docs/diagnosis-integration-guide_CN.md)。
 
 ## 集群巡检（Experimental）
 
