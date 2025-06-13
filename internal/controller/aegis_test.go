@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"testing"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/api/models"
+	"github.com/scitix/aegis/api/models"
 )
 
 func TestGenerateName(t *testing.T) {

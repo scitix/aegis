@@ -3,9 +3,9 @@ package controller
 import (
 	"k8s.io/apimachinery/pkg/util/errors"
 
-	alertv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/alert/v1alpha1"
-	nodecheckv1apha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/nodecheck/v1alpha1"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/controller"
+	alertv1alpha1 "github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
+	nodecheckv1apha1 "github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
+	"github.com/scitix/aegis/pkg/controller"
 	"k8s.io/klog/v2"
 )
 

@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/clientset/internalversion"
-	nodecheckinternalversion "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/clientset/internalversion/typed/nodecheck/internalversion"
-	fakenodecheckinternalversion "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/clientset/internalversion/typed/nodecheck/internalversion/fake"
+	clientset "github.com/scitix/aegis/pkg/generated/nodecheck/clientset/internalversion"
+	nodecheckinternalversion "github.com/scitix/aegis/pkg/generated/nodecheck/clientset/internalversion/typed/nodecheck/internalversion"
+	fakenodecheckinternalversion "github.com/scitix/aegis/pkg/generated/nodecheck/clientset/internalversion/typed/nodecheck/internalversion/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

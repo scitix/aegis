@@ -3,7 +3,7 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	nodecheckv1apha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/nodecheck/v1alpha1"
+	nodecheckv1apha1 "github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
 )
 
 var (

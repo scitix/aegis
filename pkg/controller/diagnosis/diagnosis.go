@@ -12,9 +12,12 @@ import (
 	"gitlab.scitix-inner.ai/k8s/aegis/pkg/ai"
 	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer"
 	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer/common"
+	"github.com/scitix/aegis/pkg/analyzer"
+	"github.com/scitix/aegis/pkg/analyzer/common"
+	"github.com/spf13/viper"
 	"k8s.io/klog/v2"
 
-	diagnosisv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/diagnosis/v1alpha1"
+	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
 )
 
 type Diagnosis struct {
@@ -138,7 +141,7 @@ func (d *Diagnosis) RunDiagnosis(ctx context.Context, kind, namespace, name stri
 	response, err := d.AIClient.GetCompletion(ctx, prompt)
 	if err != nil {
 		klog.Errorf("Failed to get AI completion: %v", err)
-		return dresult, "", fmt.Errorf("failed to get explain")
+		return dresult, "", fmt.Errorf("failed to get explain: %v", err)
 	}
 
 	if !d.NoCache {

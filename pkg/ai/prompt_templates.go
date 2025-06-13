@@ -127,3 +127,30 @@ Healthy: {Yes 或者 No，代表是否有异常}
 Error: {在这里解释错误}
 Solution: {在这里给出分步骤的解决方案}
 `
+
+const alertToModelPromptTemplate = `
+你是一个 Kubernetes 运维平台的 AI 模块。你接收到来自外部监控系统的一条告警消息，请将它转换为标准结构 models.Alert 的 JSON 格式。
+
+models.Alert 包含如下字段：
+
+- type（string）：告警类型，遵循驼峰命名法，例如NodeOutOfDiskSpace、HighMemoryUsage、PodCrashLoop（优先从告警名称如alertname取，如无明显字段请自己总结，遵循上述风格）
+- status（string）：告警状态，只能是 "Firing" 或 "Resolved"（可以来自 status 字段）
+- fingerprint（string，可选）：唯一标识符，建议来自 fingerprint、uuid、id 等字段
+- involvedObject（对象信息）：
+  - kind（string）：对象类型，枚举值包括 Pod、Node、Cluster、Workflow 等（可以来自 kind 字段）精准
+  - name（string）：对象名称，例如 pod 名称、node 名称（可以来自 name 字段）
+  - namespace（string，可选）：如为 Pod 类型则需提供（可以来自 namespace 字段）
+  - node（string，可选）：所在节点，如能识别（可以来自 node 字段）
+- details（map[string]string）：原始的 labels 和 annotations 内容（字符串键值对，来自 tags 或 annotations 字段）
+
+你的任务是：
+1. 从以下 JSON 中提取上述字段
+2. 构造一个完整的 models.Alert 对象的 JSON
+3. 保证字段名大小写正确、值保持原样
+4. 不要添加任何注释或额外说明
+
+【原始告警内容】
+{{.RawAlert}}
+
+请只返回 JSON 格式的 models.Alert 对象。
+`

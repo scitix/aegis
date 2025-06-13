@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/diagnosis/clientset/versioned"
-	diagnosis "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/diagnosis/informers/externalversions/diagnosis"
-	internalinterfaces "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/diagnosis/informers/externalversions/internalinterfaces"
+	versioned "github.com/scitix/aegis/pkg/generated/diagnosis/clientset/versioned"
+	diagnosis "github.com/scitix/aegis/pkg/generated/diagnosis/informers/externalversions/diagnosis"
+	internalinterfaces "github.com/scitix/aegis/pkg/generated/diagnosis/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

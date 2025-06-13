@@ -22,11 +22,11 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	alertv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/alert/v1alpha1"
-	alertclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/alert/clientset/versioned"
-	alertInformer "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/alert/informers/externalversions/alert/v1alpha1"
-	alertLister "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/alert/listers/alert/v1alpha1"
-	"gitlab.scitix-inner.ai/k8s/aegis/tools"
+	alertv1alpha1 "github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
+	alertclientset "github.com/scitix/aegis/pkg/generated/alert/clientset/versioned"
+	alertInformer "github.com/scitix/aegis/pkg/generated/alert/informers/externalversions/alert/v1alpha1"
+	alertLister "github.com/scitix/aegis/pkg/generated/alert/listers/alert/v1alpha1"
+	"github.com/scitix/aegis/tools"
 
 	wfv1alpha1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	wfclientset "github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned"
@@ -34,7 +34,7 @@ import (
 	wfInformer "github.com/argoproj/argo-workflows/v3/pkg/client/informers/externalversions/workflow/v1alpha1"
 	wfLister "github.com/argoproj/argo-workflows/v3/pkg/client/listers/workflow/v1alpha1"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/controller"
+	"github.com/scitix/aegis/pkg/controller"
 	nativecontroller "k8s.io/kubernetes/pkg/controller"
 )
 

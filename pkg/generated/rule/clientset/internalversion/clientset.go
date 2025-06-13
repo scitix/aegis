@@ -21,7 +21,7 @@ package internalversion
 import (
 	"fmt"
 
-	ruleinternalversion "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/rule/clientset/internalversion/typed/rule/internalversion"
+	ruleinternalversion "github.com/scitix/aegis/pkg/generated/rule/clientset/internalversion/typed/rule/internalversion"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

@@ -19,9 +19,13 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/controller"
+	"github.com/scitix/aegis/pkg/controller"
 
 	kKubernetes "github.com/k8sgpt-ai/k8sgpt/pkg/kubernetes"
+	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
+	diagnosisclientset "github.com/scitix/aegis/pkg/generated/diagnosis/clientset/versioned"
+	diagnosisInformer "github.com/scitix/aegis/pkg/generated/diagnosis/informers/externalversions/diagnosis/v1alpha1"
+	diagnosisLister "github.com/scitix/aegis/pkg/generated/diagnosis/listers/diagnosis/v1alpha1"
 	"github.com/spf13/viper"
 	diagnosisv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/diagnosis/v1alpha1"
 	diagnosisclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/diagnosis/clientset/versioned"

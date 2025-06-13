@@ -18,6 +18,8 @@ import (
 	"gitlab.scitix-inner.ai/k8s/aegis/pkg/prom"
 	"gitlab.scitix-inner.ai/k8s/aegis/tools"
 	corev1 "k8s.io/api/core/v1"
+	"github.com/scitix/aegis/pkg/analyzer/common"
+	"github.com/scitix/aegis/pkg/prom"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"

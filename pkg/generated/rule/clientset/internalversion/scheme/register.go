@@ -19,7 +19,7 @@ limitations under the License.
 package scheme
 
 import (
-	rule "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/rule/install"
+	rule "github.com/scitix/aegis/pkg/apis/rule/install"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

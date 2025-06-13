@@ -25,47 +25,47 @@ echo $SCRIPT_ROOT
 echo $CODEGEN_PKG
 # bash ../vendor/k8s.io/code-generator/generate-internal-groups.sh \
 #   "deepcopy,client,informer,lister" \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/alert \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/apis \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/apis \
+#   github.com/scitix/aegis/pkg/generated/alert \
+#   github.com/scitix/aegis/pkg/apis \
+#   github.com/scitix/aegis/pkg/apis \
 #   "alert:v1alpha1" \
 #   --go-header-file $(pwd)/boilerplate/boilerplate.generatego.txt
 
 # bash ../vendor/k8s.io/code-generator/generate-internal-groups.sh \
 #   "deepcopy,client,informer,lister" \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/rule \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/apis \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/apis \
+#   github.com/scitix/aegis/pkg/generated/rule \
+#   github.com/scitix/aegis/pkg/apis \
+#   github.com/scitix/aegis/pkg/apis \
 #   "rule:v1alpha1" \
 #   --go-header-file $(pwd)/boilerplate/boilerplate.generatego.txt
 
 # bash ../vendor/k8s.io/code-generator/generate-internal-groups.sh \
 #   "deepcopy,client,informer,lister" \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/apis \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/apis \
+#   github.com/scitix/aegis/pkg/generated/template \
+#   github.com/scitix/aegis/pkg/apis \
+#   github.com/scitix/aegis/pkg/apis \
 #   "template:v1alpha1" \
 #   --go-header-file $(pwd)/boilerplate/boilerplate.generatego.txt
 
 # bash ../vendor/k8s.io/code-generator/generate-internal-groups.sh \
 #   "deepcopy,client,informer,lister" \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/check \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/apis \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/apis \
+#   github.com/scitix/aegis/pkg/generated/check \
+#   github.com/scitix/aegis/pkg/apis \
+#   github.com/scitix/aegis/pkg/apis \
 #   "check:v1alpha1" \
 #   --go-header-file $(pwd)/boilerplate/boilerplate.generatego.txt
 
 bash vendor/k8s.io/code-generator/generate-internal-groups.sh all \
-  gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/diagnosis \
-  gitlab.scitix-inner.ai/k8s/aegis/pkg/apis \
-  gitlab.scitix-inner.ai/k8s/aegis/pkg/apis \
+  github.com/scitix/aegis/pkg/generated/diagnosis \
+  github.com/scitix/aegis/pkg/apis \
+  github.com/scitix/aegis/pkg/apis \
   "diagnosis:v1alpha1" \
   --go-header-file ./hack/boilerplate/boilerplate.generatego.txt 
 
 # bash ../vendor/k8s.io/code-generator/generate-internal-groups.sh \
 #   "deepcopy,client,informer,lister" \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/machinecheck \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/apis \
-#   gitlab.scitix-inner.ai/k8s/aegis/pkg/apis \
+#   github.com/scitix/aegis/pkg/generated/machinecheck \
+#   github.com/scitix/aegis/pkg/apis \
+#   github.com/scitix/aegis/pkg/apis \
 #   "machinecheck:v1alpha1" \
 #   --go-header-file $(pwd)/boilerplate/boilerplate.generatego.txt

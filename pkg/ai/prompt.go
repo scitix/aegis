@@ -50,6 +50,11 @@ var PromptRegistry = map[string]PromptTemplate{
 		Content: podPromptTemplate,
 		Render:  RenderTextTemplate,
 	},
+	"AlertParse": {
+		Name:    "AlertParse",
+		Content: alertToModelPromptTemplate,
+		Render:  RenderTextTemplate,
+	},
 }
 
 func GetRenderedPrompt(kind string, data PromptData) (string, error) {

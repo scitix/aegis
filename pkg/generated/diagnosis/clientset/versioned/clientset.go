@@ -21,7 +21,7 @@ package versioned
 import (
 	"fmt"
 
-	aegisv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/diagnosis/clientset/versioned/typed/diagnosis/v1alpha1"
+	aegisv1alpha1 "github.com/scitix/aegis/pkg/generated/diagnosis/clientset/versioned/typed/diagnosis/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

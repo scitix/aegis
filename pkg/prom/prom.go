@@ -8,7 +8,7 @@ import (
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
-	"gitlab.scitix-inner.ai/k8s/aegis/tools"
+	"github.com/scitix/aegis/tools"
 	"k8s.io/klog/v2"
 )
 

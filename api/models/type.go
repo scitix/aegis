@@ -4,7 +4,8 @@ type AlertSourceType string
 
 const (
 	DefaultAlertSource      AlertSourceType = "Default"
-	AlertManagerAlertSource AlertSourceType = "AlertManager"
+	AlertManagerAlertSource AlertSourceType = "Alertmanager"
+	AIAlertSource           AlertSourceType = "AI"
 )
 
 const (
@@ -22,18 +23,5 @@ const (
 )
 
 func validateKind(kind string) error {
-	// switch kind {
-	// case NodeKind:
-	// case PodKind:
-	// case ApiServerKind:
-	// case EtcdKind:
-	// case IngressKind:
-	// case WorkflowKind:
-	// case KubeletKind:
-	// case PrometheusKind:
-	// default:
-	// 	return fmt.Errorf("invalid kind: %s", kind)
-	// }
-
 	return nil
 }

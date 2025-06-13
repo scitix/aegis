@@ -21,7 +21,7 @@ package internalversion
 import (
 	"fmt"
 
-	nodecheckinternalversion "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/nodecheck/clientset/internalversion/typed/nodecheck/internalversion"
+	nodecheckinternalversion "github.com/scitix/aegis/pkg/generated/nodecheck/clientset/internalversion/typed/nodecheck/internalversion"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

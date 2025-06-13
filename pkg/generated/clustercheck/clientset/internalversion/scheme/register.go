@@ -19,7 +19,7 @@ limitations under the License.
 package scheme
 
 import (
-	clustercheck "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/clustercheck/install"
+	clustercheck "github.com/scitix/aegis/pkg/apis/clustercheck/install"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

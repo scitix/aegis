@@ -19,14 +19,14 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	rulev1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/rule/v1alpha1"
-	clientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/rule/clientset/versioned"
-	informers "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/rule/informers/externalversions/rule/v1alpha1"
-	listers "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/rule/listers/rule/v1alpha1"
+	rulev1alpha1 "github.com/scitix/aegis/pkg/apis/rule/v1alpha1"
+	clientset "github.com/scitix/aegis/pkg/generated/rule/clientset/versioned"
+	informers "github.com/scitix/aegis/pkg/generated/rule/informers/externalversions/rule/v1alpha1"
+	listers "github.com/scitix/aegis/pkg/generated/rule/listers/rule/v1alpha1"
 
-	templateclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/clientset/versioned"
-	templateInformers "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/informers/externalversions/template/v1alpha1"
-	templateListers "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/template/listers/template/v1alpha1"
+	templateclientset "github.com/scitix/aegis/pkg/generated/template/clientset/versioned"
+	templateInformers "github.com/scitix/aegis/pkg/generated/template/informers/externalversions/template/v1alpha1"
+	templateListers "github.com/scitix/aegis/pkg/generated/template/listers/template/v1alpha1"
 )
 
 func init() {

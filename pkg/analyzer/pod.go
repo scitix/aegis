@@ -14,6 +14,8 @@ import (
 	ai "gitlab.scitix-inner.ai/k8s/aegis/pkg/ai"
 	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer/common"
 	"gitlab.scitix-inner.ai/k8s/aegis/pkg/prom"
+	"github.com/scitix/aegis/pkg/analyzer/common"
+	"github.com/scitix/aegis/pkg/prom"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"

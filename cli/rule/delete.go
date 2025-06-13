@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/scitix/aegis/cli/config"
 	"github.com/spf13/cobra"
-	"gitlab.scitix-inner.ai/k8s/aegis/cli/config"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"

@@ -21,7 +21,7 @@ package internalversion
 import (
 	"fmt"
 
-	diagnosisinternalversion "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/diagnosis/clientset/internalversion/typed/diagnosis/internalversion"
+	diagnosisinternalversion "github.com/scitix/aegis/pkg/generated/diagnosis/clientset/internalversion/typed/diagnosis/internalversion"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

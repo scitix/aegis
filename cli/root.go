@@ -6,9 +6,9 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/klog/v2"
 
-	"gitlab.scitix-inner.ai/k8s/aegis/cli/auth"
-	"gitlab.scitix-inner.ai/k8s/aegis/cli/config"
-	"gitlab.scitix-inner.ai/k8s/aegis/cli/rule"
+	"github.com/scitix/aegis/cli/auth"
+	"github.com/scitix/aegis/cli/config"
+	"github.com/scitix/aegis/cli/rule"
 )
 
 func NewCommand(name string) *cobra.Command {

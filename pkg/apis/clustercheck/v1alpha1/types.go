@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	nodecheck "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/nodecheck/v1alpha1"
+	nodecheck "github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	nodecheckv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/nodecheck/v1alpha1"
+	nodecheckv1alpha1 "github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
 
-	alertv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/alert/v1alpha1"
-	alertclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/alert/clientset/versioned"
-	alertlister "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/alert/listers/alert/v1alpha1"
+	alertv1alpha1 "github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
+	alertclientset "github.com/scitix/aegis/pkg/generated/alert/clientset/versioned"
+	alertlister "github.com/scitix/aegis/pkg/generated/alert/listers/alert/v1alpha1"
 
 	wfv1alpha1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	wfclientset "github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned"
