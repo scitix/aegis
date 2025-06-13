@@ -74,6 +74,8 @@ type Configuration struct {
 	DiagnosisLanguage      string
 	DiagnosisEnableExplain bool
 	DiagnosisEnableCache   bool
+	CollectorImage         string
+	EnableProm             bool
 
 	// ai
 	AiBackend string
@@ -185,7 +187,7 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 	// create template controller
 	templateController := template.NewController(cfg.Client, templateclientset, templateInformer.Aegis().V1alpha1().AegisOpsTemplates())
 	ruleController := rule.NewController(cfg.Client, ruleclientInterface, templateclientset, ruleInformer.Aegis().V1alpha1().AegisAlertOpsRules(), templateInformer.Aegis().V1alpha1().AegisOpsTemplates())
-	diagnosisController, err := diagnosis.NewController(cfg.Client, diagnosisclientset, diagnosisInformer.Aegis().V1alpha1().AegisDiagnosises(), 60*time.Second, cfg.AiBackend, cfg.DiagnosisLanguage, cfg.DiagnosisEnableExplain, !cfg.DiagnosisEnableCache)
+	diagnosisController, err := diagnosis.NewController(cfg.Client, diagnosisclientset, diagnosisInformer.Aegis().V1alpha1().AegisDiagnosises(), 60*time.Second, cfg.AiBackend, cfg.DiagnosisLanguage, cfg.CollectorImage, cfg.EnableProm, cfg.DiagnosisEnableExplain, !cfg.DiagnosisEnableCache)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create diagnosis controller: %v", err)
 	}

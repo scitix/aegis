@@ -1,0 +1,59 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{.pod_name}}
+  namespace: {{.namespace}}
+spec:
+  priorityClassName: system-node-critical
+  containers:
+  - name: collector
+    image: {{.collector_image}}
+    imagePullPolicy: Always
+    command:
+    - /bin/bash
+    - -c
+    - |
+      chmod +x collect.sh
+      /bin/bash collect.sh
+    securityContext:
+      privileged: true
+    resources:
+      limits:
+        cpu: 200m
+        memory: 500Mi
+      requests:
+        cpu: 100m
+        memory: 200Mi
+    volumeMounts:
+    - name: dev
+      mountPath: /dev
+    - name: proc
+      mountPath: /host/proc
+      readOnly: true
+    - name: rootfs
+      mountPath: /mnt/root
+      readOnly: true
+  restartPolicy: Never
+  nodeName: {{.node_name}}
+  hostPID: true
+  hostNetwork: true
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: dev
+    hostPath:
+      path: /dev
+  - name: proc
+    hostPath:
+      path: /proc
+  - name: rootfs
+    hostPath:
+      path: /

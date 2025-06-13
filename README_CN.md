@@ -44,8 +44,8 @@ Aegis 支持将告警源（现支持通过AI解析来自不同告警源的告警
 
 通过 `AegisDiagnosis` CRD 标准化定义诊断对象，支持基于 LLM 的诊断总结。当前支持的诊断对象类型：
 
-- Node
-- Pod
+- [Node](docs/node-diagnosis_CN.md)
+- [Pod]((docs/pod-diagnosis_CN.md))
 
 待支持的诊断对象类型：
 

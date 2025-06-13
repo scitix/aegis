@@ -24,7 +24,10 @@ type IAnalyzer interface {
 
 type Analyzer struct {
 	kcommon.Analyzer
-	Name string
+	Name           string
+	CollectorImage string
+	EnableProm	   bool
+	EnablePodLog   *bool
 }
 
 type PreAnalysis struct {
@@ -33,8 +36,9 @@ type PreAnalysis struct {
 
 type Result struct {
 	kcommon.Result
-	Warning []Warning `json:"warning"`
-	Info    []Info    `json:"info"`
+	Warning  []Warning         `json:"warning"`
+	Info     []Info            `json:"info"`
+	Metadata map[string]string `json:"metadata"`
 }
 
 type Info struct {
@@ -48,3 +52,8 @@ type Warning struct {
 	KubernetesDoc string
 	Sensitive     []kcommon.Sensitive
 }
+
+var (
+	Collector_namespace = "monitoring"
+	Collector_job_file  = "/collector/collector_node.yaml"
+)
