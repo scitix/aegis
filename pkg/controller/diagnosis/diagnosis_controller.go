@@ -27,10 +27,6 @@ import (
 	diagnosisInformer "github.com/scitix/aegis/pkg/generated/diagnosis/informers/externalversions/diagnosis/v1alpha1"
 	diagnosisLister "github.com/scitix/aegis/pkg/generated/diagnosis/listers/diagnosis/v1alpha1"
 	"github.com/spf13/viper"
-	diagnosisv1alpha1 "gitlab.scitix-inner.ai/k8s/aegis/pkg/apis/diagnosis/v1alpha1"
-	diagnosisclientset "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/diagnosis/clientset/versioned"
-	diagnosisInformer "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/diagnosis/informers/externalversions/diagnosis/v1alpha1"
-	diagnosisLister "gitlab.scitix-inner.ai/k8s/aegis/pkg/generated/diagnosis/listers/diagnosis/v1alpha1"
 )
 
 func init() {

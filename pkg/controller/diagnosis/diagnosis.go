@@ -9,27 +9,24 @@ import (
 	kcommon "github.com/k8sgpt-ai/k8sgpt/pkg/common"
 	"github.com/k8sgpt-ai/k8sgpt/pkg/kubernetes"
 	cache "github.com/patrickmn/go-cache"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/ai"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer/common"
+	"github.com/scitix/aegis/pkg/ai"
 	"github.com/scitix/aegis/pkg/analyzer"
 	"github.com/scitix/aegis/pkg/analyzer/common"
-	"github.com/spf13/viper"
 	"k8s.io/klog/v2"
 
 	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
 )
 
 type Diagnosis struct {
-	Client           *kubernetes.Client
-	Language         string
-	CollectorImage   string
-	EnableProm       bool
-	AIClient         kai.IAI
-	AIFactory        ai.AIProviderFactory
-	Cache            *cache.Cache
-	NoCache          bool
-	Explain          bool
+	Client         *kubernetes.Client
+	Language       string
+	CollectorImage string
+	EnableProm     bool
+	AIClient       kai.IAI
+	AIFactory      ai.AIProviderFactory
+	Cache          *cache.Cache
+	NoCache        bool
+	Explain        bool
 	// MaxConcurrency     int
 	AIProvider string // The name of the AI Provider used for diagnose
 	// WithDoc    bool
@@ -51,14 +48,14 @@ func NewDiagnosis(
 	c := cache.New(10*time.Minute, 20*time.Minute)
 
 	a := &Diagnosis{
-		Client:           kubeClient,
-		Language:         language,
-		CollectorImage:   collector_image,
-		EnableProm:       enable_prom,
-		Explain:          explain,
-		Cache:            c,
-		NoCache:          noCache,
-		AIFactory:        &ai.DefaultFactory{},
+		Client:         kubeClient,
+		Language:       language,
+		CollectorImage: collector_image,
+		EnableProm:     enable_prom,
+		Explain:        explain,
+		Cache:          c,
+		NoCache:        noCache,
+		AIFactory:      &ai.DefaultFactory{},
 	}
 
 	a.InitAnalyzerMap()

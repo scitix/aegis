@@ -11,15 +11,13 @@ import (
 	kcommon "github.com/k8sgpt-ai/k8sgpt/pkg/common"
 	"github.com/k8sgpt-ai/k8sgpt/pkg/kubernetes"
 	"github.com/k8sgpt-ai/k8sgpt/pkg/util"
-	sop "gitlab.scitix-inner.ai/k8s/aegis/internal/selfhealing/sop"
-	sop_basic "gitlab.scitix-inner.ai/k8s/aegis/internal/selfhealing/sop/basic"
-	ai "gitlab.scitix-inner.ai/k8s/aegis/pkg/ai"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer/common"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/prom"
-	"gitlab.scitix-inner.ai/k8s/aegis/tools"
-	corev1 "k8s.io/api/core/v1"
+	ai "github.com/scitix/aegis/pkg/ai"
 	"github.com/scitix/aegis/pkg/analyzer/common"
 	"github.com/scitix/aegis/pkg/prom"
+	"github.com/scitix/aegis/tools"
+	sop "gitlab.scitix-inner.ai/k8s/aegis/internal/selfhealing/sop"
+	sop_basic "gitlab.scitix-inner.ai/k8s/aegis/internal/selfhealing/sop/basic"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
@@ -174,7 +172,6 @@ func nodeEventWarningLegacy(nodeName string, event corev1.Event) common.Warning 
 	}
 }
 
-
 func nodeLogInfo(nodeName string, logs string) []common.Info {
 	var infos []common.Info
 	lines := strings.Split(logs, "\n")
@@ -189,7 +186,7 @@ func nodeLogInfo(nodeName string, logs string) []common.Info {
 				Sensitive: []kcommon.Sensitive{
 					{
 						Unmasked: nodeName,
-						Masked: util.MaskString(nodeName),
+						Masked:   util.MaskString(nodeName),
 					},
 				},
 			})
@@ -261,9 +258,9 @@ func StartCollector(ctx context.Context, client *kubernetes.Client, node string,
 
 	for {
 		select {
-		case <- ctx.Done():
+		case <-ctx.Done():
 			return nil, fmt.Errorf("context canceled before collector finished")
-		case <- ticker.C:
+		case <-ticker.C:
 			status, _, err := sop_basic.CheckPodStatus(ctx, &sop.ApiBridge{KubeClient: client.GetClient()}, podName)
 			if err != nil {
 				return nil, err

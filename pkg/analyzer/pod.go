@@ -11,9 +11,7 @@ import (
 	kcommon "github.com/k8sgpt-ai/k8sgpt/pkg/common"
 	"github.com/k8sgpt-ai/k8sgpt/pkg/kubernetes"
 	"github.com/k8sgpt-ai/k8sgpt/pkg/util"
-	ai "gitlab.scitix-inner.ai/k8s/aegis/pkg/ai"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/analyzer/common"
-	"gitlab.scitix-inner.ai/k8s/aegis/pkg/prom"
+	ai "github.com/scitix/aegis/pkg/ai"
 	"github.com/scitix/aegis/pkg/analyzer/common"
 	"github.com/scitix/aegis/pkg/prom"
 	v1 "k8s.io/api/core/v1"
@@ -277,7 +275,6 @@ func podEventWarningLegacy(podName string, event v1.Event) common.Warning {
 		},
 	}
 }
-
 
 func getContainerLogs(ctx context.Context, client *kubernetes.Client, pod *v1.Pod, container *v1.Container, containerStatus *v1.ContainerStatus) ([]string, error) {
 	containerId := strings.TrimPrefix(strings.TrimPrefix(containerStatus.ContainerID, "docker://"), "containerd://")

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/k8sgpt-ai/k8sgpt/pkg/kubernetes"
-	aprom "gitlab.scitix-inner.ai/k8s/aegis/pkg/prom"
+	aprom "github.com/scitix/aegis/pkg/prom"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
