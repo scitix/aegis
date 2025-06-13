@@ -15,8 +15,6 @@ import (
 	"github.com/scitix/aegis/pkg/analyzer/common"
 	"github.com/scitix/aegis/pkg/prom"
 	"github.com/scitix/aegis/tools"
-	sop "gitlab.scitix-inner.ai/k8s/aegis/internal/selfhealing/sop"
-	sop_basic "gitlab.scitix-inner.ai/k8s/aegis/internal/selfhealing/sop/basic"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -225,7 +223,7 @@ func StartCollector(ctx context.Context, client *kubernetes.Client, node string,
 		}
 	}
 
-	sop_basic.WaitPodCleanup(ctx, &sop.ApiBridge{KubeClient: client.GetClient()}, podName)
+	WaitPodCleanup(ctx, client.GetClient(), common.Collector_namespace, podName)
 
 	tplContent, err := os.ReadFile(common.Collector_job_file)
 	if err != nil {
@@ -261,13 +259,13 @@ func StartCollector(ctx context.Context, client *kubernetes.Client, node string,
 		case <-ctx.Done():
 			return nil, fmt.Errorf("context canceled before collector finished")
 		case <-ticker.C:
-			status, _, err := sop_basic.CheckPodStatus(ctx, &sop.ApiBridge{KubeClient: client.GetClient()}, podName)
+			status, _, err := CheckPodStatus(ctx, client.GetClient(), common.Collector_namespace, podName)
 			if err != nil {
 				return nil, err
 			}
 
 			if status == 1 {
-				logs, err := sop_basic.GetPodLogs(ctx, &sop.ApiBridge{KubeClient: client.GetClient()}, podName)
+				logs, err := GetPodLogs(ctx, client.GetClient(), common.Collector_namespace, podName)
 				if err != nil {
 					return nil, fmt.Errorf("get collector logs error: %v", err)
 				}
