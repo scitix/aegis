@@ -13,27 +13,27 @@ import (
 	"github.com/k8sgpt-ai/k8sgpt/pkg/util"
 	ai "github.com/scitix/aegis/pkg/ai"
 	"github.com/scitix/aegis/pkg/analyzer/common"
+	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
 	"github.com/scitix/aegis/pkg/prom"
 	"github.com/scitix/aegis/tools"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/pointer"
 )
 
 type NodeAnalyzer struct {
-	prometheus *prom.PromAPI
+	prometheus      *prom.PromAPI
+	collectorConfig *diagnosisv1alpha1.CollectorConfig
 }
 
-func NewNodeAnalyzer(enable_prom bool) NodeAnalyzer {
-	var promAPI *prom.PromAPI
-	if enable_prom {
-		promAPI = prom.GetPromAPI()
-	} else {
-		promAPI = nil
-	}
+func NewNodeAnalyzer(enable_prom bool, collectorConfig *diagnosisv1alpha1.CollectorConfig) NodeAnalyzer {
+	promAPI := prom.GetPromAPI()
 	return NodeAnalyzer{
-		prometheus: promAPI,
+		prometheus:      promAPI,
+		collectorConfig: collectorConfig,
 	}
 }
 
@@ -90,7 +90,7 @@ func (n NodeAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 
 	var infos []common.Info
 	// Start collector pod
-	logs, err := StartCollector(a.Context, a.Client, node.Name, a.CollectorImage)
+	logs, err := StartCollector(a.Context, a.Client, node.Name, a.CollectorImage, n.collectorConfig)
 	if err != nil {
 		klog.Warningf("Start collector failed: %v", err)
 	} else {
@@ -193,7 +193,7 @@ func nodeLogInfo(nodeName string, logs string) []common.Info {
 	return infos
 }
 
-func StartCollector(ctx context.Context, client *kubernetes.Client, node string, collector_image string) ([]common.Info, error) {
+func StartCollector(ctx context.Context, client *kubernetes.Client, node string, defaultImage string, config *diagnosisv1alpha1.CollectorConfig) ([]common.Info, error) {
 	podName := fmt.Sprintf("collector-%s", node)
 	_, err := client.GetClient().CoreV1().Pods(common.Collector_namespace).Get(ctx, podName, metav1.GetOptions{})
 	if err == nil {
@@ -207,26 +207,64 @@ func StartCollector(ctx context.Context, client *kubernetes.Client, node string,
 
 	WaitPodCleanup(ctx, client.GetClient(), common.Collector_namespace, podName)
 
-	tplContent, err := os.ReadFile(common.Collector_job_file)
-	if err != nil {
-		return nil, fmt.Errorf("error reading collector template: %v", err)
+	var pod *corev1.Pod
+
+	if config != nil {
+		// construct pod from config
+		pod = &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      podName,
+				Namespace: common.Collector_namespace,
+			},
+			Spec: corev1.PodSpec{
+				PriorityClassName: "system-node-critical",
+				RestartPolicy:     corev1.RestartPolicyNever,
+				NodeName:          node,
+				HostPID:           true,
+				HostNetwork:       true,
+				Tolerations: []corev1.Toleration{
+					{Key: "node.kubernetes.io/not-ready", Operator: "Exists", Effect: "NoExecute", TolerationSeconds: pointer.Int64(300)},
+					{Key: "node.kubernetes.io/unreachable", Operator: "Exists", Effect: "NoExecute", TolerationSeconds: pointer.Int64(300)},
+				},
+				Volumes: config.Volumes,
+				Containers: []corev1.Container{{
+					Name:            "collector",
+					Image:           config.Image,
+					Command:         config.Command,
+					Env:             config.Env,
+					VolumeMounts:    config.VolumeMounts,
+					ImagePullPolicy: corev1.PullAlways,
+					SecurityContext: &corev1.SecurityContext{Privileged: pointer.Bool(true)},
+					Resources: corev1.ResourceRequirements{
+						Limits:   corev1.ResourceList{"cpu": resource.MustParse("200m"), "memory": resource.MustParse("500Mi")},
+						Requests: corev1.ResourceList{"cpu": resource.MustParse("100m"), "memory": resource.MustParse("200Mi")},
+					},
+				}},
+			},
+		}
+	} else {
+		// default image
+		tplContent, err := os.ReadFile(common.Collector_job_file)
+		if err != nil {
+			return nil, fmt.Errorf("error reading collector template: %v", err)
+		}
+		parameters := map[string]interface{}{
+			"pod_name":        podName,
+			"namespace":       common.Collector_namespace,
+			"collector_image": defaultImage,
+			"node_name":       node,
+		}
+		yamlContent, err := tools.RenderWorkflowTemplate(string(tplContent), parameters)
+		if err != nil {
+			return nil, fmt.Errorf("error rendering collector template: %v", err)
+		}
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, _, err := decode([]byte(yamlContent), nil, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error decoding collector pod: %v", err)
+		}
+		pod = obj.(*corev1.Pod)
 	}
-	parameters := map[string]interface{}{
-		"pod_name":        podName,
-		"namespace":       common.Collector_namespace,
-		"collector_image": collector_image,
-		"node_name":       node,
-	}
-	yamlContent, err := tools.RenderWorkflowTemplate(string(tplContent), parameters)
-	if err != nil {
-		return nil, fmt.Errorf("error reading collector template: %v", err)
-	}
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(yamlContent), nil, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error decoding collector pod: %v", err)
-	}
-	pod := obj.(*corev1.Pod)
 
 	_, err = client.GetClient().CoreV1().Pods(common.Collector_namespace).Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {

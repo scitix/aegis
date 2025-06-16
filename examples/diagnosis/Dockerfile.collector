@@ -1,0 +1,9 @@
+FROM ubuntu:22.04
+
+RUN apt-get update && \
+    apt-get install -y util-linux grep coreutils bash
+
+COPY collect.sh /collector/collect.sh
+RUN chmod +x /collector/collect.sh
+
+CMD ["/bin/bash", "/collector/collect.sh"]

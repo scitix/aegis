@@ -151,7 +151,7 @@ func parse() (bool, *controller.Configuration, error) {
 	cache := flags.Bool("diagnosis.cache", true, "enable cached data")
 	language := flags.String("diagnosis.language", "chinese", "explain language, support chinese/english")
 	collectorImage := flags.String("diagnosis.collectorImage", "registry-ap-southeast.scitix.ai/k8s/collector:v1.0.0", "Container image of the Collector Pod")
-	enableProm := flags.Bool("diagnosis.enablePromtheus", false, "Whether use the promethus to get events")
+	enableProm := flags.Bool("diagnosis.enablePromtheus", true, "Whether use the promethus to get events")
 
 	ai := flags.String("ai", "openai", "backend AI Provider")
 

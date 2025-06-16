@@ -12,26 +12,22 @@ import (
 	"github.com/scitix/aegis/pkg/ai"
 	"github.com/scitix/aegis/pkg/analyzer"
 	"github.com/scitix/aegis/pkg/analyzer/common"
-	"k8s.io/klog/v2"
-
 	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
+	"k8s.io/klog/v2"
 )
 
 type Diagnosis struct {
-	Client         *kubernetes.Client
-	Language       string
-	CollectorImage string
-	EnableProm     bool
-	AIClient       kai.IAI
-	AIFactory      ai.AIProviderFactory
-	Cache          *cache.Cache
-	NoCache        bool
-	Explain        bool
-	// MaxConcurrency     int
-	AIProvider string // The name of the AI Provider used for diagnose
-	// WithDoc    bool
-
-	AnalyzerMap map[string]common.IAnalyzer
+	Client          *kubernetes.Client
+	Language        string
+	CollectorImage  string
+	EnableProm      bool
+	AIClient        kai.IAI
+	AIFactory       ai.AIProviderFactory
+	Cache           *cache.Cache
+	NoCache         bool
+	Explain         bool
+	AIProvider      string
+	AnalyzerFactory map[string]func(*diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer
 }
 
 func NewDiagnosis(
@@ -42,12 +38,10 @@ func NewDiagnosis(
 	enable_prom bool,
 	noCache bool,
 	explain bool,
-	// withDoc bool,
 	httpHeaders []string,
 ) (*Diagnosis, error) {
 	c := cache.New(10*time.Minute, 20*time.Minute)
-
-	a := &Diagnosis{
+	d := &Diagnosis{
 		Client:         kubeClient,
 		Language:       language,
 		CollectorImage: collector_image,
@@ -58,24 +52,33 @@ func NewDiagnosis(
 		AIFactory:      &ai.DefaultFactory{},
 	}
 
-	a.InitAnalyzerMap()
-
-	if !explain {
-		// Return early if AI use was not requested.
-		return a, nil
+	d.AnalyzerFactory = map[string]func(*diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer{
+		"Pod": func(_ *diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer {
+			return analyzer.NewPodAnalyzer(d.EnableProm)
+		},
+		"Node": func(diag *diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer {
+			return analyzer.NewNodeAnalyzer(d.EnableProm, diag.Spec.CollectorConfig)
+		},
 	}
 
-	AIClient, AIProvider, err := a.AIFactory.Load(backend, httpHeaders)
-	if err != nil {
-		return nil, err
+	if explain {
+		AIClient, AIProvider, err := d.AIFactory.Load(backend, httpHeaders)
+		if err != nil {
+			return nil, err
+		}
+		d.AIClient = AIClient
+		d.AIProvider = AIProvider
 	}
 
-	a.AIClient = AIClient
-	a.AIProvider = AIProvider
-	return a, nil
+	return d, nil
 }
 
-func (d *Diagnosis) RunDiagnosis(ctx context.Context, kind, namespace, name string) (*diagnosisv1alpha1.DiagnosisResult, string, error) {
+func (d *Diagnosis) RunDiagnosis(ctx context.Context, diagnosis *diagnosisv1alpha1.AegisDiagnosis) (*diagnosisv1alpha1.DiagnosisResult, string, error) {
+	object := diagnosis.Spec.Object
+	kind := string(object.Kind)
+	name := object.Name
+	namespace := object.Namespace
+
 	a := common.Analyzer{
 		Analyzer: kcommon.Analyzer{
 			Client:    d.Client,
@@ -88,10 +91,11 @@ func (d *Diagnosis) RunDiagnosis(ctx context.Context, kind, namespace, name stri
 		EnableProm:     d.EnableProm,
 	}
 
-	analyzer, ok := d.AnalyzerMap[kind]
+	factory, ok := d.AnalyzerFactory[kind]
 	if !ok {
 		return nil, "", fmt.Errorf("Unsupported diagnosis type: %s", kind)
 	}
+	analyzer := factory(diagnosis)
 
 	result, err := analyzer.Analyze(a)
 	if err != nil {
@@ -102,11 +106,9 @@ func (d *Diagnosis) RunDiagnosis(ctx context.Context, kind, namespace, name stri
 	for _, v := range result.Error {
 		failures = append(failures, v.Text)
 	}
-
 	for _, v := range result.Warning {
 		warnings = append(warnings, v.Text)
 	}
-
 	for _, v := range result.Info {
 		infos = append(infos, v.Text)
 	}
@@ -117,7 +119,6 @@ func (d *Diagnosis) RunDiagnosis(ctx context.Context, kind, namespace, name stri
 		Infos:    infos,
 	}
 
-	// if not enable ai explain
 	if !d.Explain {
 		return dresult, "", nil
 	}
@@ -133,8 +134,8 @@ func (d *Diagnosis) RunDiagnosis(ctx context.Context, kind, namespace, name stri
 		klog.Info("Do not need to get explain")
 		return dresult, "Healthy: Yes", nil
 	}
-	klog.V(4).Infof("Prompt: %s", prompt)
 
+	klog.V(4).Infof("Prompt: %s", prompt)
 	response, err := d.AIClient.GetCompletion(ctx, prompt)
 	if err != nil {
 		klog.Errorf("Failed to get AI completion: %v", err)
@@ -146,13 +147,4 @@ func (d *Diagnosis) RunDiagnosis(ctx context.Context, kind, namespace, name stri
 	}
 
 	return dresult, response, nil
-}
-
-func (d *Diagnosis) InitAnalyzerMap() {
-	customAnalyzerMap := make(map[string]common.IAnalyzer)
-
-	customAnalyzerMap["Pod"] = analyzer.NewPodAnalyzer(d.EnableProm)
-	customAnalyzerMap["Node"] = analyzer.NewNodeAnalyzer(d.EnableProm)
-
-	d.AnalyzerMap = customAnalyzerMap
 }

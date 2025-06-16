@@ -263,14 +263,14 @@ func (c *DiagnosisController) syncHandler(key string) error {
 		return nil
 	}
 
-	object := diagnosis.Spec.Object
+	// object := diagnosis.Spec.Object
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
 	begin := metav1.Now()
 	diagnosis.Status.StartTime = &begin
 
-	result, explain, err := c.diagnosis.RunDiagnosis(ctx, string(object.Kind), object.Namespace, object.Name)
+	result, explain, err := c.diagnosis.RunDiagnosis(ctx, diagnosis)
 
 	end := metav1.Now()
 	diagnosis.Status.CompletionTime = &end
