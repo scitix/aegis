@@ -77,7 +77,7 @@ func (p PodAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 	}
 
 	var warnings []common.Warning
-	// 全量 event
+	// pod event
 	rawEvents, err := FetchEvents(a.Context, a.EnableProm, p.prometheus, a.Client, kind, pod.Namespace, pod.Name, "", "7d")
 	if err != nil {
 		klog.Warningf("fetch pod events failed: %v", err)
@@ -92,6 +92,7 @@ func (p PodAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 			}
 		}
 	}
+	
 
 	var infos []common.Info
 	enablePodLog := true

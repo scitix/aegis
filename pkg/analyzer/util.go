@@ -8,6 +8,7 @@ import (
 	"io"
 	"time"
 
+	kcommon "github.com/k8sgpt-ai/k8sgpt/pkg/common"
 	kkubernetes "github.com/k8sgpt-ai/k8sgpt/pkg/kubernetes"
 	aprom "github.com/scitix/aegis/pkg/prom"
 	corev1 "k8s.io/api/core/v1"
@@ -56,6 +57,50 @@ func FetchEvents(
 		}
 	}
 	return filtered, nil
+}
+
+func FetchNodeFailures(
+	ctx context.Context,
+	enableProm bool,
+	prom *aprom.PromAPI,
+	client *kkubernetes.Client,
+	nodeName string,
+) ([]kcommon.Failure, error) {
+	var failures []kcommon.Failure
+
+	if enableProm {
+		if prom == nil {
+			return nil, fmt.Errorf("EnableProm=true but prom is nil")
+		}
+		nodeConditions, err := prom.GetNodeStatuses(ctx, nodeName, "")
+		if err != nil {
+			return nil, err
+		}
+		for _, cond := range nodeConditions {
+			failures = append(failures, nodeStatusFailure(nodeName, cond))
+		}
+	} else {
+		node, err := client.GetClient().CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		for _, cond := range node.Status.Conditions {
+			switch cond.Type {
+			case corev1.NodeReady:
+				if cond.Status == corev1.ConditionTrue {
+					continue
+				}
+			case corev1.NodeConditionType("EtcdIsVoter"):
+				continue
+			default:
+				if cond.Status == corev1.ConditionFalse {
+					continue
+				}
+			}
+			failures = append(failures, nodeStatusFailureLegacy(node.Name, cond))
+		}
+	}
+	return failures, nil
 }
 
 func WaitPodCleanup(ctx context.Context, client kubernetes.Interface, namespace, podName string) {

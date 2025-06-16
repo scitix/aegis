@@ -30,7 +30,12 @@ type NodeAnalyzer struct {
 }
 
 func NewNodeAnalyzer(enable_prom bool, collectorConfig *diagnosisv1alpha1.CollectorConfig) NodeAnalyzer {
-	promAPI := prom.GetPromAPI()
+	var promAPI *prom.PromAPI
+	if enable_prom {
+		promAPI = prom.GetPromAPI()
+	} else {
+		promAPI = nil
+	}
 	return NodeAnalyzer{
 		prometheus:      promAPI,
 		collectorConfig: collectorConfig,
@@ -61,14 +66,10 @@ func (n NodeAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 		return nil, err
 	}
 
-	var failures []kcommon.Failure
 	// node condition
-	nConditions, err := n.prometheus.GetNodeStatuses(a.Context, node.Name, "")
+	failures, err := FetchNodeFailures(a.Context, a.EnableProm, n.prometheus, a.Client, node.Name)
 	if err != nil {
-		return nil, fmt.Errorf("error get node conditions from prometheus: %s", err)
-	}
-	for _, condition := range nConditions {
-		failures = append(failures, nodeStatusFailure(node.Name, condition))
+		klog.Warningf("fetch node failures failed: %v", err)
 	}
 
 	var warnings []common.Warning
@@ -115,6 +116,18 @@ func (n NodeAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 func nodeStatusFailure(nodeName string, status prom.AegisNodeStatus) kcommon.Failure {
 	return kcommon.Failure{
 		Text: fmt.Sprintf("condition %s type=%s id=%s value=%d", status.Condition, status.Type, status.ID, status.Value),
+		Sensitive: []kcommon.Sensitive{
+			{
+				Unmasked: nodeName,
+				Masked:   util.MaskString(nodeName),
+			},
+		},
+	}
+}
+
+func nodeStatusFailureLegacy(nodeName string, cond corev1.NodeCondition) kcommon.Failure {
+	return kcommon.Failure{
+		Text: fmt.Sprintf("node %s has condition %s (status=%s, reason=%s): %s", nodeName, cond.Type, cond.Status, cond.Reason, cond.Message),
 		Sensitive: []kcommon.Sensitive{
 			{
 				Unmasked: nodeName,
