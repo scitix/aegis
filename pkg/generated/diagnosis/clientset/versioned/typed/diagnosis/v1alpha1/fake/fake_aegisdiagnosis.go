@@ -19,124 +19,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/generated/diagnosis/clientset/versioned/typed/diagnosis/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeAegisDiagnosises implements AegisDiagnosisInterface
-type FakeAegisDiagnosises struct {
+// fakeAegisDiagnosises implements AegisDiagnosisInterface
+type fakeAegisDiagnosises struct {
+	*gentype.FakeClientWithList[*v1alpha1.AegisDiagnosis, *v1alpha1.AegisDiagnosisList]
 	Fake *FakeAegisV1alpha1
-	ns   string
 }
 
-var aegisdiagnosisesResource = schema.GroupVersionResource{Group: "aegis.io", Version: "v1alpha1", Resource: "aegisdiagnosises"}
-
-var aegisdiagnosisesKind = schema.GroupVersionKind{Group: "aegis.io", Version: "v1alpha1", Kind: "AegisDiagnosis"}
-
-// Get takes name of the aegisDiagnosis, and returns the corresponding aegisDiagnosis object, and an error if there is any.
-func (c *FakeAegisDiagnosises) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AegisDiagnosis, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(aegisdiagnosisesResource, c.ns, name), &v1alpha1.AegisDiagnosis{})
-
-	if obj == nil {
-		return nil, err
+func newFakeAegisDiagnosises(fake *FakeAegisV1alpha1, namespace string) diagnosisv1alpha1.AegisDiagnosisInterface {
+	return &fakeAegisDiagnosises{
+		gentype.NewFakeClientWithList[*v1alpha1.AegisDiagnosis, *v1alpha1.AegisDiagnosisList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("aegisdiagnosises"),
+			v1alpha1.SchemeGroupVersion.WithKind("AegisDiagnosis"),
+			func() *v1alpha1.AegisDiagnosis { return &v1alpha1.AegisDiagnosis{} },
+			func() *v1alpha1.AegisDiagnosisList { return &v1alpha1.AegisDiagnosisList{} },
+			func(dst, src *v1alpha1.AegisDiagnosisList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.AegisDiagnosisList) []*v1alpha1.AegisDiagnosis {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.AegisDiagnosisList, items []*v1alpha1.AegisDiagnosis) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.AegisDiagnosis), err
-}
-
-// List takes label and field selectors, and returns the list of AegisDiagnosises that match those selectors.
-func (c *FakeAegisDiagnosises) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AegisDiagnosisList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewListAction(aegisdiagnosisesResource, aegisdiagnosisesKind, c.ns, opts), &v1alpha1.AegisDiagnosisList{})
-
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.AegisDiagnosisList{ListMeta: obj.(*v1alpha1.AegisDiagnosisList).ListMeta}
-	for _, item := range obj.(*v1alpha1.AegisDiagnosisList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested aegisDiagnosises.
-func (c *FakeAegisDiagnosises) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(aegisdiagnosisesResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a aegisDiagnosis and creates it.  Returns the server's representation of the aegisDiagnosis, and an error, if there is any.
-func (c *FakeAegisDiagnosises) Create(ctx context.Context, aegisDiagnosis *v1alpha1.AegisDiagnosis, opts v1.CreateOptions) (result *v1alpha1.AegisDiagnosis, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(aegisdiagnosisesResource, c.ns, aegisDiagnosis), &v1alpha1.AegisDiagnosis{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisDiagnosis), err
-}
-
-// Update takes the representation of a aegisDiagnosis and updates it. Returns the server's representation of the aegisDiagnosis, and an error, if there is any.
-func (c *FakeAegisDiagnosises) Update(ctx context.Context, aegisDiagnosis *v1alpha1.AegisDiagnosis, opts v1.UpdateOptions) (result *v1alpha1.AegisDiagnosis, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(aegisdiagnosisesResource, c.ns, aegisDiagnosis), &v1alpha1.AegisDiagnosis{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisDiagnosis), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeAegisDiagnosises) UpdateStatus(ctx context.Context, aegisDiagnosis *v1alpha1.AegisDiagnosis, opts v1.UpdateOptions) (*v1alpha1.AegisDiagnosis, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(aegisdiagnosisesResource, "status", c.ns, aegisDiagnosis), &v1alpha1.AegisDiagnosis{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisDiagnosis), err
-}
-
-// Delete takes name of the aegisDiagnosis and deletes it. Returns an error if one occurs.
-func (c *FakeAegisDiagnosises) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(aegisdiagnosisesResource, c.ns, name), &v1alpha1.AegisDiagnosis{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeAegisDiagnosises) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(aegisdiagnosisesResource, c.ns, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.AegisDiagnosisList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched aegisDiagnosis.
-func (c *FakeAegisDiagnosises) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AegisDiagnosis, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(aegisdiagnosisesResource, c.ns, name, pt, data, subresources...), &v1alpha1.AegisDiagnosis{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisDiagnosis), err
 }

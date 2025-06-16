@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	nodecheckv1alpha1 "github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // AegisNodeHealthCheckLister helps list AegisNodeHealthChecks.
@@ -30,7 +30,7 @@ import (
 type AegisNodeHealthCheckLister interface {
 	// List lists all AegisNodeHealthChecks in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AegisNodeHealthCheck, err error)
+	List(selector labels.Selector) (ret []*nodecheckv1alpha1.AegisNodeHealthCheck, err error)
 	// AegisNodeHealthChecks returns an object that can list and get AegisNodeHealthChecks.
 	AegisNodeHealthChecks(namespace string) AegisNodeHealthCheckNamespaceLister
 	AegisNodeHealthCheckListerExpansion
@@ -38,25 +38,17 @@ type AegisNodeHealthCheckLister interface {
 
 // aegisNodeHealthCheckLister implements the AegisNodeHealthCheckLister interface.
 type aegisNodeHealthCheckLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*nodecheckv1alpha1.AegisNodeHealthCheck]
 }
 
 // NewAegisNodeHealthCheckLister returns a new AegisNodeHealthCheckLister.
 func NewAegisNodeHealthCheckLister(indexer cache.Indexer) AegisNodeHealthCheckLister {
-	return &aegisNodeHealthCheckLister{indexer: indexer}
-}
-
-// List lists all AegisNodeHealthChecks in the indexer.
-func (s *aegisNodeHealthCheckLister) List(selector labels.Selector) (ret []*v1alpha1.AegisNodeHealthCheck, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AegisNodeHealthCheck))
-	})
-	return ret, err
+	return &aegisNodeHealthCheckLister{listers.New[*nodecheckv1alpha1.AegisNodeHealthCheck](indexer, nodecheckv1alpha1.Resource("aegisnodehealthcheck"))}
 }
 
 // AegisNodeHealthChecks returns an object that can list and get AegisNodeHealthChecks.
 func (s *aegisNodeHealthCheckLister) AegisNodeHealthChecks(namespace string) AegisNodeHealthCheckNamespaceLister {
-	return aegisNodeHealthCheckNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return aegisNodeHealthCheckNamespaceLister{listers.NewNamespaced[*nodecheckv1alpha1.AegisNodeHealthCheck](s.ResourceIndexer, namespace)}
 }
 
 // AegisNodeHealthCheckNamespaceLister helps list and get AegisNodeHealthChecks.
@@ -64,36 +56,15 @@ func (s *aegisNodeHealthCheckLister) AegisNodeHealthChecks(namespace string) Aeg
 type AegisNodeHealthCheckNamespaceLister interface {
 	// List lists all AegisNodeHealthChecks in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AegisNodeHealthCheck, err error)
+	List(selector labels.Selector) (ret []*nodecheckv1alpha1.AegisNodeHealthCheck, err error)
 	// Get retrieves the AegisNodeHealthCheck from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.AegisNodeHealthCheck, error)
+	Get(name string) (*nodecheckv1alpha1.AegisNodeHealthCheck, error)
 	AegisNodeHealthCheckNamespaceListerExpansion
 }
 
 // aegisNodeHealthCheckNamespaceLister implements the AegisNodeHealthCheckNamespaceLister
 // interface.
 type aegisNodeHealthCheckNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all AegisNodeHealthChecks in the indexer for a given namespace.
-func (s aegisNodeHealthCheckNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.AegisNodeHealthCheck, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AegisNodeHealthCheck))
-	})
-	return ret, err
-}
-
-// Get retrieves the AegisNodeHealthCheck from the indexer for a given namespace and name.
-func (s aegisNodeHealthCheckNamespaceLister) Get(name string) (*v1alpha1.AegisNodeHealthCheck, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("aegisnodehealthcheck"), name)
-	}
-	return obj.(*v1alpha1.AegisNodeHealthCheck), nil
+	listers.ResourceIndexer[*nodecheckv1alpha1.AegisNodeHealthCheck]
 }

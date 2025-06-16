@@ -19,15 +19,14 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
-	"time"
+	context "context"
 
-	v1alpha1 "github.com/scitix/aegis/pkg/apis/template/v1alpha1"
+	templatev1alpha1 "github.com/scitix/aegis/pkg/apis/template/v1alpha1"
 	scheme "github.com/scitix/aegis/pkg/generated/template/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // AegisOpsTemplatesGetter has a method to return a AegisOpsTemplateInterface.
@@ -38,158 +37,34 @@ type AegisOpsTemplatesGetter interface {
 
 // AegisOpsTemplateInterface has methods to work with AegisOpsTemplate resources.
 type AegisOpsTemplateInterface interface {
-	Create(ctx context.Context, aegisOpsTemplate *v1alpha1.AegisOpsTemplate, opts v1.CreateOptions) (*v1alpha1.AegisOpsTemplate, error)
-	Update(ctx context.Context, aegisOpsTemplate *v1alpha1.AegisOpsTemplate, opts v1.UpdateOptions) (*v1alpha1.AegisOpsTemplate, error)
-	UpdateStatus(ctx context.Context, aegisOpsTemplate *v1alpha1.AegisOpsTemplate, opts v1.UpdateOptions) (*v1alpha1.AegisOpsTemplate, error)
+	Create(ctx context.Context, aegisOpsTemplate *templatev1alpha1.AegisOpsTemplate, opts v1.CreateOptions) (*templatev1alpha1.AegisOpsTemplate, error)
+	Update(ctx context.Context, aegisOpsTemplate *templatev1alpha1.AegisOpsTemplate, opts v1.UpdateOptions) (*templatev1alpha1.AegisOpsTemplate, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+	UpdateStatus(ctx context.Context, aegisOpsTemplate *templatev1alpha1.AegisOpsTemplate, opts v1.UpdateOptions) (*templatev1alpha1.AegisOpsTemplate, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.AegisOpsTemplate, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.AegisOpsTemplateList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*templatev1alpha1.AegisOpsTemplate, error)
+	List(ctx context.Context, opts v1.ListOptions) (*templatev1alpha1.AegisOpsTemplateList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AegisOpsTemplate, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *templatev1alpha1.AegisOpsTemplate, err error)
 	AegisOpsTemplateExpansion
 }
 
 // aegisOpsTemplates implements AegisOpsTemplateInterface
 type aegisOpsTemplates struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithList[*templatev1alpha1.AegisOpsTemplate, *templatev1alpha1.AegisOpsTemplateList]
 }
 
 // newAegisOpsTemplates returns a AegisOpsTemplates
 func newAegisOpsTemplates(c *AegisV1alpha1Client, namespace string) *aegisOpsTemplates {
 	return &aegisOpsTemplates{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithList[*templatev1alpha1.AegisOpsTemplate, *templatev1alpha1.AegisOpsTemplateList](
+			"aegisopstemplates",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *templatev1alpha1.AegisOpsTemplate { return &templatev1alpha1.AegisOpsTemplate{} },
+			func() *templatev1alpha1.AegisOpsTemplateList { return &templatev1alpha1.AegisOpsTemplateList{} },
+		),
 	}
-}
-
-// Get takes name of the aegisOpsTemplate, and returns the corresponding aegisOpsTemplate object, and an error if there is any.
-func (c *aegisOpsTemplates) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AegisOpsTemplate, err error) {
-	result = &v1alpha1.AegisOpsTemplate{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("aegisopstemplates").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of AegisOpsTemplates that match those selectors.
-func (c *aegisOpsTemplates) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AegisOpsTemplateList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha1.AegisOpsTemplateList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("aegisopstemplates").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested aegisOpsTemplates.
-func (c *aegisOpsTemplates) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("aegisopstemplates").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a aegisOpsTemplate and creates it.  Returns the server's representation of the aegisOpsTemplate, and an error, if there is any.
-func (c *aegisOpsTemplates) Create(ctx context.Context, aegisOpsTemplate *v1alpha1.AegisOpsTemplate, opts v1.CreateOptions) (result *v1alpha1.AegisOpsTemplate, err error) {
-	result = &v1alpha1.AegisOpsTemplate{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("aegisopstemplates").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(aegisOpsTemplate).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a aegisOpsTemplate and updates it. Returns the server's representation of the aegisOpsTemplate, and an error, if there is any.
-func (c *aegisOpsTemplates) Update(ctx context.Context, aegisOpsTemplate *v1alpha1.AegisOpsTemplate, opts v1.UpdateOptions) (result *v1alpha1.AegisOpsTemplate, err error) {
-	result = &v1alpha1.AegisOpsTemplate{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("aegisopstemplates").
-		Name(aegisOpsTemplate.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(aegisOpsTemplate).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *aegisOpsTemplates) UpdateStatus(ctx context.Context, aegisOpsTemplate *v1alpha1.AegisOpsTemplate, opts v1.UpdateOptions) (result *v1alpha1.AegisOpsTemplate, err error) {
-	result = &v1alpha1.AegisOpsTemplate{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("aegisopstemplates").
-		Name(aegisOpsTemplate.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(aegisOpsTemplate).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the aegisOpsTemplate and deletes it. Returns an error if one occurs.
-func (c *aegisOpsTemplates) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("aegisopstemplates").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *aegisOpsTemplates) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("aegisopstemplates").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched aegisOpsTemplate.
-func (c *aegisOpsTemplates) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AegisOpsTemplate, err error) {
-	result = &v1alpha1.AegisOpsTemplate{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("aegisopstemplates").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

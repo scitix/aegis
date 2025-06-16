@@ -19,13 +19,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	alertv1alpha1 "github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
+	apisalertv1alpha1 "github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
 	versioned "github.com/scitix/aegis/pkg/generated/alert/clientset/versioned"
 	internalinterfaces "github.com/scitix/aegis/pkg/generated/alert/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/scitix/aegis/pkg/generated/alert/listers/alert/v1alpha1"
+	alertv1alpha1 "github.com/scitix/aegis/pkg/generated/alert/listers/alert/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // AegisAlerts.
 type AegisAlertInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.AegisAlertLister
+	Lister() alertv1alpha1.AegisAlertLister
 }
 
 type aegisAlertInformer struct {
@@ -71,7 +71,7 @@ func NewFilteredAegisAlertInformer(client versioned.Interface, namespace string,
 				return client.AegisV1alpha1().AegisAlerts(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&alertv1alpha1.AegisAlert{},
+		&apisalertv1alpha1.AegisAlert{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +82,9 @@ func (f *aegisAlertInformer) defaultInformer(client versioned.Interface, resyncP
 }
 
 func (f *aegisAlertInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&alertv1alpha1.AegisAlert{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisalertv1alpha1.AegisAlert{}, f.defaultInformer)
 }
 
-func (f *aegisAlertInformer) Lister() v1alpha1.AegisAlertLister {
-	return v1alpha1.NewAegisAlertLister(f.Informer().GetIndexer())
+func (f *aegisAlertInformer) Lister() alertv1alpha1.AegisAlertLister {
+	return alertv1alpha1.NewAegisAlertLister(f.Informer().GetIndexer())
 }

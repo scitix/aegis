@@ -19,124 +19,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/scitix/aegis/pkg/apis/template/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	templatev1alpha1 "github.com/scitix/aegis/pkg/generated/template/clientset/versioned/typed/template/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeAegisOpsTemplates implements AegisOpsTemplateInterface
-type FakeAegisOpsTemplates struct {
+// fakeAegisOpsTemplates implements AegisOpsTemplateInterface
+type fakeAegisOpsTemplates struct {
+	*gentype.FakeClientWithList[*v1alpha1.AegisOpsTemplate, *v1alpha1.AegisOpsTemplateList]
 	Fake *FakeAegisV1alpha1
-	ns   string
 }
 
-var aegisopstemplatesResource = schema.GroupVersionResource{Group: "aegis.io", Version: "v1alpha1", Resource: "aegisopstemplates"}
-
-var aegisopstemplatesKind = schema.GroupVersionKind{Group: "aegis.io", Version: "v1alpha1", Kind: "AegisOpsTemplate"}
-
-// Get takes name of the aegisOpsTemplate, and returns the corresponding aegisOpsTemplate object, and an error if there is any.
-func (c *FakeAegisOpsTemplates) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AegisOpsTemplate, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(aegisopstemplatesResource, c.ns, name), &v1alpha1.AegisOpsTemplate{})
-
-	if obj == nil {
-		return nil, err
+func newFakeAegisOpsTemplates(fake *FakeAegisV1alpha1, namespace string) templatev1alpha1.AegisOpsTemplateInterface {
+	return &fakeAegisOpsTemplates{
+		gentype.NewFakeClientWithList[*v1alpha1.AegisOpsTemplate, *v1alpha1.AegisOpsTemplateList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("aegisopstemplates"),
+			v1alpha1.SchemeGroupVersion.WithKind("AegisOpsTemplate"),
+			func() *v1alpha1.AegisOpsTemplate { return &v1alpha1.AegisOpsTemplate{} },
+			func() *v1alpha1.AegisOpsTemplateList { return &v1alpha1.AegisOpsTemplateList{} },
+			func(dst, src *v1alpha1.AegisOpsTemplateList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.AegisOpsTemplateList) []*v1alpha1.AegisOpsTemplate {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.AegisOpsTemplateList, items []*v1alpha1.AegisOpsTemplate) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.AegisOpsTemplate), err
-}
-
-// List takes label and field selectors, and returns the list of AegisOpsTemplates that match those selectors.
-func (c *FakeAegisOpsTemplates) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AegisOpsTemplateList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewListAction(aegisopstemplatesResource, aegisopstemplatesKind, c.ns, opts), &v1alpha1.AegisOpsTemplateList{})
-
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.AegisOpsTemplateList{ListMeta: obj.(*v1alpha1.AegisOpsTemplateList).ListMeta}
-	for _, item := range obj.(*v1alpha1.AegisOpsTemplateList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested aegisOpsTemplates.
-func (c *FakeAegisOpsTemplates) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(aegisopstemplatesResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a aegisOpsTemplate and creates it.  Returns the server's representation of the aegisOpsTemplate, and an error, if there is any.
-func (c *FakeAegisOpsTemplates) Create(ctx context.Context, aegisOpsTemplate *v1alpha1.AegisOpsTemplate, opts v1.CreateOptions) (result *v1alpha1.AegisOpsTemplate, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(aegisopstemplatesResource, c.ns, aegisOpsTemplate), &v1alpha1.AegisOpsTemplate{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisOpsTemplate), err
-}
-
-// Update takes the representation of a aegisOpsTemplate and updates it. Returns the server's representation of the aegisOpsTemplate, and an error, if there is any.
-func (c *FakeAegisOpsTemplates) Update(ctx context.Context, aegisOpsTemplate *v1alpha1.AegisOpsTemplate, opts v1.UpdateOptions) (result *v1alpha1.AegisOpsTemplate, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(aegisopstemplatesResource, c.ns, aegisOpsTemplate), &v1alpha1.AegisOpsTemplate{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisOpsTemplate), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeAegisOpsTemplates) UpdateStatus(ctx context.Context, aegisOpsTemplate *v1alpha1.AegisOpsTemplate, opts v1.UpdateOptions) (*v1alpha1.AegisOpsTemplate, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(aegisopstemplatesResource, "status", c.ns, aegisOpsTemplate), &v1alpha1.AegisOpsTemplate{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisOpsTemplate), err
-}
-
-// Delete takes name of the aegisOpsTemplate and deletes it. Returns an error if one occurs.
-func (c *FakeAegisOpsTemplates) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(aegisopstemplatesResource, c.ns, name), &v1alpha1.AegisOpsTemplate{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeAegisOpsTemplates) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(aegisopstemplatesResource, c.ns, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.AegisOpsTemplateList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched aegisOpsTemplate.
-func (c *FakeAegisOpsTemplates) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AegisOpsTemplate, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(aegisopstemplatesResource, c.ns, name, pt, data, subresources...), &v1alpha1.AegisOpsTemplate{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisOpsTemplate), err
 }

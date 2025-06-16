@@ -19,15 +19,14 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
-	"time"
+	context "context"
 
-	v1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
+	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
 	scheme "github.com/scitix/aegis/pkg/generated/diagnosis/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // AegisDiagnosisesGetter has a method to return a AegisDiagnosisInterface.
@@ -38,158 +37,34 @@ type AegisDiagnosisesGetter interface {
 
 // AegisDiagnosisInterface has methods to work with AegisDiagnosis resources.
 type AegisDiagnosisInterface interface {
-	Create(ctx context.Context, aegisDiagnosis *v1alpha1.AegisDiagnosis, opts v1.CreateOptions) (*v1alpha1.AegisDiagnosis, error)
-	Update(ctx context.Context, aegisDiagnosis *v1alpha1.AegisDiagnosis, opts v1.UpdateOptions) (*v1alpha1.AegisDiagnosis, error)
-	UpdateStatus(ctx context.Context, aegisDiagnosis *v1alpha1.AegisDiagnosis, opts v1.UpdateOptions) (*v1alpha1.AegisDiagnosis, error)
+	Create(ctx context.Context, aegisDiagnosis *diagnosisv1alpha1.AegisDiagnosis, opts v1.CreateOptions) (*diagnosisv1alpha1.AegisDiagnosis, error)
+	Update(ctx context.Context, aegisDiagnosis *diagnosisv1alpha1.AegisDiagnosis, opts v1.UpdateOptions) (*diagnosisv1alpha1.AegisDiagnosis, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+	UpdateStatus(ctx context.Context, aegisDiagnosis *diagnosisv1alpha1.AegisDiagnosis, opts v1.UpdateOptions) (*diagnosisv1alpha1.AegisDiagnosis, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.AegisDiagnosis, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.AegisDiagnosisList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*diagnosisv1alpha1.AegisDiagnosis, error)
+	List(ctx context.Context, opts v1.ListOptions) (*diagnosisv1alpha1.AegisDiagnosisList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AegisDiagnosis, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *diagnosisv1alpha1.AegisDiagnosis, err error)
 	AegisDiagnosisExpansion
 }
 
 // aegisDiagnosises implements AegisDiagnosisInterface
 type aegisDiagnosises struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithList[*diagnosisv1alpha1.AegisDiagnosis, *diagnosisv1alpha1.AegisDiagnosisList]
 }
 
 // newAegisDiagnosises returns a AegisDiagnosises
 func newAegisDiagnosises(c *AegisV1alpha1Client, namespace string) *aegisDiagnosises {
 	return &aegisDiagnosises{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithList[*diagnosisv1alpha1.AegisDiagnosis, *diagnosisv1alpha1.AegisDiagnosisList](
+			"aegisdiagnosises",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *diagnosisv1alpha1.AegisDiagnosis { return &diagnosisv1alpha1.AegisDiagnosis{} },
+			func() *diagnosisv1alpha1.AegisDiagnosisList { return &diagnosisv1alpha1.AegisDiagnosisList{} },
+		),
 	}
-}
-
-// Get takes name of the aegisDiagnosis, and returns the corresponding aegisDiagnosis object, and an error if there is any.
-func (c *aegisDiagnosises) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AegisDiagnosis, err error) {
-	result = &v1alpha1.AegisDiagnosis{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("aegisdiagnosises").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of AegisDiagnosises that match those selectors.
-func (c *aegisDiagnosises) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AegisDiagnosisList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha1.AegisDiagnosisList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("aegisdiagnosises").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested aegisDiagnosises.
-func (c *aegisDiagnosises) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("aegisdiagnosises").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a aegisDiagnosis and creates it.  Returns the server's representation of the aegisDiagnosis, and an error, if there is any.
-func (c *aegisDiagnosises) Create(ctx context.Context, aegisDiagnosis *v1alpha1.AegisDiagnosis, opts v1.CreateOptions) (result *v1alpha1.AegisDiagnosis, err error) {
-	result = &v1alpha1.AegisDiagnosis{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("aegisdiagnosises").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(aegisDiagnosis).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a aegisDiagnosis and updates it. Returns the server's representation of the aegisDiagnosis, and an error, if there is any.
-func (c *aegisDiagnosises) Update(ctx context.Context, aegisDiagnosis *v1alpha1.AegisDiagnosis, opts v1.UpdateOptions) (result *v1alpha1.AegisDiagnosis, err error) {
-	result = &v1alpha1.AegisDiagnosis{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("aegisdiagnosises").
-		Name(aegisDiagnosis.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(aegisDiagnosis).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *aegisDiagnosises) UpdateStatus(ctx context.Context, aegisDiagnosis *v1alpha1.AegisDiagnosis, opts v1.UpdateOptions) (result *v1alpha1.AegisDiagnosis, err error) {
-	result = &v1alpha1.AegisDiagnosis{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("aegisdiagnosises").
-		Name(aegisDiagnosis.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(aegisDiagnosis).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the aegisDiagnosis and deletes it. Returns an error if one occurs.
-func (c *aegisDiagnosises) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("aegisdiagnosises").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *aegisDiagnosises) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("aegisdiagnosises").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched aegisDiagnosis.
-func (c *aegisDiagnosises) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AegisDiagnosis, err error) {
-	result = &v1alpha1.AegisDiagnosis{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("aegisdiagnosises").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

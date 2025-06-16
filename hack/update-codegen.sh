@@ -18,54 +18,73 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-SCRIPT_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
-CODEGEN_PKG=${CODEGEN_PKG:-$(cd "${SCRIPT_ROOT}"; ls -d -1 ./vendor/k8s.io/code-generator 2>/dev/null || echo ../code-generator)}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_ROOT="${SCRIPT_DIR}/.."
+CODEGEN_PKG="${CODEGEN_PKG:-${SCRIPT_ROOT}/vendor/k8s.io/code-generator}"
 
-echo $SCRIPT_ROOT
-echo $CODEGEN_PKG
-# bash ../vendor/k8s.io/code-generator/generate-internal-groups.sh \
-#   "deepcopy,client,informer,lister" \
-#   github.com/scitix/aegis/pkg/generated/alert \
-#   github.com/scitix/aegis/pkg/apis \
-#   github.com/scitix/aegis/pkg/apis \
-#   "alert:v1alpha1" \
-#   --go-header-file $(pwd)/boilerplate/boilerplate.generatego.txt
+source "${CODEGEN_PKG}/kube_codegen.sh"
 
-# bash ../vendor/k8s.io/code-generator/generate-internal-groups.sh \
-#   "deepcopy,client,informer,lister" \
-#   github.com/scitix/aegis/pkg/generated/rule \
-#   github.com/scitix/aegis/pkg/apis \
-#   github.com/scitix/aegis/pkg/apis \
-#   "rule:v1alpha1" \
-#   --go-header-file $(pwd)/boilerplate/boilerplate.generatego.txt
+BOILERPLATE="${SCRIPT_ROOT}/hack/boilerplate/boilerplate.generatego.txt"
+APIS_ROOT="${SCRIPT_ROOT}/pkg/apis"
+MODULE="github.com/scitix/aegis"
 
-# bash ../vendor/k8s.io/code-generator/generate-internal-groups.sh \
-#   "deepcopy,client,informer,lister" \
-#   github.com/scitix/aegis/pkg/generated/template \
-#   github.com/scitix/aegis/pkg/apis \
-#   github.com/scitix/aegis/pkg/apis \
-#   "template:v1alpha1" \
-#   --go-header-file $(pwd)/boilerplate/boilerplate.generatego.txt
+# kube::codegen::gen_helpers \
+#   --boilerplate "${SCRIPT_ROOT}/hack/boilerplate/boilerplate.generatego.txt" \
+#   "${SCRIPT_ROOT}"
 
-# bash ../vendor/k8s.io/code-generator/generate-internal-groups.sh \
-#   "deepcopy,client,informer,lister" \
-#   github.com/scitix/aegis/pkg/generated/check \
-#   github.com/scitix/aegis/pkg/apis \
-#   github.com/scitix/aegis/pkg/apis \
-#   "check:v1alpha1" \
-#   --go-header-file $(pwd)/boilerplate/boilerplate.generatego.txt
+# kube::codegen::gen_register \
+#   --boilerplate "${SCRIPT_ROOT}/hack/boilerplate/boilerplate.generatego.txt" \
+#   "${SCRIPT_ROOT}"
 
-bash vendor/k8s.io/code-generator/generate-internal-groups.sh all \
-  github.com/scitix/aegis/pkg/generated/diagnosis \
-  github.com/scitix/aegis/pkg/apis \
-  github.com/scitix/aegis/pkg/apis \
-  "diagnosis:v1alpha1" \
-  --go-header-file ./hack/boilerplate/boilerplate.generatego.txt 
+# === Alert ===
+kube::codegen::gen_client \
+  --with-watch \
+  --output-dir "${SCRIPT_ROOT}/pkg/generated/alert" \
+  --output-pkg "${MODULE}/pkg/generated/alert" \
+  --boilerplate "${BOILERPLATE}" \
+  --one-input-api "alert/v1alpha1" \
+  "${APIS_ROOT}"
 
-# bash ../vendor/k8s.io/code-generator/generate-internal-groups.sh \
-#   "deepcopy,client,informer,lister" \
-#   github.com/scitix/aegis/pkg/generated/machinecheck \
-#   github.com/scitix/aegis/pkg/apis \
-#   github.com/scitix/aegis/pkg/apis \
-#   "machinecheck:v1alpha1" \
-#   --go-header-file $(pwd)/boilerplate/boilerplate.generatego.txt
+# === Rule ===
+kube::codegen::gen_client \
+  --with-watch \
+  --output-dir "${SCRIPT_ROOT}/pkg/generated/rule" \
+  --output-pkg "${MODULE}/pkg/generated/rule" \
+  --boilerplate "${BOILERPLATE}" \
+  --one-input-api "rule/v1alpha1" \
+  "${APIS_ROOT}"
+
+# === Template ===
+kube::codegen::gen_client \
+  --with-watch \
+  --output-dir "${SCRIPT_ROOT}/pkg/generated/template" \
+  --output-pkg "${MODULE}/pkg/generated/template" \
+  --boilerplate "${BOILERPLATE}" \
+  --one-input-api "template/v1alpha1" \
+  "${APIS_ROOT}"
+
+# === Check ===
+kube::codegen::gen_client \
+  --with-watch \
+  --output-dir "${SCRIPT_ROOT}/pkg/generated/clustercheck" \
+  --output-pkg "${MODULE}/pkg/generated/clustercheck" \
+  --boilerplate "${BOILERPLATE}" \
+  --one-input-api "clustercheck/v1alpha1" \
+  "${APIS_ROOT}"
+
+kube::codegen::gen_client \
+  --with-watch \
+  --output-dir "${SCRIPT_ROOT}/pkg/generated/nodecheck" \
+  --output-pkg "${MODULE}/pkg/generated/nodecheck" \
+  --boilerplate "${BOILERPLATE}" \
+  --one-input-api "nodecheck/v1alpha1" \
+  "${APIS_ROOT}"
+
+# === Diagnosis ===
+kube::codegen::gen_client \
+  --with-watch \
+  --output-dir "${SCRIPT_ROOT}/pkg/generated/diagnosis" \
+  --output-pkg "${MODULE}/pkg/generated/diagnosis" \
+  --boilerplate "${BOILERPLATE}" \
+  --one-input-api "diagnosis/v1alpha1" \
+  "${APIS_ROOT}"

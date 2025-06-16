@@ -29,7 +29,7 @@ type FakeAegisV1alpha1 struct {
 }
 
 func (c *FakeAegisV1alpha1) AegisOpsTemplates(namespace string) v1alpha1.AegisOpsTemplateInterface {
-	return &FakeAegisOpsTemplates{c, namespace}
+	return newFakeAegisOpsTemplates(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

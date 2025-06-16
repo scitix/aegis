@@ -19,124 +19,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/scitix/aegis/pkg/apis/clustercheck/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	clustercheckv1alpha1 "github.com/scitix/aegis/pkg/generated/clustercheck/clientset/versioned/typed/clustercheck/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeAegisClusterHealthChecks implements AegisClusterHealthCheckInterface
-type FakeAegisClusterHealthChecks struct {
+// fakeAegisClusterHealthChecks implements AegisClusterHealthCheckInterface
+type fakeAegisClusterHealthChecks struct {
+	*gentype.FakeClientWithList[*v1alpha1.AegisClusterHealthCheck, *v1alpha1.AegisClusterHealthCheckList]
 	Fake *FakeAegisV1alpha1
-	ns   string
 }
 
-var aegisclusterhealthchecksResource = schema.GroupVersionResource{Group: "aegis.io", Version: "v1alpha1", Resource: "aegisclusterhealthchecks"}
-
-var aegisclusterhealthchecksKind = schema.GroupVersionKind{Group: "aegis.io", Version: "v1alpha1", Kind: "AegisClusterHealthCheck"}
-
-// Get takes name of the aegisClusterHealthCheck, and returns the corresponding aegisClusterHealthCheck object, and an error if there is any.
-func (c *FakeAegisClusterHealthChecks) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AegisClusterHealthCheck, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(aegisclusterhealthchecksResource, c.ns, name), &v1alpha1.AegisClusterHealthCheck{})
-
-	if obj == nil {
-		return nil, err
+func newFakeAegisClusterHealthChecks(fake *FakeAegisV1alpha1, namespace string) clustercheckv1alpha1.AegisClusterHealthCheckInterface {
+	return &fakeAegisClusterHealthChecks{
+		gentype.NewFakeClientWithList[*v1alpha1.AegisClusterHealthCheck, *v1alpha1.AegisClusterHealthCheckList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("aegisclusterhealthchecks"),
+			v1alpha1.SchemeGroupVersion.WithKind("AegisClusterHealthCheck"),
+			func() *v1alpha1.AegisClusterHealthCheck { return &v1alpha1.AegisClusterHealthCheck{} },
+			func() *v1alpha1.AegisClusterHealthCheckList { return &v1alpha1.AegisClusterHealthCheckList{} },
+			func(dst, src *v1alpha1.AegisClusterHealthCheckList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.AegisClusterHealthCheckList) []*v1alpha1.AegisClusterHealthCheck {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.AegisClusterHealthCheckList, items []*v1alpha1.AegisClusterHealthCheck) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.AegisClusterHealthCheck), err
-}
-
-// List takes label and field selectors, and returns the list of AegisClusterHealthChecks that match those selectors.
-func (c *FakeAegisClusterHealthChecks) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AegisClusterHealthCheckList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewListAction(aegisclusterhealthchecksResource, aegisclusterhealthchecksKind, c.ns, opts), &v1alpha1.AegisClusterHealthCheckList{})
-
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.AegisClusterHealthCheckList{ListMeta: obj.(*v1alpha1.AegisClusterHealthCheckList).ListMeta}
-	for _, item := range obj.(*v1alpha1.AegisClusterHealthCheckList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested aegisClusterHealthChecks.
-func (c *FakeAegisClusterHealthChecks) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(aegisclusterhealthchecksResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a aegisClusterHealthCheck and creates it.  Returns the server's representation of the aegisClusterHealthCheck, and an error, if there is any.
-func (c *FakeAegisClusterHealthChecks) Create(ctx context.Context, aegisClusterHealthCheck *v1alpha1.AegisClusterHealthCheck, opts v1.CreateOptions) (result *v1alpha1.AegisClusterHealthCheck, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(aegisclusterhealthchecksResource, c.ns, aegisClusterHealthCheck), &v1alpha1.AegisClusterHealthCheck{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisClusterHealthCheck), err
-}
-
-// Update takes the representation of a aegisClusterHealthCheck and updates it. Returns the server's representation of the aegisClusterHealthCheck, and an error, if there is any.
-func (c *FakeAegisClusterHealthChecks) Update(ctx context.Context, aegisClusterHealthCheck *v1alpha1.AegisClusterHealthCheck, opts v1.UpdateOptions) (result *v1alpha1.AegisClusterHealthCheck, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(aegisclusterhealthchecksResource, c.ns, aegisClusterHealthCheck), &v1alpha1.AegisClusterHealthCheck{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisClusterHealthCheck), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeAegisClusterHealthChecks) UpdateStatus(ctx context.Context, aegisClusterHealthCheck *v1alpha1.AegisClusterHealthCheck, opts v1.UpdateOptions) (*v1alpha1.AegisClusterHealthCheck, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(aegisclusterhealthchecksResource, "status", c.ns, aegisClusterHealthCheck), &v1alpha1.AegisClusterHealthCheck{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisClusterHealthCheck), err
-}
-
-// Delete takes name of the aegisClusterHealthCheck and deletes it. Returns an error if one occurs.
-func (c *FakeAegisClusterHealthChecks) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(aegisclusterhealthchecksResource, c.ns, name), &v1alpha1.AegisClusterHealthCheck{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeAegisClusterHealthChecks) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(aegisclusterhealthchecksResource, c.ns, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.AegisClusterHealthCheckList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched aegisClusterHealthCheck.
-func (c *FakeAegisClusterHealthChecks) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AegisClusterHealthCheck, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(aegisclusterhealthchecksResource, c.ns, name, pt, data, subresources...), &v1alpha1.AegisClusterHealthCheck{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisClusterHealthCheck), err
 }
