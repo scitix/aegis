@@ -19,124 +19,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	nodecheckv1alpha1 "github.com/scitix/aegis/pkg/generated/nodecheck/clientset/versioned/typed/nodecheck/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeAegisNodeHealthChecks implements AegisNodeHealthCheckInterface
-type FakeAegisNodeHealthChecks struct {
+// fakeAegisNodeHealthChecks implements AegisNodeHealthCheckInterface
+type fakeAegisNodeHealthChecks struct {
+	*gentype.FakeClientWithList[*v1alpha1.AegisNodeHealthCheck, *v1alpha1.AegisNodeHealthCheckList]
 	Fake *FakeAegisV1alpha1
-	ns   string
 }
 
-var aegisnodehealthchecksResource = schema.GroupVersionResource{Group: "aegis.io", Version: "v1alpha1", Resource: "aegisnodehealthchecks"}
-
-var aegisnodehealthchecksKind = schema.GroupVersionKind{Group: "aegis.io", Version: "v1alpha1", Kind: "AegisNodeHealthCheck"}
-
-// Get takes name of the aegisNodeHealthCheck, and returns the corresponding aegisNodeHealthCheck object, and an error if there is any.
-func (c *FakeAegisNodeHealthChecks) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AegisNodeHealthCheck, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(aegisnodehealthchecksResource, c.ns, name), &v1alpha1.AegisNodeHealthCheck{})
-
-	if obj == nil {
-		return nil, err
+func newFakeAegisNodeHealthChecks(fake *FakeAegisV1alpha1, namespace string) nodecheckv1alpha1.AegisNodeHealthCheckInterface {
+	return &fakeAegisNodeHealthChecks{
+		gentype.NewFakeClientWithList[*v1alpha1.AegisNodeHealthCheck, *v1alpha1.AegisNodeHealthCheckList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("aegisnodehealthchecks"),
+			v1alpha1.SchemeGroupVersion.WithKind("AegisNodeHealthCheck"),
+			func() *v1alpha1.AegisNodeHealthCheck { return &v1alpha1.AegisNodeHealthCheck{} },
+			func() *v1alpha1.AegisNodeHealthCheckList { return &v1alpha1.AegisNodeHealthCheckList{} },
+			func(dst, src *v1alpha1.AegisNodeHealthCheckList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.AegisNodeHealthCheckList) []*v1alpha1.AegisNodeHealthCheck {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.AegisNodeHealthCheckList, items []*v1alpha1.AegisNodeHealthCheck) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.AegisNodeHealthCheck), err
-}
-
-// List takes label and field selectors, and returns the list of AegisNodeHealthChecks that match those selectors.
-func (c *FakeAegisNodeHealthChecks) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AegisNodeHealthCheckList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewListAction(aegisnodehealthchecksResource, aegisnodehealthchecksKind, c.ns, opts), &v1alpha1.AegisNodeHealthCheckList{})
-
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.AegisNodeHealthCheckList{ListMeta: obj.(*v1alpha1.AegisNodeHealthCheckList).ListMeta}
-	for _, item := range obj.(*v1alpha1.AegisNodeHealthCheckList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested aegisNodeHealthChecks.
-func (c *FakeAegisNodeHealthChecks) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(aegisnodehealthchecksResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a aegisNodeHealthCheck and creates it.  Returns the server's representation of the aegisNodeHealthCheck, and an error, if there is any.
-func (c *FakeAegisNodeHealthChecks) Create(ctx context.Context, aegisNodeHealthCheck *v1alpha1.AegisNodeHealthCheck, opts v1.CreateOptions) (result *v1alpha1.AegisNodeHealthCheck, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(aegisnodehealthchecksResource, c.ns, aegisNodeHealthCheck), &v1alpha1.AegisNodeHealthCheck{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisNodeHealthCheck), err
-}
-
-// Update takes the representation of a aegisNodeHealthCheck and updates it. Returns the server's representation of the aegisNodeHealthCheck, and an error, if there is any.
-func (c *FakeAegisNodeHealthChecks) Update(ctx context.Context, aegisNodeHealthCheck *v1alpha1.AegisNodeHealthCheck, opts v1.UpdateOptions) (result *v1alpha1.AegisNodeHealthCheck, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(aegisnodehealthchecksResource, c.ns, aegisNodeHealthCheck), &v1alpha1.AegisNodeHealthCheck{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisNodeHealthCheck), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeAegisNodeHealthChecks) UpdateStatus(ctx context.Context, aegisNodeHealthCheck *v1alpha1.AegisNodeHealthCheck, opts v1.UpdateOptions) (*v1alpha1.AegisNodeHealthCheck, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(aegisnodehealthchecksResource, "status", c.ns, aegisNodeHealthCheck), &v1alpha1.AegisNodeHealthCheck{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisNodeHealthCheck), err
-}
-
-// Delete takes name of the aegisNodeHealthCheck and deletes it. Returns an error if one occurs.
-func (c *FakeAegisNodeHealthChecks) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(aegisnodehealthchecksResource, c.ns, name), &v1alpha1.AegisNodeHealthCheck{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeAegisNodeHealthChecks) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(aegisnodehealthchecksResource, c.ns, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.AegisNodeHealthCheckList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched aegisNodeHealthCheck.
-func (c *FakeAegisNodeHealthChecks) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AegisNodeHealthCheck, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(aegisnodehealthchecksResource, c.ns, name, pt, data, subresources...), &v1alpha1.AegisNodeHealthCheck{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisNodeHealthCheck), err
 }

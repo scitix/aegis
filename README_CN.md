@@ -44,13 +44,15 @@ Aegis 支持将告警源（现支持通过AI解析来自不同告警源的告警
 
 通过 `AegisDiagnosis` CRD 标准化定义诊断对象，支持基于 LLM 的诊断总结。当前支持的诊断对象类型：
 
-- Node
-- Pod
+* [Node](docs/node-diagnosis_CN.md)
+
+  > ⚠️ **在使用 Node 诊断功能前，请确保 Collector Pod 镜像已正确配置。Aegis 提供了默认镜像，但也支持通过 controller 启动参数指定自定义镜像。详见 [Collector Pod 使用指南](docs/node-diagnosis_CN.md#collector-pod-guide)。**
+* [Pod](docs/pod-diagnosis_CN.md)
 
 待支持的诊断对象类型：
 
-- Argo Workflow（待支持）
-- PytorchJob（待支持）
+- Argo Workflow
+- PytorchJob
 
 ## 集群巡检（Experimental）
 

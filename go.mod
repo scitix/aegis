@@ -12,7 +12,6 @@ require (
 	github.com/google/go-containerregistry v0.20.2
 	github.com/google/uuid v1.6.0
 	github.com/k8sgpt-ai/k8sgpt v0.4.17
-	github.com/olivere/elastic/v7 v7.0.32
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/common v0.62.0
@@ -29,6 +28,7 @@ require (
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff
 	k8s.io/kubernetes v0.0.0-00010101000000-000000000000
+	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
 )
 
 require (
@@ -260,7 +260,6 @@ require (
 	k8s.io/kms v0.32.2 // indirect
 	k8s.io/kubectl v0.32.2 // indirect
 	k8s.io/kubelet v0.0.0 // indirect
-	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979 // indirect
 	knative.dev/pkg v0.0.0-20241026180704-25f6002b00f3 // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.2 // indirect

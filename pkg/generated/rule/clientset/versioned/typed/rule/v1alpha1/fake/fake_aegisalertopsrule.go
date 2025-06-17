@@ -19,124 +19,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/scitix/aegis/pkg/apis/rule/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	rulev1alpha1 "github.com/scitix/aegis/pkg/generated/rule/clientset/versioned/typed/rule/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeAegisAlertOpsRules implements AegisAlertOpsRuleInterface
-type FakeAegisAlertOpsRules struct {
+// fakeAegisAlertOpsRules implements AegisAlertOpsRuleInterface
+type fakeAegisAlertOpsRules struct {
+	*gentype.FakeClientWithList[*v1alpha1.AegisAlertOpsRule, *v1alpha1.AegisAlertOpsRuleList]
 	Fake *FakeAegisV1alpha1
-	ns   string
 }
 
-var aegisalertopsrulesResource = schema.GroupVersionResource{Group: "aegis.io", Version: "v1alpha1", Resource: "aegisalertopsrules"}
-
-var aegisalertopsrulesKind = schema.GroupVersionKind{Group: "aegis.io", Version: "v1alpha1", Kind: "AegisAlertOpsRule"}
-
-// Get takes name of the aegisAlertOpsRule, and returns the corresponding aegisAlertOpsRule object, and an error if there is any.
-func (c *FakeAegisAlertOpsRules) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AegisAlertOpsRule, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(aegisalertopsrulesResource, c.ns, name), &v1alpha1.AegisAlertOpsRule{})
-
-	if obj == nil {
-		return nil, err
+func newFakeAegisAlertOpsRules(fake *FakeAegisV1alpha1, namespace string) rulev1alpha1.AegisAlertOpsRuleInterface {
+	return &fakeAegisAlertOpsRules{
+		gentype.NewFakeClientWithList[*v1alpha1.AegisAlertOpsRule, *v1alpha1.AegisAlertOpsRuleList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("aegisalertopsrules"),
+			v1alpha1.SchemeGroupVersion.WithKind("AegisAlertOpsRule"),
+			func() *v1alpha1.AegisAlertOpsRule { return &v1alpha1.AegisAlertOpsRule{} },
+			func() *v1alpha1.AegisAlertOpsRuleList { return &v1alpha1.AegisAlertOpsRuleList{} },
+			func(dst, src *v1alpha1.AegisAlertOpsRuleList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.AegisAlertOpsRuleList) []*v1alpha1.AegisAlertOpsRule {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.AegisAlertOpsRuleList, items []*v1alpha1.AegisAlertOpsRule) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.AegisAlertOpsRule), err
-}
-
-// List takes label and field selectors, and returns the list of AegisAlertOpsRules that match those selectors.
-func (c *FakeAegisAlertOpsRules) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AegisAlertOpsRuleList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewListAction(aegisalertopsrulesResource, aegisalertopsrulesKind, c.ns, opts), &v1alpha1.AegisAlertOpsRuleList{})
-
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.AegisAlertOpsRuleList{ListMeta: obj.(*v1alpha1.AegisAlertOpsRuleList).ListMeta}
-	for _, item := range obj.(*v1alpha1.AegisAlertOpsRuleList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested aegisAlertOpsRules.
-func (c *FakeAegisAlertOpsRules) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(aegisalertopsrulesResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a aegisAlertOpsRule and creates it.  Returns the server's representation of the aegisAlertOpsRule, and an error, if there is any.
-func (c *FakeAegisAlertOpsRules) Create(ctx context.Context, aegisAlertOpsRule *v1alpha1.AegisAlertOpsRule, opts v1.CreateOptions) (result *v1alpha1.AegisAlertOpsRule, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(aegisalertopsrulesResource, c.ns, aegisAlertOpsRule), &v1alpha1.AegisAlertOpsRule{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisAlertOpsRule), err
-}
-
-// Update takes the representation of a aegisAlertOpsRule and updates it. Returns the server's representation of the aegisAlertOpsRule, and an error, if there is any.
-func (c *FakeAegisAlertOpsRules) Update(ctx context.Context, aegisAlertOpsRule *v1alpha1.AegisAlertOpsRule, opts v1.UpdateOptions) (result *v1alpha1.AegisAlertOpsRule, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(aegisalertopsrulesResource, c.ns, aegisAlertOpsRule), &v1alpha1.AegisAlertOpsRule{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisAlertOpsRule), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeAegisAlertOpsRules) UpdateStatus(ctx context.Context, aegisAlertOpsRule *v1alpha1.AegisAlertOpsRule, opts v1.UpdateOptions) (*v1alpha1.AegisAlertOpsRule, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(aegisalertopsrulesResource, "status", c.ns, aegisAlertOpsRule), &v1alpha1.AegisAlertOpsRule{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisAlertOpsRule), err
-}
-
-// Delete takes name of the aegisAlertOpsRule and deletes it. Returns an error if one occurs.
-func (c *FakeAegisAlertOpsRules) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(aegisalertopsrulesResource, c.ns, name), &v1alpha1.AegisAlertOpsRule{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeAegisAlertOpsRules) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(aegisalertopsrulesResource, c.ns, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.AegisAlertOpsRuleList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched aegisAlertOpsRule.
-func (c *FakeAegisAlertOpsRules) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AegisAlertOpsRule, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(aegisalertopsrulesResource, c.ns, name, pt, data, subresources...), &v1alpha1.AegisAlertOpsRule{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.AegisAlertOpsRule), err
 }

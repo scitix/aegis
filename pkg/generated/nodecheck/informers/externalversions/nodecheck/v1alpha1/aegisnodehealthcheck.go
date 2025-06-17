@@ -19,13 +19,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	nodecheckv1alpha1 "github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
+	apisnodecheckv1alpha1 "github.com/scitix/aegis/pkg/apis/nodecheck/v1alpha1"
 	versioned "github.com/scitix/aegis/pkg/generated/nodecheck/clientset/versioned"
 	internalinterfaces "github.com/scitix/aegis/pkg/generated/nodecheck/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/scitix/aegis/pkg/generated/nodecheck/listers/nodecheck/v1alpha1"
+	nodecheckv1alpha1 "github.com/scitix/aegis/pkg/generated/nodecheck/listers/nodecheck/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // AegisNodeHealthChecks.
 type AegisNodeHealthCheckInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.AegisNodeHealthCheckLister
+	Lister() nodecheckv1alpha1.AegisNodeHealthCheckLister
 }
 
 type aegisNodeHealthCheckInformer struct {
@@ -71,7 +71,7 @@ func NewFilteredAegisNodeHealthCheckInformer(client versioned.Interface, namespa
 				return client.AegisV1alpha1().AegisNodeHealthChecks(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&nodecheckv1alpha1.AegisNodeHealthCheck{},
+		&apisnodecheckv1alpha1.AegisNodeHealthCheck{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +82,9 @@ func (f *aegisNodeHealthCheckInformer) defaultInformer(client versioned.Interfac
 }
 
 func (f *aegisNodeHealthCheckInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&nodecheckv1alpha1.AegisNodeHealthCheck{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisnodecheckv1alpha1.AegisNodeHealthCheck{}, f.defaultInformer)
 }
 
-func (f *aegisNodeHealthCheckInformer) Lister() v1alpha1.AegisNodeHealthCheckLister {
-	return v1alpha1.NewAegisNodeHealthCheckLister(f.Informer().GetIndexer())
+func (f *aegisNodeHealthCheckInformer) Lister() nodecheckv1alpha1.AegisNodeHealthCheckLister {
+	return nodecheckv1alpha1.NewAegisNodeHealthCheckLister(f.Informer().GetIndexer())
 }

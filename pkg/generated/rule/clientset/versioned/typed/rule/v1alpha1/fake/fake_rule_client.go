@@ -29,7 +29,7 @@ type FakeAegisV1alpha1 struct {
 }
 
 func (c *FakeAegisV1alpha1) AegisAlertOpsRules(namespace string) v1alpha1.AegisAlertOpsRuleInterface {
-	return &FakeAegisAlertOpsRules{c, namespace}
+	return newFakeAegisAlertOpsRules(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

@@ -128,7 +128,6 @@ Error: {在这里解释错误}
 Solution: {在这里给出分步骤的解决方案}
 `
 
-
 const alertToModelPromptTemplate = `
 你是一个 Kubernetes 运维平台的 AI 模块。你接收到来自外部监控系统的一条告警消息，请将它转换为标准结构 models.Alert 的 JSON 格式。
 

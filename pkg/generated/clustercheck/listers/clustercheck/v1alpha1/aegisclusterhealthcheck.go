@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/scitix/aegis/pkg/apis/clustercheck/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	clustercheckv1alpha1 "github.com/scitix/aegis/pkg/apis/clustercheck/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // AegisClusterHealthCheckLister helps list AegisClusterHealthChecks.
@@ -30,7 +30,7 @@ import (
 type AegisClusterHealthCheckLister interface {
 	// List lists all AegisClusterHealthChecks in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AegisClusterHealthCheck, err error)
+	List(selector labels.Selector) (ret []*clustercheckv1alpha1.AegisClusterHealthCheck, err error)
 	// AegisClusterHealthChecks returns an object that can list and get AegisClusterHealthChecks.
 	AegisClusterHealthChecks(namespace string) AegisClusterHealthCheckNamespaceLister
 	AegisClusterHealthCheckListerExpansion
@@ -38,25 +38,17 @@ type AegisClusterHealthCheckLister interface {
 
 // aegisClusterHealthCheckLister implements the AegisClusterHealthCheckLister interface.
 type aegisClusterHealthCheckLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*clustercheckv1alpha1.AegisClusterHealthCheck]
 }
 
 // NewAegisClusterHealthCheckLister returns a new AegisClusterHealthCheckLister.
 func NewAegisClusterHealthCheckLister(indexer cache.Indexer) AegisClusterHealthCheckLister {
-	return &aegisClusterHealthCheckLister{indexer: indexer}
-}
-
-// List lists all AegisClusterHealthChecks in the indexer.
-func (s *aegisClusterHealthCheckLister) List(selector labels.Selector) (ret []*v1alpha1.AegisClusterHealthCheck, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AegisClusterHealthCheck))
-	})
-	return ret, err
+	return &aegisClusterHealthCheckLister{listers.New[*clustercheckv1alpha1.AegisClusterHealthCheck](indexer, clustercheckv1alpha1.Resource("aegisclusterhealthcheck"))}
 }
 
 // AegisClusterHealthChecks returns an object that can list and get AegisClusterHealthChecks.
 func (s *aegisClusterHealthCheckLister) AegisClusterHealthChecks(namespace string) AegisClusterHealthCheckNamespaceLister {
-	return aegisClusterHealthCheckNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return aegisClusterHealthCheckNamespaceLister{listers.NewNamespaced[*clustercheckv1alpha1.AegisClusterHealthCheck](s.ResourceIndexer, namespace)}
 }
 
 // AegisClusterHealthCheckNamespaceLister helps list and get AegisClusterHealthChecks.
@@ -64,36 +56,15 @@ func (s *aegisClusterHealthCheckLister) AegisClusterHealthChecks(namespace strin
 type AegisClusterHealthCheckNamespaceLister interface {
 	// List lists all AegisClusterHealthChecks in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AegisClusterHealthCheck, err error)
+	List(selector labels.Selector) (ret []*clustercheckv1alpha1.AegisClusterHealthCheck, err error)
 	// Get retrieves the AegisClusterHealthCheck from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.AegisClusterHealthCheck, error)
+	Get(name string) (*clustercheckv1alpha1.AegisClusterHealthCheck, error)
 	AegisClusterHealthCheckNamespaceListerExpansion
 }
 
 // aegisClusterHealthCheckNamespaceLister implements the AegisClusterHealthCheckNamespaceLister
 // interface.
 type aegisClusterHealthCheckNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all AegisClusterHealthChecks in the indexer for a given namespace.
-func (s aegisClusterHealthCheckNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.AegisClusterHealthCheck, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AegisClusterHealthCheck))
-	})
-	return ret, err
-}
-
-// Get retrieves the AegisClusterHealthCheck from the indexer for a given namespace and name.
-func (s aegisClusterHealthCheckNamespaceLister) Get(name string) (*v1alpha1.AegisClusterHealthCheck, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("aegisclusterhealthcheck"), name)
-	}
-	return obj.(*v1alpha1.AegisClusterHealthCheck), nil
+	listers.ResourceIndexer[*clustercheckv1alpha1.AegisClusterHealthCheck]
 }

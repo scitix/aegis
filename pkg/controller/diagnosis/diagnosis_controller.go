@@ -21,10 +21,12 @@ import (
 
 	"github.com/scitix/aegis/pkg/controller"
 
+	kKubernetes "github.com/k8sgpt-ai/k8sgpt/pkg/kubernetes"
 	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
 	diagnosisclientset "github.com/scitix/aegis/pkg/generated/diagnosis/clientset/versioned"
 	diagnosisInformer "github.com/scitix/aegis/pkg/generated/diagnosis/informers/externalversions/diagnosis/v1alpha1"
 	diagnosisLister "github.com/scitix/aegis/pkg/generated/diagnosis/listers/diagnosis/v1alpha1"
+	"github.com/spf13/viper"
 )
 
 func init() {
@@ -109,10 +111,11 @@ func NewController(kubeclient kubernetes.Interface,
 	timeout time.Duration,
 	backend string,
 	language string,
+	collectorImage string,
+	enableProm bool,
 	explain bool,
 	noCache bool,
 ) (*DiagnosisController, error) {
-
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartStructuredLogging(0)
 	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: kubeclient.CoreV1().Events(v1.NamespaceAll)})
@@ -130,7 +133,15 @@ func NewController(kubeclient kubernetes.Interface,
 		logger:             klog.NewKlogr(),
 	}
 
-	dignosis, err := NewDiagnosis(backend, language, noCache, explain, nil)
+	// Get crd client from viper.
+	kubecontext := viper.GetString("kubecontext")
+	kubeconfig := viper.GetString("kubeconfig")
+	client, err := kKubernetes.NewClient(kubecontext, kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("initialising kubernetes client: %w", err)
+	}
+
+	dignosis, err := NewDiagnosis(client, backend, language, collectorImage, enableProm, noCache, explain, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +211,6 @@ func (c *DiagnosisController) processNextWorkItem(ctx context.Context) bool {
 		c.workqueue.Forget(obj)
 		return nil
 	}(obj)
-
 	if err != nil {
 		utilruntime.HandleError(err)
 		return true
@@ -253,14 +263,14 @@ func (c *DiagnosisController) syncHandler(key string) error {
 		return nil
 	}
 
-	object := diagnosis.Spec.Object
+	// object := diagnosis.Spec.Object
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
 	begin := metav1.Now()
 	diagnosis.Status.StartTime = &begin
 
-	result, explain, err := c.diagnosis.RunDiagnosis(ctx, string(object.Kind), object.Namespace, object.Name)
+	result, explain, err := c.diagnosis.RunDiagnosis(ctx, diagnosis)
 
 	end := metav1.Now()
 	diagnosis.Status.CompletionTime = &end

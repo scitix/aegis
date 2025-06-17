@@ -15,6 +15,7 @@ package common
 
 import (
 	kcommon "github.com/k8sgpt-ai/k8sgpt/pkg/common"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type IAnalyzer interface {
@@ -24,7 +25,11 @@ type IAnalyzer interface {
 
 type Analyzer struct {
 	kcommon.Analyzer
-	Name string
+	Name           string
+	CollectorImage string
+	EnableProm     bool
+	EnablePodLog   *bool
+	Owner          metav1.Object
 }
 
 type PreAnalysis struct {
@@ -33,8 +38,9 @@ type PreAnalysis struct {
 
 type Result struct {
 	kcommon.Result
-	Warning []Warning `json:"warning"`
-	Info    []Info    `json:"info"`
+	Warning  []Warning         `json:"warning"`
+	Info     []Info            `json:"info"`
+	Metadata map[string]string `json:"metadata"`
 }
 
 type Info struct {

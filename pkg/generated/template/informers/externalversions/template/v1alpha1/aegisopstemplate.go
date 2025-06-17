@@ -19,13 +19,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	templatev1alpha1 "github.com/scitix/aegis/pkg/apis/template/v1alpha1"
+	apistemplatev1alpha1 "github.com/scitix/aegis/pkg/apis/template/v1alpha1"
 	versioned "github.com/scitix/aegis/pkg/generated/template/clientset/versioned"
 	internalinterfaces "github.com/scitix/aegis/pkg/generated/template/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/scitix/aegis/pkg/generated/template/listers/template/v1alpha1"
+	templatev1alpha1 "github.com/scitix/aegis/pkg/generated/template/listers/template/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // AegisOpsTemplates.
 type AegisOpsTemplateInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.AegisOpsTemplateLister
+	Lister() templatev1alpha1.AegisOpsTemplateLister
 }
 
 type aegisOpsTemplateInformer struct {
@@ -71,7 +71,7 @@ func NewFilteredAegisOpsTemplateInformer(client versioned.Interface, namespace s
 				return client.AegisV1alpha1().AegisOpsTemplates(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&templatev1alpha1.AegisOpsTemplate{},
+		&apistemplatev1alpha1.AegisOpsTemplate{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +82,9 @@ func (f *aegisOpsTemplateInformer) defaultInformer(client versioned.Interface, r
 }
 
 func (f *aegisOpsTemplateInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&templatev1alpha1.AegisOpsTemplate{}, f.defaultInformer)
+	return f.factory.InformerFor(&apistemplatev1alpha1.AegisOpsTemplate{}, f.defaultInformer)
 }
 
-func (f *aegisOpsTemplateInformer) Lister() v1alpha1.AegisOpsTemplateLister {
-	return v1alpha1.NewAegisOpsTemplateLister(f.Informer().GetIndexer())
+func (f *aegisOpsTemplateInformer) Lister() templatev1alpha1.AegisOpsTemplateLister {
+	return templatev1alpha1.NewAegisOpsTemplateLister(f.Informer().GetIndexer())
 }

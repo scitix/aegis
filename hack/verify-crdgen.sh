@@ -27,7 +27,7 @@ CRD_OPTIONS="crd:generateEmbeddedObjectMeta=true"
 
 # Download controller-gen locally
 CONTROLLER_GEN="${GOPATH}/bin/controller-gen"
-go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0
+go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.18.0
 
 # Generate CRD
 # api_paths="./pkg/apis/alert/v1alpha1/...;./pkg/apis/rule/v1alpha1/...;./pkg/apis/template/v1alpha1/...;./pkg/apis/diagnose/v1alpha1/..."

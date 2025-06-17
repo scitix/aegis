@@ -19,13 +19,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	rulev1alpha1 "github.com/scitix/aegis/pkg/apis/rule/v1alpha1"
+	apisrulev1alpha1 "github.com/scitix/aegis/pkg/apis/rule/v1alpha1"
 	versioned "github.com/scitix/aegis/pkg/generated/rule/clientset/versioned"
 	internalinterfaces "github.com/scitix/aegis/pkg/generated/rule/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/scitix/aegis/pkg/generated/rule/listers/rule/v1alpha1"
+	rulev1alpha1 "github.com/scitix/aegis/pkg/generated/rule/listers/rule/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // AegisAlertOpsRules.
 type AegisAlertOpsRuleInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.AegisAlertOpsRuleLister
+	Lister() rulev1alpha1.AegisAlertOpsRuleLister
 }
 
 type aegisAlertOpsRuleInformer struct {
@@ -71,7 +71,7 @@ func NewFilteredAegisAlertOpsRuleInformer(client versioned.Interface, namespace 
 				return client.AegisV1alpha1().AegisAlertOpsRules(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&rulev1alpha1.AegisAlertOpsRule{},
+		&apisrulev1alpha1.AegisAlertOpsRule{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +82,9 @@ func (f *aegisAlertOpsRuleInformer) defaultInformer(client versioned.Interface, 
 }
 
 func (f *aegisAlertOpsRuleInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&rulev1alpha1.AegisAlertOpsRule{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisrulev1alpha1.AegisAlertOpsRule{}, f.defaultInformer)
 }
 
-func (f *aegisAlertOpsRuleInformer) Lister() v1alpha1.AegisAlertOpsRuleLister {
-	return v1alpha1.NewAegisAlertOpsRuleLister(f.Informer().GetIndexer())
+func (f *aegisAlertOpsRuleInformer) Lister() rulev1alpha1.AegisAlertOpsRuleLister {
+	return rulev1alpha1.NewAegisAlertOpsRuleLister(f.Informer().GetIndexer())
 }
