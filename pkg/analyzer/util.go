@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"time"
 
 	kcommon "github.com/k8sgpt-ai/k8sgpt/pkg/common"
 	kkubernetes "github.com/k8sgpt-ai/k8sgpt/pkg/kubernetes"
@@ -103,22 +102,6 @@ func FetchNodeFailures(
 	return failures, nil
 }
 
-func WaitPodCleanup(ctx context.Context, client kubernetes.Interface, namespace, podName string) {
-	ticker := time.NewTicker(3 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			_, err := client.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
-			if err != nil && apierrors.IsNotFound(err) {
-				return
-			}
-		}
-	}
-}
 
 func CheckPodStatus(ctx context.Context, client kubernetes.Interface, namespace, podName string) (int, int, error) {
 	maxErrCount := 3

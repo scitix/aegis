@@ -111,8 +111,8 @@ func NewController(kubeclient kubernetes.Interface,
 	timeout time.Duration,
 	backend string,
 	language string,
-	collector_image string,
-	enable_prom bool,
+	collectorImage string,
+	enableProm bool,
 	explain bool,
 	noCache bool,
 ) (*DiagnosisController, error) {
@@ -141,7 +141,7 @@ func NewController(kubeclient kubernetes.Interface,
 		return nil, fmt.Errorf("initialising kubernetes client: %w", err)
 	}
 
-	dignosis, err := NewDiagnosis(client, backend, language, collector_image, enable_prom, noCache, explain, nil)
+	dignosis, err := NewDiagnosis(client, backend, language, collectorImage, enableProm, noCache, explain, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -17,23 +17,24 @@ import (
 	"github.com/scitix/aegis/tools"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
 )
 
 type NodeAnalyzer struct {
-	prometheus      *prom.PromAPI
+	prometheus *prom.PromAPI
 }
 
-func NewNodeAnalyzer(enable_prom bool) NodeAnalyzer {
+func NewNodeAnalyzer(enableProm bool) NodeAnalyzer {
 	var promAPI *prom.PromAPI
-	if enable_prom {
+	if enableProm {
 		promAPI = prom.GetPromAPI()
 	} else {
 		promAPI = nil
 	}
 	return NodeAnalyzer{
-		prometheus:      promAPI,
+		prometheus: promAPI,
 	}
 }
 
@@ -86,7 +87,7 @@ func (n NodeAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 
 	var infos []common.Info
 	// Start collector pod
-	logs, err := StartCollector(a.Context, a.Client, node.Name, a.CollectorImage)
+	logs, err := StartCollector(a.Context, a.Client, node, a.CollectorImage, a.Owner.GetNamespace(), a.Owner)
 	if err != nil {
 		klog.Warningf("Start collector failed: %v", err)
 	} else {
@@ -201,50 +202,53 @@ func nodeLogInfo(nodeName string, logs string) []common.Info {
 	return infos
 }
 
-func StartCollector(ctx context.Context, client *kubernetes.Client, node string, defaultImage string) ([]common.Info, error) {
-	podName := fmt.Sprintf("collector-%s", node)
-	_, err := client.GetClient().CoreV1().Pods(common.Collector_namespace).Get(ctx, podName, metav1.GetOptions{})
-	if err == nil {
-		// delete old pod
-		deletePolicy := metav1.DeletePropagationForeground
-		err = client.GetClient().CoreV1().Pods(common.Collector_namespace).Delete(ctx, podName, metav1.DeleteOptions{PropagationPolicy: &deletePolicy})
-		if err != nil {
-			return nil, fmt.Errorf("error deleting existing collector pod %s: %v", podName, err)
-		}
-	}
-
-	WaitPodCleanup(ctx, client.GetClient(), common.Collector_namespace, podName)
-
-	var pod *corev1.Pod
-
-	// default image
-	tplContent, err := os.ReadFile(common.Collector_job_file)
+func StartCollector(
+	ctx context.Context,
+	client *kubernetes.Client,
+	node *corev1.Node,
+	image string,
+	namespace string,
+	owner metav1.Object,
+) ([]common.Info, error) {
+	collector_pod_yaml := "/collector/collector_node.yaml"
+	tplContent, err := os.ReadFile(collector_pod_yaml)
 	if err != nil {
 		return nil, fmt.Errorf("error reading collector template: %v", err)
 	}
+
 	parameters := map[string]interface{}{
-		"pod_name":        podName,
-		"namespace":       common.Collector_namespace,
-		"collector_image": defaultImage,
-		"node_name":       node,
+		"generateName":   fmt.Sprintf("collector-%s-", node.Name),
+		"namespace":      namespace,
+		"collectorImage": image,
+		"node_name":      node.Name,
 	}
+
 	yamlContent, err := tools.RenderWorkflowTemplate(string(tplContent), parameters)
 	if err != nil {
 		return nil, fmt.Errorf("error rendering collector template: %v", err)
 	}
+
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode([]byte(yamlContent), nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error decoding collector pod: %v", err)
 	}
-	pod = obj.(*corev1.Pod)
 
-	_, err = client.GetClient().CoreV1().Pods(common.Collector_namespace).Create(ctx, pod, metav1.CreateOptions{})
+	pod := obj.(*corev1.Pod)
+	pod.ObjectMeta.OwnerReferences = []metav1.OwnerReference{
+		*metav1.NewControllerRef(owner, schema.GroupVersionKind{
+			Group:   "aegis.io",
+			Version: "v1alpha1",
+			Kind:    "AegisDiagnosis",
+		}),
+	}
+
+	created, err := client.GetClient().CoreV1().Pods(namespace).Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("error creating collector pod: %v", err)
 	}
 
-	ticker := time.NewTicker(time.Duration(10) * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -252,17 +256,16 @@ func StartCollector(ctx context.Context, client *kubernetes.Client, node string,
 		case <-ctx.Done():
 			return nil, fmt.Errorf("context canceled before collector finished")
 		case <-ticker.C:
-			status, _, err := CheckPodStatus(ctx, client.GetClient(), common.Collector_namespace, podName)
+			status, _, err := CheckPodStatus(ctx, client.GetClient(), namespace, created.Name)
 			if err != nil {
 				return nil, err
 			}
-
 			if status == 1 {
-				logs, err := GetPodLogs(ctx, client.GetClient(), common.Collector_namespace, podName)
+				logs, err := GetPodLogs(ctx, client.GetClient(), namespace, created.Name)
 				if err != nil {
 					return nil, fmt.Errorf("get collector logs error: %v", err)
 				}
-				return nodeLogInfo(node, logs), nil
+				return nodeLogInfo(node.Name, logs), nil
 			} else if status != 0 {
 				return nil, fmt.Errorf("collector pod status failed")
 			}

@@ -15,6 +15,7 @@ package common
 
 import (
 	kcommon "github.com/k8sgpt-ai/k8sgpt/pkg/common"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type IAnalyzer interface {
@@ -26,8 +27,9 @@ type Analyzer struct {
 	kcommon.Analyzer
 	Name           string
 	CollectorImage string
-	EnableProm	   bool
+	EnableProm     bool
 	EnablePodLog   *bool
+	Owner          metav1.Object
 }
 
 type PreAnalysis struct {
@@ -52,8 +54,3 @@ type Warning struct {
 	KubernetesDoc string
 	Sensitive     []kcommon.Sensitive
 }
-
-var (
-	Collector_namespace = "monitoring"
-	Collector_job_file  = "/collector/collector_node.yaml"
-)

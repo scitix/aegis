@@ -34,8 +34,8 @@ func NewDiagnosis(
 	kubeClient *kubernetes.Client,
 	backend string,
 	language string,
-	collector_image string,
-	enable_prom bool,
+	collectorImage string,
+	enableProm bool,
 	noCache bool,
 	explain bool,
 	httpHeaders []string,
@@ -44,8 +44,8 @@ func NewDiagnosis(
 	d := &Diagnosis{
 		Client:         kubeClient,
 		Language:       language,
-		CollectorImage: collector_image,
-		EnableProm:     enable_prom,
+		CollectorImage: collectorImage,
+		EnableProm:     enableProm,
 		Explain:        explain,
 		Cache:          c,
 		NoCache:        noCache,
@@ -89,6 +89,7 @@ func (d *Diagnosis) RunDiagnosis(ctx context.Context, diagnosis *diagnosisv1alph
 		Name:           name,
 		CollectorImage: d.CollectorImage,
 		EnableProm:     d.EnableProm,
+		Owner:          diagnosis,
 	}
 
 	factory, ok := d.AnalyzerFactory[kind]
