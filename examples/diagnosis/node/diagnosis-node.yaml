@@ -1,0 +1,9 @@
+apiVersion: aegis.io/v1alpha1
+kind: AegisDiagnosis
+metadata:
+  name: diagnose-node
+  namespace: your-namespace
+spec:
+  object:
+    kind: Node
+    name: your-node

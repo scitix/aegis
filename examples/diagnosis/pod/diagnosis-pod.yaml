@@ -1,0 +1,10 @@
+apiVersion: aegis.io/v1alpha1
+kind: AegisDiagnosis
+metadata:
+  name: diagnose-pod
+  namespace: your-namespace
+spec:
+  object:
+    kind: Pod
+    name: your-pod-name
+    namespace: your-target-namespace
