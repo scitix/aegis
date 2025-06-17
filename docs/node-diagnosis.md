@@ -39,14 +39,28 @@ The following types of diagnostic data are collected:
 
 #### **Info**
 
-* A **Collector Pod** can be launched on the target Node to collect additional system-level information.
-* The Collector Pod runs a user-defined image and script.
-* Logs from the Collector Pod are parsed as *Info* context.
-* By default, AegisDiagnosis uses the built-in image:  
-  `registry-ap-southeast.scitix.ai/k8s/collector:v1.0.0`  
-  located under [`manifests/collector`](../manifests/collector)  
-  with a default shell script [`collect.sh`](../manifests/collector/collect.sh).
-* 👉 See [Collector Pod Guide](#collector-pod-guide) for instructions on providing your own image and logic.
+* A **Collector Pod** is launched on the target Node to collect system-level diagnostic data.
+
+* The Collector Pod runs a container image that includes a diagnostic script (e.g., system info, logs).
+
+* Logs from the container are collected and presented as *Info* in the diagnosis result.
+
+* The collector image is configured **globally** via the Aegis controller's startup arguments.
+
+  Example configuration in `deployment.yaml`:
+
+  ```yaml
+  args:
+    - --diagnosis.collectorImage=myregistry/mycustom-collector:latest
+  ```
+
+* 🧩 The default image used is:
+
+  ```text
+  registry-ap-southeast.scitix.ai/k8s/collector:v1.0.0
+  ```
+
+* 👉 To build and configure your own collector image, refer to the [Collector Pod Guide](#collector-pod-guide).
 
 
 ### 3. AI Prompt Construction
@@ -147,28 +161,29 @@ In this case, the collector ran successfully on the node and captured system log
 
 ## Collector Pod Guide
 
-👉 The Collector Pod mechanism allows users to deploy their own customized Pod for gathering detailed system-level information from Nodes.
+👉 The **Collector Pod** mechanism enables advanced diagnosis by executing a custom script in a Pod on the target Node.
 
-By default, AegisDiagnosis uses an internal collector image, but you can override it with your own container and script for advanced use cases such as specialized log collection, hardware checks, or compliance auditing.
+The Collector image is **globally configured** in the Aegis controller deployment and **not** set per-diagnosis.
 
-### Structure Overview
 
-To use a custom collector, you must provide:
+### 1. Collector Image Configuration
 
-* A **diagnosis CR** (`AegisDiagnosis`) with `collectorConfig` defined
-* A **custom image** that includes the collector logic
-* A **shell script** (e.g., `collect.sh`) as the entrypoint
+Edit your `Deployment` to specify the collector image using the flag `--diagnosis.collectorImage`.
 
-You can find a working example under:
-
-```
-examples/diagnosis/node/collector/
-├── collect.sh
-├── Dockerfile.collector
-└── diagnosis-node-custom-collector.yaml
+```yaml
+args:
+  - --diagnosis.collectorImage=myregistry/mycustom-collector:latest
 ```
 
-### 📜 1. Sample Script (`collect.sh`)
+### 2. Collector Image Requirements
+
+You must provide a valid container image that:
+
+* Contains a shell script as the entrypoint (e.g., `collect.sh`)
+* Includes essential shell tools (`bash`, `coreutils`, `grep`, etc.)
+* Writes log output to a standard location (e.g., `/var/log/custom/diagnosis.log`)
+
+### 3. Example: `collect.sh`
 
 ```bash
 #!/bin/bash
@@ -187,9 +202,7 @@ log "- Timestamp: $(date)"
 log "- Hostname: $(hostname)"
 ```
 
-This script prints a simple success log with timestamp and hostname, and stores it to the mounted log path.
-
-### 🐳 2. Dockerfile (`Dockerfile.collector`)
+### 4. Example: Dockerfile
 
 ```dockerfile
 FROM ubuntu:22.04
@@ -203,40 +216,9 @@ RUN chmod +x /collector/collect.sh
 CMD ["/bin/bash", "/collector/collect.sh"]
 ```
 
-This builds a lightweight container with basic shell utilities and includes the custom script.
-
-Build it locally:
+Build & push:
 
 ```bash
 docker build -f Dockerfile.collector -t myregistry/mycustom-collector:latest .
 docker push myregistry/mycustom-collector:latest
 ```
-
-### 📦 3. AegisDiagnosis YAML (`diagnosis-node-custom-collector.yaml`)
-
-```yaml
-apiVersion: aegis.io/v1alpha1
-kind: AegisDiagnosis
-metadata:
-  name: node-diagnosis-sample
-spec:
-  object:
-    kind: Node
-    name: node-01
-  timeout: "10m"
-  collectorConfig:
-    image: myregistry/mycustom-collector:latest
-    command:
-      - "/bin/bash"
-      - "-c"
-      - "/collector/collect.sh"
-    volumeMounts:
-      - name: custom-logs
-        mountPath: /var/log/custom
-    volumes:
-      - name: custom-logs
-        hostPath:
-          path: /var/log/custom
-```
-
-This instructs AegisDiagnosis to launch a Pod on the target node using your image and command. Output logs written to `/var/log/custom` on the node will be picked up and parsed as part of the diagnosis `Info` section.

@@ -57,7 +57,7 @@ func NewDiagnosis(
 			return analyzer.NewPodAnalyzer(d.EnableProm)
 		},
 		"Node": func(diag *diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer {
-			return analyzer.NewNodeAnalyzer(d.EnableProm, diag.Spec.CollectorConfig)
+			return analyzer.NewNodeAnalyzer(d.EnableProm)
 		},
 	}
 
