@@ -159,6 +159,26 @@ In this case, the collector ran successfully on the node and captured system log
 
 ---
 
+## Custom Prompt Support
+
+Users can **customize the diagnosis prompt** to control how the analysis result is structured and phrased.
+
+### Available Variables
+
+You can reference the following variables in your Node diagnosis prompt template:
+
+
+* `{{ .ErrorInfo }}` — Summary of abnormal indicators
+* `{{ .EventInfo }}` — Related Kubernetes events for the node, useful for historical context
+* `{{ .LogInfo }}` — Relevant pod logs on the node, optional but helpful for root cause analysis
+
+
+These fields are automatically populated and passed into the template during a Node diagnosis task.
+
+➡️ For details on how to customize prompts, see the [Custom Prompt Guide](./diagnosis-custom-prompt-guide.md)
+
+---
+
 ## Collector Pod Guide
 
 👉 The **Collector Pod** mechanism enables advanced diagnosis by executing a custom script in a Pod on the target Node.

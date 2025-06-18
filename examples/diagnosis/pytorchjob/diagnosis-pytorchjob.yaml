@@ -1,0 +1,10 @@
+apiVersion: aegis.io/v1alpha1
+kind: AegisDiagnosis
+metadata:
+  name: pytorchjob-sample
+  namespace: monitoring
+spec:
+  object:
+    kind: PytorchJob
+    name: ptjob-llama2-13b-tp2-pp1-np8-gbs256-demo
+    namespace: default

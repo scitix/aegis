@@ -143,6 +143,24 @@ Status:
 
 ---
 
+## 自定义提示词支持（Custom Prompt Support）
+
+### 可用变量（Available Variables）
+
+在 Node 类型的诊断提示词模板中，您可以使用如下变量：
+
+
+* `{{ .ErrorInfo }}` — 异常指标信息摘要
+* `{{ .EventInfo }}` — 节点相关的 Kubernetes 告警事件（Events），用于参考历史波动、状态变更等
+* `{{ .LogInfo }}` — 节点相关 Pod 的关键日志片段，可辅助理解当前状态或故障背景
+
+
+以上字段在 Node 诊断任务中由系统预先填充，并传递给自定义提示词模板使用。
+
+➡️ 详见完整自定义机制说明：[自定义提示词指南（Custom Prompt Guide）](./diagnosis-custom-prompt-guide_CN.md)
+
+---
+
 ## Collector Pod Guide
 
 **Collector Pod** 方案支持在节点上启动自定义镜像和脚本执行诊断分析。

@@ -1,5 +1,7 @@
 # Aegis - Cloud-Native AIOps Framework for Kubernetes
 
+**📘 For the Chinese version, please refer to [README_CN.md](./README_CN.md)**
+
 **Aegis** is an event-driven, cloud-native automated operations system running on Kubernetes. It is designed to automatically respond to and handle various abnormal states in the cluster. By connecting alerts to standardized operations (SOPs), it significantly improves operational efficiency and failure response speed. Through the integration of custom resources (CRDs) and workflow engines (e.g., Argo Workflows), Aegis forms a complete closed-loop from alert reception, rule matching, automatic template rendering, workflow execution, to status feedback. Additional features include AI-HPC cluster diagnostics and periodic node health checks.
 
 ![Aegis Overview](./docs/assets/aegis-architecture.png)
@@ -56,7 +58,10 @@ Planned support:
 
 * **Argo Workflow**
 
-> This feature also provides a mechanism that enables third-party systems to trigger diagnoses for these objects by creating corresponding resources. Detailed instructions can be found [here](docs/diagnosis-integration-guide.md).
+> **Additional Capabilities:**
+>
+> * 🔁 *Third-party systems integration:* Diagnoses can be triggered externally by creating `AegisDiagnosis` CRs. See the [Diagnosis Integration Guide](docs/diagnosis-integration-guide.md) for detailed instructions.
+> * 🧠 *Custom LLM prompt support:* You can customize diagnosis prompts for different object types by configuring a `ConfigMap`. See the [Custom Prompt Guide](docs/diagnosis-custom-prompt-guide.md) to learn how.
 
 
 ## Cluster Health Checks (Experimental)
