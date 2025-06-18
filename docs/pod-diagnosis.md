@@ -188,3 +188,13 @@ Status:
 
 4. **Monitor Logs and Status**
    Ensure the new Pod starts correctly and the permission issue is resolved.
+
+
+## Custom Prompt Support
+
+Users can **customize the diagnosis prompt** to control how the analysis result is structured and phrased.
+
+The available variables for Pod diagnosis prompts are the same as those used in [Node diagnosis](./node-diagnosis.md#custom-prompt-support).
+Please refer to that section for details.
+
+➡️ For instructions on defining a custom prompt, see the [Custom Prompt Guide](./diagnosis-custom-prompt-guide.md).

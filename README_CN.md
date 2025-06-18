@@ -54,6 +54,11 @@ Aegis 支持将告警源（现支持通过AI解析来自不同告警源的告警
 
 - Argo Workflow
 
+> **附加能力：**
+>
+> * 🔁 *第三方系统集成：* 通过创建 `AegisDiagnosis` 自定义资源（CR），外部系统可以触发诊断任务。详见 [诊断集成指南](docs/diagnosis-integration-guide_CN.md)。
+> * 🧠 *自定义大模型提示词支持：* 可通过配置 `ConfigMap` 来为不同类型的对象定制诊断提示词。详见 [自定义提示词指南](docs/diagnosis-custom-prompt-guide_CN.md)。
+
 ## 集群巡检（Experimental）
 
 通过 `AegisNodeHealthCheck` 和 `AegisClusterHealthCheck` CRD 标准化定义节点巡检和集群巡检，支持提供自定义一系列巡检脚本，满足从 Pod 视角执行脚本从而巡检节点需求。

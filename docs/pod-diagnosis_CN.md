@@ -192,3 +192,10 @@ Status:
 4. **监控新 Pod 状态与日志**
    确保新 Pod 启动后，权限问题已解决。
 
+## 自定义提示词支持（Custom Prompt Support）
+
+Pod 诊断支持**与 Node 诊断相同的提示词自定义机制和变量引用方式**。
+
+请参考 [Node 诊断提示词说明](./node-diagnosis_CN.md#自定义提示词支持) 获取详细说明。
+
+➡️ 有关如何定义自定义提示词，请参见 [自定义提示词指南](./diagnosis-custom-prompt-guide_CN.md)。

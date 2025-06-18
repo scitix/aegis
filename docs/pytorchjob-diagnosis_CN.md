@@ -1,23 +1,5 @@
 # PyTorchJob 诊断功能
 
-## 目录
-
-* [背景](#背景)
-* [PyTorchJob 定义示例](#pytorchjob-定义示例)
-* [诊断流程](#诊断流程)
-* [典型案例](#典型案例)
-* [自定义 Prompt 支持](#自定义-prompt-支持)
-
-  * [机制](#机制)
-  * [如何提供自定义 Prompt](#如何提供自定义-prompt)
-  * [可用变量](#可用变量)
-* [诊断结果格式](#诊断结果格式)
-* [结果示例](#结果示例)
-* [Prompt 模板版本管理](#prompt-模板版本管理)
-* [总结](#总结)
-
----
-
 ## 背景
 
 在基于 Kubernetes 的机器学习平台中，**Kubeflow PyTorchJob** 被广泛用于管理分布式训练任务。
@@ -78,68 +60,66 @@ status:
 
 ---
 
-## 典型案例
+## 诊断用例：使用自定义 Prompt 对 PyTorchJob 进行诊断
 
-1. **Job 已创建但无 Pod 运行**
-   → 调度失败，因 GPU 资源不足。
+这是一个使用**自定义 Prompt 模板**对 PyTorchJob 进行诊断的示例。
 
-2. **Job 创建 → 运行 → 失败**
-   → Master 副本因 OOM（退出码 137）失败。
+* 📄 自定义 Prompt 定义在 [`deploy/prompt-config.yaml`](../deploy/prompt-config.yaml)
+* 📄 诊断资源定义在 [`examples/diagnosis/pytorchjob/diagnosis-pytorchjob.yaml`](../examples/diagnosis/pytorchjob/diagnosis-pytorchjob.yaml)
 
-3. **Job 长时间 Pending**
-   → 无匹配节点，PodScheduled=False，事件显示资源不足。
+执行诊断：
 
-4. **Job 成功**
-   → 健康，无异常。
-
----
-
-## 自定义 Prompt 支持
-
-用户可通过 **自定义诊断 Prompt** 控制分析结果的结构与表述风格。
-
-### 机制
-
-* 系统优先查找名为 `aegis-prompts` 的 ConfigMap 中 `/aegis/prompts/` 下的 **覆盖 Prompt**。
-* 若存在覆盖 Prompt，则使用该 Prompt；否则使用内置默认 Prompt。
-
-### 如何提供自定义 Prompt
-
-示例 ConfigMap：
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: aegis-prompts
-data:
-  pytorchjob.tmpl: |
-    You are a Kubernetes + Kubeflow diagnostic expert...
-    Job Name: {{ index .Metadata "JobName" }}
-    Job Status: {{ index .Metadata "JobStatus" }}
-    ...
+```bash
+kubectl apply -f examples/diagnosis/pytorchjob/diagnosis-pytorchjob.yaml
+kubectl get aegisdiagnosises.aegis.io -n monitoring --watch
 ```
 
-### 可用变量
+诊断完成后查看结果：
 
-模板中可引用：
+```bash
+kubectl describe -n monitoring aegisdiagnosises.aegis.io pytorchjob-test
+```
 
-* `.Metadata["JobName"]` — Job 名称
-* `.Metadata["JobStatus"]` — Job 状态（Succeeded / Failed / Running / Created）
-* `.Metadata["LauncherStatus"]` — Launcher 副本状态
-* `.Metadata["MasterExpected"]`、`.Metadata["MasterCreatedCount"]`
-* `.Metadata["WorkerExpected"]`、`.Metadata["WorkerCreatedCount"]`
-* `.Metadata["MasterDiagnosis"]` — Master Pod 诊断摘要
-* `.Metadata["WorkerDiagnosis"]` — Worker Pod 诊断摘要
-
-以及：
-
-* `.ErrorInfo` — 提取的错误信息
-* `.EventInfo` — 相关 Kubernetes 事件
-* `.LogInfo` — 相关 Pod 日志
+✅ 此示例展示了如何通过 ConfigMap 使用自定义模板覆盖系统默认 Prompt。
+💡 即使不配置自定义 Prompt，Aegis 仍会使用**内置默认 Prompt**正常工作并生成诊断报告。
 
 ---
 
+## 自定义提示词支持（Custom Prompt Support）
+
+用户可以**自定义诊断提示词（prompt）**，以控制分析结果的结构和表达方式。
+
+### 可用变量及模板用法
+
+在模板中，您可以使用如下方式引用变量，例如：
+
+```gotemplate
+{{ index .Metadata "JobName" }}
+```
+
+### `.Metadata` 字段
+
+这些字段用于描述 PyTorchJob 的基本状态与角色信息：
+
+* `{{ index .Metadata "JobName" }}` — 任务名称
+* `{{ index .Metadata "JobStatus" }}` — 任务状态（Succeeded / Failed / Running / Created）
+* `{{ index .Metadata "LauncherStatus" }}` — Launcher 副本的状态
+* `{{ index .Metadata "MasterExpected" }}` — Master 预期副本数
+* `{{ index .Metadata "MasterCreatedCount" }}` — Master 实际已创建副本数
+* `{{ index .Metadata "WorkerExpected" }}` — Worker 预期副本数
+* `{{ index .Metadata "WorkerCreatedCount" }}` — Worker 实际已创建副本数
+* `{{ index .Metadata "MasterDiagnosis" }}` — Master Pod 的诊断摘要
+* `{{ index .Metadata "WorkerDiagnosis" }}` — Worker Pods 的诊断摘要
+
+### 其他字段
+
+这些字段包含诊断过程中提取的异常、事件和日志信息：
+
+* `{{ .ErrorInfo }}` — 提取的错误信息摘要
+* `{{ .EventInfo }}` — 相关 Kubernetes 告警事件
+* `{{ .LogInfo }}` — Pod 级别的关键日志片段
+
+➡️ 使用方式详见 [自定义提示词指南（Custom Prompt Guide）](./diagnosis-custom-prompt-guide_CN.md)。
 ## 诊断结果格式
 
 诊断输出采用结构化格式：

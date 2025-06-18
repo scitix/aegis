@@ -1,22 +1,5 @@
 # PyTorchJob Diagnostic Feature
 
-## Table of Contents
-
-* [Background](#background)
-* [PyTorchJob Definition Example](#pytorchjob-definition-example)
-* [Diagnostic Process](#diagnostic-process)
-* [Example Cases](#example-cases)
-* [Custom Prompt Support](#custom-prompt-support)
-
-  * [Mechanism](#mechanism)
-  * [How to provide a custom prompt](#how-to-provide-a-custom-prompt)
-  * [Available Variables](#available-variables)
-* [Result Format](#result-format)
-* [Example Output](#example-output)
-* [Prompt Template Versioning](#prompt-template-versioning)
-* [Summary](#summary)
-
----
 
 ## Background
 
@@ -78,19 +61,30 @@ The detailed process is illustrated in the figure below:
 
 ---
 
-## Example Cases
+## Example Use Case: PyTorchJob Diagnosis with Custom Prompt
 
-1. **Job Created but no pods running**
-   → Scheduling failure due to insufficient GPUs.
+This is an example of running a diagnosis on a PyTorchJob using a **custom prompt template**.
 
-2. **Job Created → Running → Failed**
-   → Master replica failed due to OOM (exit code 137).
+* 📄 Custom prompt is defined in [`deploy/prompt-config.yaml`](../deploy/prompt-config.yaml)
+* 📄 Diagnosis CR is defined in [`examples/diagnosis/pytorchjob/diagnosis-pytorchjob.yaml`](../examples/diagnosis/pytorchjob/diagnosis-pytorchjob.yaml)
 
-3. **Job long-term Pending**
-   → No matching nodes found, PodScheduled=False, events indicate insufficient resources.
+To run the diagnosis:
 
-4. **Job succeeded**
-   → Healthy, no issues detected.
+```bash
+kubectl apply -f examples/diagnosis/pytorchjob/diagnosis-pytorchjob.yaml
+kubectl get aegisdiagnosises.aegis.io -n monitoring --watch
+```
+
+Once completed, you can view the result:
+
+```bash
+kubectl describe -n monitoring aegisdiagnosises.aegis.io pytorchjob-test
+```
+
+✅ This demonstrates how to override the default system prompt using a custom template via ConfigMap.
+
+💡 Even without a custom prompt, Aegis will still work with its **built-in default prompt** for each supported diagnosis type.
+
 
 ---
 
@@ -98,46 +92,37 @@ The detailed process is illustrated in the figure below:
 
 Users can **customize the diagnosis prompt** to control how the analysis result is structured and phrased.
 
-### Mechanism
+### Available Variables and Usage in Templates
 
-* The system first looks for an **override prompt** in a ConfigMap named `aegis-prompts`, under `/aegis/prompts/`.
-* If an override prompt is provided, it is used instead of the built-in default prompt.
-* If not, the default system prompt is used.
+In your prompt template, you can reference variables using the following syntax:
 
-### How to provide a custom prompt
-
-Example ConfigMap:
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: aegis-prompts
-data:
-  pytorchjob.tmpl: |
-    You are a Kubernetes + Kubeflow diagnostic expert...
-    Job Name: {{ index .Metadata "JobName" }}
-    Job Status: {{ index .Metadata "JobStatus" }}
-    ...
+```gotemplate
+{{ index .Metadata "JobName" }}
 ```
 
-### Available Variables
+### `.Metadata` Fields
 
-In the template, you can reference:
+These fields describe the basic information and replica status of a PyTorchJob:
 
-* `.Metadata["JobName"]` — Job name
-* `.Metadata["JobStatus"]` — Job status (Succeeded / Failed / Running / Created)
-* `.Metadata["LauncherStatus"]` — Launcher replica status
-* `.Metadata["MasterExpected"]`, `.Metadata["MasterCreatedCount"]`
-* `.Metadata["WorkerExpected"]`, `.Metadata["WorkerCreatedCount"]`
-* `.Metadata["MasterDiagnosis"]` — Master pod diagnosis summary
-* `.Metadata["WorkerDiagnosis"]` — Worker pod diagnosis summary
+* `{{ index .Metadata "JobName" }}` — Job name
+* `{{ index .Metadata "JobStatus" }}` — Job status (e.g., Succeeded / Failed / Running / Created)
+* `{{ index .Metadata "LauncherStatus" }}` — Status of the launcher replica
+* `{{ index .Metadata "MasterExpected" }}` — Expected number of Master replicas
+* `{{ index .Metadata "MasterCreatedCount" }}` — Actually created Master replicas
+* `{{ index .Metadata "WorkerExpected" }}` — Expected number of Worker replicas
+* `{{ index .Metadata "WorkerCreatedCount" }}` — Actually created Worker replicas
+* `{{ index .Metadata "MasterDiagnosis" }}` — Summary diagnosis for Master Pod
+* `{{ index .Metadata "WorkerDiagnosis" }}` — Summary diagnosis for Worker Pods
 
-And:
+### Other Fields
 
-* `.ErrorInfo` — Extracted error information
-* `.EventInfo` — Related Kubernetes events
-* `.LogInfo` — Relevant pod logs
+These fields provide additional information extracted during the diagnosis:
+
+* `{{ .ErrorInfo }}` — Extracted error information
+* `{{ .EventInfo }}` — Related Kubernetes events
+* `{{ .LogInfo }}` — Relevant logs from related pods
+
+➡️ For full instructions on using custom prompts, see the [Custom Prompt Guide](./diagnosis-custom-prompt-guide.md).
 
 ---
 

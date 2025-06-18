@@ -64,9 +64,9 @@ spec:
         - name: llm-config
           mountPath: /aegis/config/
           readOnly: true
-        - name: prompt-config
-          mountPath: /aegis/prompt/
-          readOnly: true
+        # - name: prompt-config
+        #   mountPath: /aegis/prompt/
+        #   readOnly: true
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       serviceAccount: aegis
@@ -76,7 +76,7 @@ spec:
         configMap:
           defaultMode: 0777
           name: aegis-llm
-      - name: prompt-config
-        configMap:
-          defaultMode: 0777
-          name: aegis-prompt
+      # - name: prompt-config
+      #   configMap:
+      #     defaultMode: 0777
+      #     name: aegis-prompt
