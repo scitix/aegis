@@ -2,7 +2,7 @@
 
 Aegis 是一个运行于 Kubernetes 平台上基于告警事件驱动的云原生自动化运维系统，旨在自动响应并处理集群中的各种异常状态，将告警与运维标准操作流程（SOP）衔接，显著提升运维效率与故障响应速度。通过自定义资源（CRD）与工作流引擎（如 Argo Workflows）集成，实现了从告警接收、规则匹配、自动渲染、执行运维工作流到状态反馈的完整闭环处理。除此之外还包括 AI-HPC 集群故障诊断和集群节点巡检功能。
 
-![Aegis 系统架构图](./docs/aegis.png)
+![Aegis 系统架构图](./docs/assets/aegis-architecture.png)
 
 # 目录
 
@@ -44,15 +44,15 @@ Aegis 支持将告警源（现支持通过AI解析来自不同告警源的告警
 
 通过 `AegisDiagnosis` CRD 标准化定义诊断对象，支持基于 LLM 的诊断总结。当前支持的诊断对象类型：
 
-* [Node](docs/node-diagnosis_CN.md)
+- [Node](docs/node-diagnosis_CN.md)
 
   > ⚠️ **在使用 Node 诊断功能前，请确保 Collector Pod 镜像已正确配置。Aegis 提供了默认镜像，但也支持通过 controller 启动参数指定自定义镜像。详见 [Collector Pod 使用指南](docs/node-diagnosis_CN.md#collector-pod-guide)。**
-* [Pod](docs/pod-diagnosis_CN.md)
+- [Pod](docs/pod-diagnosis_CN.md)
+- [PytorchJob](docs/pytorchjob-diagnosis_CN.md) (as defined by [Kubeflow](https://www.kubeflow.org/docs/components/trainer/legacy-v1/user-guides/pytorch/))
 
 待支持的诊断对象类型：
 
 - Argo Workflow
-- PytorchJob
 
 ## 集群巡检（Experimental）
 
