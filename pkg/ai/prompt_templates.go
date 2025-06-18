@@ -154,3 +154,34 @@ models.Alert 包含如下字段：
 
 请只返回 JSON 格式的 models.Alert 对象。
 `
+
+const pytorchJobPromptTemplate = `
+你是一个专业的 Kubernetes + Kubeflow 分布式训练故障诊断专家，以下是一个 PyTorchJob 的详细信息。请你判断该任务是否存在异常，并用中文给出诊断建议。
+
+该 PyTorchJob 是通过 Kubeflow Training Operator 启动的分布式深度学习任务，包含 Master 和多个 Worker Pod。
+
+【任务基本信息】
+Job 名称: {{ index .Metadata "JobName" }}
+Job 状态: {{ index .Metadata "JobStatus" }}
+
+【任务状态诊断】
+异常摘要（来自 PyTorchJob 的 conditions 或状态字段）: --- {{.ErrorInfo}} ---
+Job历史告警事件： --- {{.EventInfo}} ---
+
+【副本角色信息】
+- Master 需求数量: {{ index .Metadata "MasterExpected" }}, 创建数量: {{ index .Metadata "MasterCreatedCount" }}
+- Worker 需求数量: {{ index .Metadata "WorkerExpected" }}, 创建数量: {{ index .Metadata "WorkerCreatedCount" }}
+
+【关键组件诊断（基于 Pod 层分析）】
+- Master Pod 分析摘要:
+{{ index .Metadata "MasterDiagnosis" }}
+
+- Worker Pod 分析摘要:
+{{ index .Metadata "WorkerDiagnosis" }}
+
+请按以下结构化格式返回诊断结论，不超过 1000 字：
+Healthy: {Yes / No，表示是否存在故障，请优先判断job 状态，如果成功直接说明即可，无需后续解释}
+Error: {一句话简洁总结该任务最可能的失败原因}
+Analysis: {结合任务状态、Pod 状态、事件、日志等，简要分析故障根因，注意需要指明Master、Worker的需求数和实际创建数。如果日志中出现了明确的报错信息（如 Traceback、OOM、断言失败、类型错误、环境变量缺失等），请摘录 1~3 行最关键的日志片段展示出来，使用 **markdown 代码块** 包裹（即用三个反引号包裹日志片段）
+Solution: {给出清晰、可执行的分步骤修复建议,如果提供命令，尽可能的具体一些}
+`

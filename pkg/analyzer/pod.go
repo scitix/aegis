@@ -342,3 +342,35 @@ func (p PodAnalyzer) Prompt(result *common.Result) (prompt string) {
 	}
 	return prompt
 }
+
+func (p PodAnalyzer) Summarize(result *common.Result) string {
+	if result == nil {
+		return "Unable to analyze this Pod. No result data was returned."
+	}
+
+	errorInfo := ""
+	for _, e := range result.Error {
+		errorInfo += e.Text + "\n"
+	}
+
+	eventInfo := ""
+	for _, e := range result.Warning {
+		eventInfo += e.Text + "\n"
+	}
+
+	logInfo := ""
+	for _, e := range result.Info {
+		logInfo += e.Text + "\n"
+	}
+
+	if strings.TrimSpace(errorInfo) == "" && strings.TrimSpace(eventInfo) == "" && strings.TrimSpace(logInfo) == "" {
+        return "No issues detected. Pod is running and healthy."
+    }
+
+	return fmt.Sprintf(
+		"Errors:\n%s\nEvents:\n%s\nLogs:\n%s",
+		strings.TrimSpace(errorInfo),
+		strings.TrimSpace(eventInfo),
+		strings.TrimSpace(logInfo),
+	)
+}

@@ -34,7 +34,7 @@ func FetchEvents(
 		switch objectKind {
 		case "Pod":
 			return prom.GetEventWithRange(ctx, "Pod", namespace, name, eventType, timeRange)
-		case "Node", "PyTorchJob", "Workflow": // GetEvent
+		case "Node", "PyTorchJob": // GetEvent
 			return prom.GetEvent(ctx, objectKind, namespace, name, eventType)
 		default:
 			return nil, fmt.Errorf("unsupported objectKind for Prometheus: %s", objectKind)

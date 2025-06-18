@@ -65,8 +65,9 @@ type AegisDiagnosisSpec struct {
 type DiagnosisObjectKind string
 
 const (
-	NodeKind DiagnosisObjectKind = "Node"
-	PodKind  DiagnosisObjectKind = "Pod"
+	NodeKind       DiagnosisObjectKind = "Node"
+	PodKind        DiagnosisObjectKind = "Pod"
+	PytorchJobKind DiagnosisObjectKind = "PytorchJob"
 )
 
 type AegisDiagnosisObject struct {

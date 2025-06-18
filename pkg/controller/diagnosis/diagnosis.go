@@ -14,24 +14,28 @@ import (
 	"github.com/scitix/aegis/pkg/analyzer/common"
 	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
 	"k8s.io/klog/v2"
+
+	kfclientset "github.com/kubeflow/training-operator/pkg/client/clientset/versioned"
 )
 
 type Diagnosis struct {
-	Client          *kubernetes.Client
-	Language        string
-	CollectorImage  string
-	EnableProm      bool
-	AIClient        kai.IAI
-	AIFactory       ai.AIProviderFactory
-	Cache           *cache.Cache
-	NoCache         bool
-	Explain         bool
-	AIProvider      string
-	AnalyzerFactory map[string]func(*diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer
+	Client           *kubernetes.Client
+	PytorchJobClient kfclientset.Interface
+	Language         string
+	CollectorImage   string
+	EnableProm       bool
+	AIClient         kai.IAI
+	AIFactory        ai.AIProviderFactory
+	Cache            *cache.Cache
+	NoCache          bool
+	Explain          bool
+	AIProvider       string
+	AnalyzerFactory  map[string]func(*diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer
 }
 
 func NewDiagnosis(
 	kubeClient *kubernetes.Client,
+	ptClient kfclientset.Interface,
 	backend string,
 	language string,
 	collectorImage string,
@@ -42,14 +46,15 @@ func NewDiagnosis(
 ) (*Diagnosis, error) {
 	c := cache.New(10*time.Minute, 20*time.Minute)
 	d := &Diagnosis{
-		Client:         kubeClient,
-		Language:       language,
-		CollectorImage: collectorImage,
-		EnableProm:     enableProm,
-		Explain:        explain,
-		Cache:          c,
-		NoCache:        noCache,
-		AIFactory:      &ai.DefaultFactory{},
+		Client:           kubeClient,
+		PytorchJobClient: ptClient,
+		Language:         language,
+		CollectorImage:   collectorImage,
+		EnableProm:       enableProm,
+		Explain:          explain,
+		Cache:            c,
+		NoCache:          noCache,
+		AIFactory:        &ai.DefaultFactory{},
 	}
 
 	d.AnalyzerFactory = map[string]func(*diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer{
@@ -58,6 +63,9 @@ func NewDiagnosis(
 		},
 		"Node": func(diag *diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer {
 			return analyzer.NewNodeAnalyzer(d.EnableProm)
+		},
+		"PytorchJob": func(_ *diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer {
+			return analyzer.NewPytorchJobAnalyzer(d.EnableProm, d.PytorchJobClient)
 		},
 	}
 
