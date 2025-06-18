@@ -114,6 +114,16 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - pytorchjobs
+  verbs:
+  - create
+  - update
+  - get
+  - list
+  - watch
 ---
 apiVersion: v1
 kind: ServiceAccount

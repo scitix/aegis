@@ -22,6 +22,7 @@ import (
 	"github.com/scitix/aegis/pkg/controller"
 
 	kKubernetes "github.com/k8sgpt-ai/k8sgpt/pkg/kubernetes"
+	kfclientset "github.com/kubeflow/training-operator/pkg/client/clientset/versioned"
 	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
 	diagnosisclientset "github.com/scitix/aegis/pkg/generated/diagnosis/clientset/versioned"
 	diagnosisInformer "github.com/scitix/aegis/pkg/generated/diagnosis/informers/externalversions/diagnosis/v1alpha1"
@@ -141,7 +142,12 @@ func NewController(kubeclient kubernetes.Interface,
 		return nil, fmt.Errorf("initialising kubernetes client: %w", err)
 	}
 
-	dignosis, err := NewDiagnosis(client, backend, language, collectorImage, enableProm, noCache, explain, nil)
+	ptClient, err := kfclientset.NewForConfig(client.Config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create PyTorchJob client: %w", err)
+	}
+
+	dignosis, err := NewDiagnosis(client, ptClient, backend, language, collectorImage, enableProm, noCache, explain, nil)
 	if err != nil {
 		return nil, err
 	}

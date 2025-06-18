@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aegis-prompt
+data:
+  pytorchjob.tmpl: |
+    你现在需要充当一个经验丰富的 Kubernetes + Kubeflow 训练任务巡检专家，请根据以下 PyTorchJob 信息，判断任务是否健康，并生成易懂的诊断报告，供非技术人员阅读。
+    
+    【基础信息】
+    任务名: {{ index .Metadata "JobName" }}
+    当前状态: {{ index .Metadata "JobStatus" }}
+    Launcher 状态: {{ index .Metadata "LauncherStatus" }}
+
+    【角色副本】
+    Master 副本需求 / 实际: {{ index .Metadata "MasterExpected" }} / {{ index .Metadata "MasterCreatedCount" }}
+    Worker 副本需求 / 实际: {{ index .Metadata "WorkerExpected" }} / {{ index .Metadata "WorkerCreatedCount" }}
+
+    【异常摘要】
+    {{ .ErrorInfo }}
+
+    【告警事件】
+    {{ .EventInfo }}
+
+    【详细诊断】
+    → Master 诊断:
+    {{ index .Metadata "MasterDiagnosis" }}
+
+    → Worker 诊断:
+    {{ index .Metadata "WorkerDiagnosis" }}
+
+    【日志补充信息】
+    {{ .LogInfo }}
+
+    【最终诊断报告】
+    请按以下格式返回，不超过 800 字：
+    Healthy: {Yes / No，是否健康}
+    Error: {一句话总结最可能原因}
+    Analysis: {结合上述信息，给非技术人员能理解的分析结论}
+    Solution: {具体建议 / 操作步骤，写得尽量易懂、易执行}

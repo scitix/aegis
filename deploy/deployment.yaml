@@ -29,6 +29,7 @@ spec:
         - --http-port=8080
         - --enable-leader-election=true
         - --election-id=aegis
+        - --config=/aegis/config/llm-config.yaml
         - --alert.enable=true
         - --alert.publish-namespace=monitoring
         - --alert.system-parameters=cluster:dev
@@ -59,7 +60,23 @@ spec:
           protocol: TCP
         securityContext:
           privileged: false
+        volumeMounts:
+        - name: llm-config
+          mountPath: /aegis/config/
+          readOnly: true
+        - name: prompt-config
+          mountPath: /aegis/prompt/
+          readOnly: true
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       serviceAccount: aegis
       serviceAccountName: aegis
+      volumes:
+      - name: llm-config
+        configMap:
+          defaultMode: 0777
+          name: aegis-llm
+      - name: prompt-config
+        configMap:
+          defaultMode: 0777
+          name: aegis-prompt
