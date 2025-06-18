@@ -19,13 +19,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
+	apisdiagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
 	versioned "github.com/scitix/aegis/pkg/generated/diagnosis/clientset/versioned"
 	internalinterfaces "github.com/scitix/aegis/pkg/generated/diagnosis/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/scitix/aegis/pkg/generated/diagnosis/listers/diagnosis/v1alpha1"
+	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/generated/diagnosis/listers/diagnosis/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // AegisDiagnosises.
 type AegisDiagnosisInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.AegisDiagnosisLister
+	Lister() diagnosisv1alpha1.AegisDiagnosisLister
 }
 
 type aegisDiagnosisInformer struct {
@@ -71,7 +71,7 @@ func NewFilteredAegisDiagnosisInformer(client versioned.Interface, namespace str
 				return client.AegisV1alpha1().AegisDiagnosises(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&diagnosisv1alpha1.AegisDiagnosis{},
+		&apisdiagnosisv1alpha1.AegisDiagnosis{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +82,9 @@ func (f *aegisDiagnosisInformer) defaultInformer(client versioned.Interface, res
 }
 
 func (f *aegisDiagnosisInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&diagnosisv1alpha1.AegisDiagnosis{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisdiagnosisv1alpha1.AegisDiagnosis{}, f.defaultInformer)
 }
 
-func (f *aegisDiagnosisInformer) Lister() v1alpha1.AegisDiagnosisLister {
-	return v1alpha1.NewAegisDiagnosisLister(f.Informer().GetIndexer())
+func (f *aegisDiagnosisInformer) Lister() diagnosisv1alpha1.AegisDiagnosisLister {
+	return diagnosisv1alpha1.NewAegisDiagnosisLister(f.Informer().GetIndexer())
 }

@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/scitix/aegis/pkg/apis/rule/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	rulev1alpha1 "github.com/scitix/aegis/pkg/apis/rule/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // AegisAlertOpsRuleLister helps list AegisAlertOpsRules.
@@ -30,7 +30,7 @@ import (
 type AegisAlertOpsRuleLister interface {
 	// List lists all AegisAlertOpsRules in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AegisAlertOpsRule, err error)
+	List(selector labels.Selector) (ret []*rulev1alpha1.AegisAlertOpsRule, err error)
 	// AegisAlertOpsRules returns an object that can list and get AegisAlertOpsRules.
 	AegisAlertOpsRules(namespace string) AegisAlertOpsRuleNamespaceLister
 	AegisAlertOpsRuleListerExpansion
@@ -38,25 +38,17 @@ type AegisAlertOpsRuleLister interface {
 
 // aegisAlertOpsRuleLister implements the AegisAlertOpsRuleLister interface.
 type aegisAlertOpsRuleLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*rulev1alpha1.AegisAlertOpsRule]
 }
 
 // NewAegisAlertOpsRuleLister returns a new AegisAlertOpsRuleLister.
 func NewAegisAlertOpsRuleLister(indexer cache.Indexer) AegisAlertOpsRuleLister {
-	return &aegisAlertOpsRuleLister{indexer: indexer}
-}
-
-// List lists all AegisAlertOpsRules in the indexer.
-func (s *aegisAlertOpsRuleLister) List(selector labels.Selector) (ret []*v1alpha1.AegisAlertOpsRule, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AegisAlertOpsRule))
-	})
-	return ret, err
+	return &aegisAlertOpsRuleLister{listers.New[*rulev1alpha1.AegisAlertOpsRule](indexer, rulev1alpha1.Resource("aegisalertopsrule"))}
 }
 
 // AegisAlertOpsRules returns an object that can list and get AegisAlertOpsRules.
 func (s *aegisAlertOpsRuleLister) AegisAlertOpsRules(namespace string) AegisAlertOpsRuleNamespaceLister {
-	return aegisAlertOpsRuleNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return aegisAlertOpsRuleNamespaceLister{listers.NewNamespaced[*rulev1alpha1.AegisAlertOpsRule](s.ResourceIndexer, namespace)}
 }
 
 // AegisAlertOpsRuleNamespaceLister helps list and get AegisAlertOpsRules.
@@ -64,36 +56,15 @@ func (s *aegisAlertOpsRuleLister) AegisAlertOpsRules(namespace string) AegisAler
 type AegisAlertOpsRuleNamespaceLister interface {
 	// List lists all AegisAlertOpsRules in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AegisAlertOpsRule, err error)
+	List(selector labels.Selector) (ret []*rulev1alpha1.AegisAlertOpsRule, err error)
 	// Get retrieves the AegisAlertOpsRule from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.AegisAlertOpsRule, error)
+	Get(name string) (*rulev1alpha1.AegisAlertOpsRule, error)
 	AegisAlertOpsRuleNamespaceListerExpansion
 }
 
 // aegisAlertOpsRuleNamespaceLister implements the AegisAlertOpsRuleNamespaceLister
 // interface.
 type aegisAlertOpsRuleNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all AegisAlertOpsRules in the indexer for a given namespace.
-func (s aegisAlertOpsRuleNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.AegisAlertOpsRule, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AegisAlertOpsRule))
-	})
-	return ret, err
-}
-
-// Get retrieves the AegisAlertOpsRule from the indexer for a given namespace and name.
-func (s aegisAlertOpsRuleNamespaceLister) Get(name string) (*v1alpha1.AegisAlertOpsRule, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("aegisalertopsrule"), name)
-	}
-	return obj.(*v1alpha1.AegisAlertOpsRule), nil
+	listers.ResourceIndexer[*rulev1alpha1.AegisAlertOpsRule]
 }

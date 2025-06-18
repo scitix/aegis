@@ -19,13 +19,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	clustercheckv1alpha1 "github.com/scitix/aegis/pkg/apis/clustercheck/v1alpha1"
+	apisclustercheckv1alpha1 "github.com/scitix/aegis/pkg/apis/clustercheck/v1alpha1"
 	versioned "github.com/scitix/aegis/pkg/generated/clustercheck/clientset/versioned"
 	internalinterfaces "github.com/scitix/aegis/pkg/generated/clustercheck/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/scitix/aegis/pkg/generated/clustercheck/listers/clustercheck/v1alpha1"
+	clustercheckv1alpha1 "github.com/scitix/aegis/pkg/generated/clustercheck/listers/clustercheck/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // AegisClusterHealthChecks.
 type AegisClusterHealthCheckInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.AegisClusterHealthCheckLister
+	Lister() clustercheckv1alpha1.AegisClusterHealthCheckLister
 }
 
 type aegisClusterHealthCheckInformer struct {
@@ -71,7 +71,7 @@ func NewFilteredAegisClusterHealthCheckInformer(client versioned.Interface, name
 				return client.AegisV1alpha1().AegisClusterHealthChecks(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&clustercheckv1alpha1.AegisClusterHealthCheck{},
+		&apisclustercheckv1alpha1.AegisClusterHealthCheck{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +82,9 @@ func (f *aegisClusterHealthCheckInformer) defaultInformer(client versioned.Inter
 }
 
 func (f *aegisClusterHealthCheckInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&clustercheckv1alpha1.AegisClusterHealthCheck{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisclustercheckv1alpha1.AegisClusterHealthCheck{}, f.defaultInformer)
 }
 
-func (f *aegisClusterHealthCheckInformer) Lister() v1alpha1.AegisClusterHealthCheckLister {
-	return v1alpha1.NewAegisClusterHealthCheckLister(f.Informer().GetIndexer())
+func (f *aegisClusterHealthCheckInformer) Lister() clustercheckv1alpha1.AegisClusterHealthCheckLister {
+	return clustercheckv1alpha1.NewAegisClusterHealthCheckLister(f.Informer().GetIndexer())
 }

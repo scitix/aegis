@@ -45,9 +45,12 @@ Aegis supports converting alert messages from sources (now support for the diffe
 
 Provides intelligent diagnostic capabilities via the `AegisDiagnosis` CRD, enabling LLM-based summary diagnosis. Currently supported object types include:
 
-* **Node**
-* **Pod**
+
+* [**Node**](docs/node-diagnosis.md) 
+  > ⚠️ **Before using Node Diagnosis, make sure a Collector Pod image is configured. Aegis provides a default image, but you may also specify your own via the controller’s startup arguments. See [Collector Pod Guide](docs/node-diagnosis.md#collector-pod-guide) for details.**
+* [**Pod**](docs/pod-diagnosis.md)
 * [**PytorchJob**](docs/pytorchjob-diagnosis.md) (as defined by [Kubeflow](https://www.kubeflow.org/docs/components/trainer/legacy-v1/user-guides/pytorch/))
+
 
 Planned support:
 

@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	alertv1alpha1 "github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // AegisAlertLister helps list AegisAlerts.
@@ -30,7 +30,7 @@ import (
 type AegisAlertLister interface {
 	// List lists all AegisAlerts in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AegisAlert, err error)
+	List(selector labels.Selector) (ret []*alertv1alpha1.AegisAlert, err error)
 	// AegisAlerts returns an object that can list and get AegisAlerts.
 	AegisAlerts(namespace string) AegisAlertNamespaceLister
 	AegisAlertListerExpansion
@@ -38,25 +38,17 @@ type AegisAlertLister interface {
 
 // aegisAlertLister implements the AegisAlertLister interface.
 type aegisAlertLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*alertv1alpha1.AegisAlert]
 }
 
 // NewAegisAlertLister returns a new AegisAlertLister.
 func NewAegisAlertLister(indexer cache.Indexer) AegisAlertLister {
-	return &aegisAlertLister{indexer: indexer}
-}
-
-// List lists all AegisAlerts in the indexer.
-func (s *aegisAlertLister) List(selector labels.Selector) (ret []*v1alpha1.AegisAlert, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AegisAlert))
-	})
-	return ret, err
+	return &aegisAlertLister{listers.New[*alertv1alpha1.AegisAlert](indexer, alertv1alpha1.Resource("aegisalert"))}
 }
 
 // AegisAlerts returns an object that can list and get AegisAlerts.
 func (s *aegisAlertLister) AegisAlerts(namespace string) AegisAlertNamespaceLister {
-	return aegisAlertNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return aegisAlertNamespaceLister{listers.NewNamespaced[*alertv1alpha1.AegisAlert](s.ResourceIndexer, namespace)}
 }
 
 // AegisAlertNamespaceLister helps list and get AegisAlerts.
@@ -64,36 +56,15 @@ func (s *aegisAlertLister) AegisAlerts(namespace string) AegisAlertNamespaceList
 type AegisAlertNamespaceLister interface {
 	// List lists all AegisAlerts in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AegisAlert, err error)
+	List(selector labels.Selector) (ret []*alertv1alpha1.AegisAlert, err error)
 	// Get retrieves the AegisAlert from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.AegisAlert, error)
+	Get(name string) (*alertv1alpha1.AegisAlert, error)
 	AegisAlertNamespaceListerExpansion
 }
 
 // aegisAlertNamespaceLister implements the AegisAlertNamespaceLister
 // interface.
 type aegisAlertNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all AegisAlerts in the indexer for a given namespace.
-func (s aegisAlertNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.AegisAlert, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AegisAlert))
-	})
-	return ret, err
-}
-
-// Get retrieves the AegisAlert from the indexer for a given namespace and name.
-func (s aegisAlertNamespaceLister) Get(name string) (*v1alpha1.AegisAlert, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("aegisalert"), name)
-	}
-	return obj.(*v1alpha1.AegisAlert), nil
+	listers.ResourceIndexer[*alertv1alpha1.AegisAlert]
 }

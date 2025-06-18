@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // AegisDiagnosisLister helps list AegisDiagnosises.
@@ -30,7 +30,7 @@ import (
 type AegisDiagnosisLister interface {
 	// List lists all AegisDiagnosises in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AegisDiagnosis, err error)
+	List(selector labels.Selector) (ret []*diagnosisv1alpha1.AegisDiagnosis, err error)
 	// AegisDiagnosises returns an object that can list and get AegisDiagnosises.
 	AegisDiagnosises(namespace string) AegisDiagnosisNamespaceLister
 	AegisDiagnosisListerExpansion
@@ -38,25 +38,17 @@ type AegisDiagnosisLister interface {
 
 // aegisDiagnosisLister implements the AegisDiagnosisLister interface.
 type aegisDiagnosisLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*diagnosisv1alpha1.AegisDiagnosis]
 }
 
 // NewAegisDiagnosisLister returns a new AegisDiagnosisLister.
 func NewAegisDiagnosisLister(indexer cache.Indexer) AegisDiagnosisLister {
-	return &aegisDiagnosisLister{indexer: indexer}
-}
-
-// List lists all AegisDiagnosises in the indexer.
-func (s *aegisDiagnosisLister) List(selector labels.Selector) (ret []*v1alpha1.AegisDiagnosis, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AegisDiagnosis))
-	})
-	return ret, err
+	return &aegisDiagnosisLister{listers.New[*diagnosisv1alpha1.AegisDiagnosis](indexer, diagnosisv1alpha1.Resource("aegisdiagnosis"))}
 }
 
 // AegisDiagnosises returns an object that can list and get AegisDiagnosises.
 func (s *aegisDiagnosisLister) AegisDiagnosises(namespace string) AegisDiagnosisNamespaceLister {
-	return aegisDiagnosisNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return aegisDiagnosisNamespaceLister{listers.NewNamespaced[*diagnosisv1alpha1.AegisDiagnosis](s.ResourceIndexer, namespace)}
 }
 
 // AegisDiagnosisNamespaceLister helps list and get AegisDiagnosises.
@@ -64,36 +56,15 @@ func (s *aegisDiagnosisLister) AegisDiagnosises(namespace string) AegisDiagnosis
 type AegisDiagnosisNamespaceLister interface {
 	// List lists all AegisDiagnosises in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AegisDiagnosis, err error)
+	List(selector labels.Selector) (ret []*diagnosisv1alpha1.AegisDiagnosis, err error)
 	// Get retrieves the AegisDiagnosis from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.AegisDiagnosis, error)
+	Get(name string) (*diagnosisv1alpha1.AegisDiagnosis, error)
 	AegisDiagnosisNamespaceListerExpansion
 }
 
 // aegisDiagnosisNamespaceLister implements the AegisDiagnosisNamespaceLister
 // interface.
 type aegisDiagnosisNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all AegisDiagnosises in the indexer for a given namespace.
-func (s aegisDiagnosisNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.AegisDiagnosis, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AegisDiagnosis))
-	})
-	return ret, err
-}
-
-// Get retrieves the AegisDiagnosis from the indexer for a given namespace and name.
-func (s aegisDiagnosisNamespaceLister) Get(name string) (*v1alpha1.AegisDiagnosis, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("aegisdiagnosis"), name)
-	}
-	return obj.(*v1alpha1.AegisDiagnosis), nil
+	listers.ResourceIndexer[*diagnosisv1alpha1.AegisDiagnosis]
 }

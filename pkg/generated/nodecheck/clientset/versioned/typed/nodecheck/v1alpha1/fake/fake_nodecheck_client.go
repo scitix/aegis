@@ -29,7 +29,7 @@ type FakeAegisV1alpha1 struct {
 }
 
 func (c *FakeAegisV1alpha1) AegisNodeHealthChecks(namespace string) v1alpha1.AegisNodeHealthCheckInterface {
-	return &FakeAegisNodeHealthChecks{c, namespace}
+	return newFakeAegisNodeHealthChecks(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate
