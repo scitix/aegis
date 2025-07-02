@@ -21,6 +21,7 @@ import (
 
 var (
 	defaultPrometheusEndpoint = "http://prometheus-k8s.monitoring:9090"
+	defaultOpEndpoint         = "https://op.example.com"
 )
 
 func init() {
@@ -41,7 +42,7 @@ func CompressTargz(input, output string) error {
 	var writer *gzip.Writer
 	var body []byte
 
-	if file, err = os.OpenFile(output, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
+	if file, err = os.OpenFile(output, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644); err != nil {
 		return err
 	}
 	defer file.Close()
@@ -61,7 +62,7 @@ func CompressTargz(input, output string) error {
 	if body != nil {
 		hdr := &tar.Header{
 			Name: path.Base(input),
-			Mode: int64(0644),
+			Mode: int64(0o644),
 			Size: int64(len(body)),
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
@@ -106,6 +107,14 @@ func GetPrometheusEndpoint() string {
 
 func GetElasticSearchConfig() (string, string, string) {
 	return os.Getenv("ELASTICSEARCH_ENDPOINT"), os.Getenv("ELASTICSERACH_USERNAME"), os.Getenv("ELASTICSERACH_PASSWORD")
+}
+
+func GetOpEndpoint() string {
+	if endpoint := os.Getenv("OP_ENDPOINT"); endpoint != "" {
+		return endpoint
+	}
+
+	return defaultOpEndpoint
 }
 
 func GetCurrentTimestamp() string {
