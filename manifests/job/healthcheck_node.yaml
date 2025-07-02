@@ -1,0 +1,42 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{.pod_name}}
+spec:
+  priorityClassName: system-node-critical
+  containers:
+  - image: {{.registry}}/{{.repository}}/aegis-sop:v2.0.0
+    imagePullPolicy: Always
+    name: healthcheck
+    command:
+      - /entrypoint.sh
+      - healthcheck
+      - {{.region}}
+      - {{.cluster}}
+      - {{.node_name}}
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - mountPath: /var/selfhealing
+      name: script
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  hostNetwork: true
+  hostPID: true
+  nodeName: {{.node_name}}
+  restartPolicy: Never
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - hostPath:
+      path: /var/selfhealing
+      type: ""
+    name: script
