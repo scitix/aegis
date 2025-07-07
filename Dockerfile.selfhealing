@@ -1,7 +1,14 @@
+FROM curlimages/curl:8.8.0 AS kubectl_downloader
+ARG KUBECTL_VERSION=v1.29.8
+RUN set -eux; \
+    curl -L -o /tmp/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"; \
+    curl -L -o /tmp/kubectl.sha256 "https://dl.k8s.io/${KUBECTL_VERSION}/bin/linux/amd64/kubectl.sha256"; \
+    echo "$(cat /tmp/kubectl.sha256)  /tmp/kubectl" | sha256sum -c -
+
 FROM golang:1.24.2
 WORKDIR /aegis
 RUN mkdir -p /selfhealing/job
 ADD . /aegis/
-ADD bin/kubectl /usr/bin/
 ADD manifests/job/* /selfhealing/job/
+COPY --from=kubectl_downloader /tmp/kubectl /usr/bin/kubectl
 RUN cd /aegis && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o aegis-selfhealing cmd/aegis-selfhealing/main.go
