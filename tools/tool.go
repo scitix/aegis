@@ -106,7 +106,7 @@ func GetPrometheusEndpoint() string {
 }
 
 func GetElasticSearchConfig() (string, string, string) {
-	return os.Getenv("ELASTICSEARCH_ENDPOINT"), os.Getenv("ELASTICSERACH_USERNAME"), os.Getenv("ELASTICSERACH_PASSWORD")
+	return os.Getenv("ELASTICSEARCH_ENDPOINT"), os.Getenv("ELASTICSEARCH_USERNAME"), os.Getenv("ELASTICSEARCH_PASSWORD")
 }
 
 func GetOpEndpoint() string {
