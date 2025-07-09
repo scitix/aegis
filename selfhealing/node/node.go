@@ -180,10 +180,22 @@ func (o *nodeOptions) complete(cmd *cobra.Command, args []string) (err error) {
 	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: o.config.KubeClient.CoreV1().Events(v1.NamespaceAll)})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "Aegis"})
 
+	var alertName string
+	if strings.Contains(Alert, "/") {
+		parts := strings.Split(Alert, "/")
+		if len(parts) > 1 {
+			alertName = parts[1]
+		} else {
+			alertName = "" // Default value if split result is invalid
+		}
+	} else {
+		alertName = "" // Default value if Alert does not contain "/"
+	}
+
 	o.bridge = &sop.ApiBridge{
 		ClusterName:   o.config.ClusterName,
 		Region:        o.config.Region,
-		AlertName:     strings.Split(Alert, "/")[1],
+		AlertName:     alertName,
 		Aggressive:    o.level > 0,
 		Registry:      o.config.Registry,
 		Repository:    o.config.Repository,
