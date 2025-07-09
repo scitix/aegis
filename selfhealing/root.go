@@ -28,7 +28,7 @@ func NewCommand(name string) *cobra.Command {
 	c.PersistentFlags().StringVar(&f.ClusterName, "clustername", "", "kubernetes cluster name")
 	c.PersistentFlags().StringVar(&f.Registry, "registry", "", "registry endpoint for selfhealing ops image")
 	c.PersistentFlags().StringVar(&f.Repository, "repository", "", "registry repository for selfhealing ops image")
-	c.PersistentFlags().BoolVar(&f.EnableLeaderElection, "enable-leader-election", true, "Enable leader elelction in a kubernetes cluster.")
+	c.PersistentFlags().BoolVar(&f.EnableLeaderElection, "enable-leader-election", true, "Enable leader election in a kubernetes cluster.")
 
 	c.AddCommand(
 		node.NewCommand(f, "node"),
