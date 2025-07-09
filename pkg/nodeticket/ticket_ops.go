@@ -19,7 +19,7 @@ func (m *NodeTicketManager) GetRootCauseDescription(ctx context.Context) (*ticke
 	klog.Infof("[ticket] GetRootCauseDescription called, returning createdAt timestamp and condition (no-op in NodeTicketManager)")
 	return &ticketmodel.TicketCause{
 		Timestamps: m.ticket.CreatedAt,
-		Condtion:   m.ticket.Condition,
+		Condition:  m.ticket.Condition,
 	}, nil
 }
 

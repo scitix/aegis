@@ -234,7 +234,7 @@ func (t *OpTicketManager) IsFrequentIssue(ctx context.Context, size, frequency i
 			continue
 		}
 
-		m, ok := description.Cause.Condtion.(map[interface{}]interface{})
+		m, ok := description.Cause.Condition.(map[interface{}]interface{})
 		if !ok {
 			continue
 		}

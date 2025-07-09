@@ -11,7 +11,7 @@ import (
 type TicketCause struct {
 	Timestamps time.Time   `yaml:"timestamps,omitempty"`
 	Cause      string      `yaml:"cause,omitempty"`
-	Condtion   interface{} `yaml:"condition,omitempty"`
+	Condition  interface{} `yaml:"condition,omitempty"`
 	Count      int64       `yaml:"count,omitempty"`
 }
 

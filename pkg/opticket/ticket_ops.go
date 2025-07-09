@@ -56,7 +56,7 @@ func (t *OpTicketManager) AddRootCauseDescription(ctx context.Context, cause str
 	description.Cause = ticketmodel.TicketCause{
 		Timestamps: time.Now(),
 		Cause:      cause,
-		Condtion:   condition,
+		Condition:  condition,
 		Count:      description.Cause.Count + 1,
 	}
 
@@ -98,14 +98,14 @@ func (t *OpTicketManager) AddOrUpdateRootCauseDescription(ctx context.Context, c
 		description.Cause = ticketmodel.TicketCause{
 			Timestamps: time.Now(),
 			Cause:      cause,
-			Condtion:   condition,
+			Condition:  condition,
 			Count:      1,
 		}
 	} else {
 		description.Cause = ticketmodel.TicketCause{
 			Timestamps: time.Now(),
 			Cause:      cause,
-			Condtion:   condition,
+			Condition:  condition,
 			Count:      description.Cause.Count + 1,
 		}
 		updated = true
