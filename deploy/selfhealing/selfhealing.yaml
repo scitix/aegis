@@ -1,0 +1,113 @@
+apiVersion: aegis.io/v1alpha1
+kind: AegisAlertOpsRule
+metadata:
+  name: selfhealing-node-critical-issue
+  namespace: monitoring
+spec:
+  alertConditions:
+  - status: Firing
+    type: NodeCriticalIssue
+  opsTemplate:
+    apiVersion: aegis.io/v1alpha1
+    kind: AegisOpsTemplate
+    name: selfhealing-node
+    namespace: monitoring
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisAlertOpsRule
+metadata:
+  name: selfhealing-node-cordon
+  namespace: monitoring
+spec:
+  alertConditions:
+  - status: Firing
+    type: NodeCordonAfter6H
+  opsTemplate:
+    apiVersion: aegis.io/v1alpha1
+    kind: AegisOpsTemplate
+    name: selfhealing-node
+    namespace: monitoring
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisOpsTemplate
+metadata:
+  name: selfhealing-node
+  namespace: monitoring
+spec:
+  manifest: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: Workflow
+    spec:
+      ttlStrategy:
+        secondsAfterCompletion: 259200
+        secondsAfterSuccess: 259200
+        secondsAfterFailure: 259200
+      serviceAccountName: aegis-workflow
+      entrypoint: workflow-ops
+      templates:
+      - name: workflow-ops
+        steps:
+        - - name: selfhealing-ops
+            template: selfhealing-ops
+      - name: selfhealing-ops
+        resource:
+          action: create
+          setOwnerReference: true
+          successCondition: status.succeeded > 0
+          failureCondition: status.failed > 0
+          manifest: |
+            apiVersion: batch/v1
+            kind: Job
+            metadata:
+              generateName: {{.AlertName}}-
+            spec:
+              ttlSecondsAfterFinished: 259200
+              template:
+                spec:
+                  containers:
+                  - name: selfhealing-ops
+                    image: registry-ap-southeast.scitix.ai/k8s/aegis-selfhealing:v1.0.0
+                    imagePullPolicy: Always
+                    command:
+                    - /aegis/aegis-selfhealing
+                    - --clustername={{.cluster}}
+                    - --region=ap-southeast
+                    - --orgname=siflow
+                    - --registry=registry-ap-southeast.scitix.ai
+                    - --repository=k8s
+                    - --ticket.system=Node
+                    - node
+                    - {{.InvolvedObjectNode}}
+                    - --level=1
+                    env:
+                    - name: SRE
+                      value: syuan,cfeng,xfchen
+                    - name: POD_NAME
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.name
+                    - name: POD_NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.namespace
+                    - name: AlertType
+                      value: {{.alertname}}
+                    - name: Alert
+                      value: "{{.AlertNamespace}}/{{.AlertName}}"
+                    - name: Object
+                      value: "{{.InvolvedObjectKind}}/{{.InvolvedObjectNode}}"
+                    - name: OP_ENDPOINT
+                      value: "https://op.example.com"
+                    volumeMounts:
+                    - name: config
+                      mountPath: /selfhealing/config/
+                      readOnly: true
+                  volumes:
+                  - name: config
+                    configMap:
+                      defaultMode: 0777
+                      name: aegis-priority
+                  dnsPolicy: ClusterFirst
+                  restartPolicy: Never
+                  serviceAccount: aegis-workflow
+                  serviceAccountName: aegis-workflow
