@@ -21,7 +21,7 @@ type OpTicket struct {
 	Node            string                   `json:"node"`
 	NodeSN          string                   `json:"nodeSN"`
 	IsHardwareIssue bool                     `json:"isHardwareIssue"`
-	HardwareType    bool                     `json:"hardwareType"`
+	HardwareType    string                   `json:"hardwareType"`
 	Creator         string                   `json:"creator"`
 	Description     string                   `json:"description"`
 	Supervisor      string                   `json:"supervisor"`
