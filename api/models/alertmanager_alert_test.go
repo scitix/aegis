@@ -9,7 +9,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-func TestConvertAlertManagerAlert(t *testing.T) {
+func TestConvertAlertmanagerAlert(t *testing.T) {
 	validAlerts := map[*AlertManagerAlert]bool{
 		&AlertManagerAlert{}: false,
 		&AlertManagerAlert{
@@ -125,7 +125,7 @@ func TestConvertAlertManagerAlert(t *testing.T) {
 	}
 
 	for alert, valid := range validAlerts {
-		if _, err := alert.ConvertAlertManagerToCommonAlert(); (err == nil) == valid {
+		if _, err := alert.ConvertAlertmanagerToCommonAlert(); (err == nil) == valid {
 			t.Logf("Got expected result, expected validation: %v, got: %v", valid, err)
 		} else {
 			t.Errorf("Got error result, expected validation: %v, got: %v", valid, err)

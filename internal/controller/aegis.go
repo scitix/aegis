@@ -97,7 +97,6 @@ type AegisController struct {
 	templateInformer templateinformers.SharedInformerFactory
 	ruleInformer     ruleInformers.SharedInformerFactory
 	diagnosisInfomer diagnosisInformers.SharedInformerFactory
-	// checkInfomer     checkInformers.SharedInformerFactory
 	nodecheckInformer    nodecheckInformers.SharedInformerFactory
 	clustercheckInformer clustercheckInformers.SharedInformerFactory
 
@@ -116,7 +115,6 @@ type AegisController struct {
 	diagnosisController *diagnosis.DiagnosisController
 
 	// manager check
-	// checkController *check.CheckController
 	nodecheckController *nodecheck.NodeCheckController
 
 	clustercheckController *clustercheck.ClusterCheckController
@@ -154,12 +152,6 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 	}
 	diagnosisInformer := diagnosisInformers.NewSharedInformerFactory(diagnosisclientset, cfg.ResyncPeriod)
 
-	// checkclientset, err := checkclientset.NewForConfig(cfg.Config)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("fail to create check client interface: %v", err)
-	// }
-	// checkinformer := checkInformers.NewSharedInformerFactory(checkclientset, cfg.ResyncPeriod)
-
 	nodecheckclientset, err := nodecheckclientset.NewForConfig(cfg.Config)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create nodecheck client interface: %v", err)
@@ -182,7 +174,6 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 	metricsController := metrics.NewMetricsController()
 
 	lifecycle.register("metrics", metricsController)
-	// lifecycle.register("notify", notifyContoller)
 
 	// create template controller
 	templateController := template.NewController(cfg.Client, templateclientset, templateInformer.Aegis().V1alpha1().AegisOpsTemplates())
@@ -193,7 +184,6 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 	}
 
 	alertController := alert.NewController(cfg.Client, alertclientInterface, workflowclientset, ruleController, workflowInformer.Argoproj().V1alpha1().Workflows(), aInformer, lifecycle)
-	// checkController := check.NewController(cfg.Client, checkclientset, workflowclientset, workflowInformer.Argoproj().V1alpha1().Workflows(), checkinformer.Aegis().V1alpha1().AegisChecks())
 	nodecheckController := nodecheck.NewController(cfg.Client, nodecheckclientset, nodecheckInformer.Aegis().V1alpha1().AegisNodeHealthChecks(), podInformer, cmInformer, nodeInformer, lifecycle, cfg.EnableFireNodeEvent)
 	clustercheckController := clustercheck.NewController(cfg.Client, clustercheckclientset, clustercheckInformer.Aegis().V1alpha1().AegisClusterHealthChecks(), nodecheckclientset, nodecheckInformer.Aegis().V1alpha1().AegisNodeHealthChecks())
 
@@ -209,14 +199,12 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 		ruleInformer:     ruleInformer,
 		templateInformer: templateInformer,
 		diagnosisInfomer: diagnosisInformer,
-		// checkInfomer:       checkinformer,
 		nodecheckInformer:    nodecheckInformer,
 		clustercheckInformer: clustercheckInformer,
 		alertController:      alertController,
 		ruleController:       ruleController,
 		templateController:   templateController,
 		diagnosisController:  diagnosisController,
-		// checkController:    checkController,
 		nodecheckController:    nodecheckController,
 		clustercheckController: clustercheckController,
 	}
@@ -277,7 +265,7 @@ func (c *AegisController) run(ctx context.Context) error {
 	var wg sync.WaitGroup
 	wg.Add(6)
 
-	errChan := make(chan error, 5)
+	errChan := make(chan error, 6)
 
 	go func() {
 		defer wg.Done()
