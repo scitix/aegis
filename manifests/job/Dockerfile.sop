@@ -1,0 +1,10 @@
+FROM ubuntu:22.04
+
+RUN apt update -y && \
+    apt install -y freeipmi ipmitool net-tools python3 vim curl jq util-linux
+
+COPY scripts/ /opt/aegis/
+COPY entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /opt/aegis/*.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

@@ -1,0 +1,43 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{.job_name}}
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 6000
+  ttlSecondsAfterFinished: 259200
+  template:
+    spec:
+      containers:
+      - image: {{.registry}}/{{.repository}}/aegis-sop:v2.0.0
+        imagePullPolicy: Always
+        name: repair
+        command:
+        - /entrypoint.sh
+        - repair
+        - {{.region}}
+        - {{.cluster}}
+        - {{.node_name}}
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        securityContext:
+          privileged: true
+      restartPolicy: Never
+      hostNetwork: true
+      hostPID: true
+      nodeName: {{.node_name}}
+      volumes:
+      - name: tmp
+        hostPath:
+          path: /tmp
+      tolerations:
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 300
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 300
