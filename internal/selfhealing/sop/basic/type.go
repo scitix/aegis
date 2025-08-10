@@ -17,7 +17,7 @@ var repair_job_file string = filepath.Join(job_dir, "repair_node.yaml")
 var remedy_job_file string = filepath.Join(job_dir, "remedy_node.yaml")
 var perf_job_file string = filepath.Join(job_dir, "perf_node.yaml")
 
-var SleepWaitDuration = time.Hour * time.Duration(1)
+var SleepWaitDuration = time.Minute * time.Duration(30)
 
 const (
 	SystemNamespace = "kube-system"
@@ -60,76 +60,87 @@ const (
 	ComponentTypeDcgmExporter       = "dcgm-exporter"
 	ComponentTypeNvidiaDevicePlugin = "nvidia-device-plugin"
 	ComponentTypeRdmaDevicePlugin   = "rdma-device-plugin"
+	ComponentTypeRoceDevicePlugin   = "kube-sriov-device-plugin"
 )
 
 type ConditionType string
 
 const (
 	ConditionTypeNull                            ConditionType = "NULL"
-	ConditionTypeBaseBoardCriticalIssue          ConditionType = "BaseBoardCriticalIssue"
-	ConditionTypeCPUPressure                     ConditionType = "CPUPressure"
-	ConditionTypeCpuUnhealthy                    ConditionType = "CpuUnhealthy"
-	ConditionTypeDiskUnhealthy                   ConditionType = "DiskUnhealthy"
-	ConditionTypeGpfsTestFailed                  ConditionType = "GpfsTestFailed"
-	ConditionTypeGpfsIBNotConfig                 ConditionType = "GpfsIBNotConfig"
-	ConditionTypeGpfsThreadDeadlock              ConditionType = "GpfsThreadDeadlock"
-	ConditionTypeGpfsDown                        ConditionType = "GpfsDown"
-	ConditionTypeGpfsMountLost                   ConditionType = "GpfsMountLost"
-	ConditionTypeGpfsInactive                    ConditionType = "GpfsInactive"
-	ConditionTypeGpfsRdmaStatusError             ConditionType = "GpfsRdmaStatusError"
-	ConditionTypeGpfsQuorumConnectionDown        ConditionType = "GpfsQuorumConnectionDown"
-	ConditionTypeGpfsExpelledFromCluster         ConditionType = "GpfsExpelledFromCluster"
-	ConditionTypeGpfsTimeClockError              ConditionType = "GpfsTimeClockError"
-	ConditionTypeGpfsOsLockup                    ConditionType = "GpfsOsLockup"
-	ConditionTypeGpfsBadTcpState                 ConditionType = "GpfsBadTcpState"
-	ConditionTypeGpfsUnauthorized                ConditionType = "GpfsUnauthorized"
-	ConditionTypeGpfsBond0Lost                   ConditionType = "GpfsBond0Lost"
-	ConditionTypeGpuApplicationFrequentError     ConditionType = "GpuApplicationFrequentError"
-	ConditionTypeGpuHung                         ConditionType = "GpuHung"
-	ConditionTypeGpuCheckFailed                  ConditionType = "GpuCheckFailed"
-	ConditionTypeGpuDown                         ConditionType = "GpuDown"
-	ConditionTypeXIDECCMemoryErr                 ConditionType = "XIDECCMemoryErr"
-	ConditionTypeXIDHWSystemErr                  ConditionType = "XIDHWSystemErr"
-	ConditionTypeXIDUnclassifiedErr              ConditionType = "XIDUnclassifiedErr"
-	ConditionTypeGpuMetricsHang                  ConditionType = "GpuMetricsHang"
-	ConditionTypeGpuTooManyPageRetired           ConditionType = "GpuTooManyPageRetired"
-	ConditionTypeGpuPcieDowngraded               ConditionType = "GpuPcieDowngraded"
-	ConditionTypeGpuRegisterFailed               ConditionType = "GpuRegisterFailed"
-	ConditionTypeGpuRowRemappingPending          ConditionType = "GpuRowRemappingPending"
-	ConditionTypeGpuRowRemappingFailure          ConditionType = "GpuRowRemappingFailure"
-	ConditionTypeGpuSramUncorrectable            ConditionType = "GpuSramUncorrectable"
-	ConditionTypeGpuAggSramUncorrectable         ConditionType = "GpuAggSramUncorrectable"
-	ConditionTypeGpuVolSramUncorrectable         ConditionType = "GpuVolSramUncorrectable"
-	ConditionTypeGpuVolDramUncorrectable         ConditionType = "GpuVolDramUncorrectable"
-	ConditionTypeGpuVolDramCorrectable           ConditionType = "GpuVolDramCorrectable"
-	ConditionTypeGpuNvlinkInactive               ConditionType = "GPUNvlinkInactive"
-	ConditionTypeGpuGpuHWSlowdown                ConditionType = "GPUHWSlowdown"
-	ConditionTypeGPUPersistenceModeNotEnabled    ConditionType = "GPUPersistenceModeNotEnabled"
-	ConditionTypeHighGpuMemoryTemp               ConditionType = "HighGpuMemoryTemp"
-	ConditionTypeHighGpuTemp                     ConditionType = "HighGpuTemp"
-	ConditionTypeIBDown                          ConditionType = "IBDown"
-	ConditionTypeRoceDeviceBroken                ConditionType = "RoceDeviceBroken"
-	ConditionTypeIBLinkFrequentDown              ConditionType = "IBLinkFrequentDown"
-	ConditionTypeIBPcieDowngraded                ConditionType = "IBPcieDowngraded"
-	ConditionTypeIBModuleNotInstalled            ConditionType = "IBModuleNotInstalled"
-	ConditionTypeIBRegisterFailed                ConditionType = "IBRegisterFailed"
-	ConditionTypeRoceRegisterFailed              ConditionType = "RoceRegisterFailed"
-	ConditionTypeIBSymbolError                   ConditionType = "IBSymbolError"
-	ConditionTypeMemoryPressure                  ConditionType = "MemoryPressure"
-	ConditionTypeKubeletMemoryPressure           ConditionType = "KubeletMemoryPressure"
-	ConditionTypeMemoryUnhealthy                 ConditionType = "MemoryUnhealthy"
-	ConditionTypeNetworkLinkFrequentDown         ConditionType = "NetworkLinkFrequentDown"
-	ConditionTypeNetworkLinkTooManyDown          ConditionType = "NetworkLinkTooManyDown"
-	ConditionTypeNetworkICETXTimeout             ConditionType = "ICETxTimeout"
+	
+	// baseboard
+	ConditionTypeBaseBoardCriticalIssue ConditionType = "BaseBoardCriticalIssue"
+
+	// cpu
+	ConditionTypeCPUPressure  ConditionType = "CPUPressure"
+	ConditionTypeCpuUnhealthy ConditionType = "CpuUnhealthy"
+
+	// disk
+	ConditionTypeDiskPressure  ConditionType = "DiskPressure"
+	ConditionTypeDiskUnhealthy ConditionType = "DiskUnhealthy"
+
+	// memory
+	ConditionTypeMemoryPressure        ConditionType = "MemoryPressure"
+	ConditionTypeKubeletMemoryPressure ConditionType = "KubeletMemoryPressure"
+	ConditionTypeMemoryUnhealthy       ConditionType = "MemoryUnhealthy"
+
+	// network
+	ConditionTypeNetworkLinkDown ConditionType = "NetworkLinkDown"
+
+	// system
+	ConditionTypeHighZombieProcessesCount ConditionType = "HighZombieProcessesCount"
+
+	// ib
+	ConditionTypeIBLinkFrequentDown ConditionType = "IBLinkFrequentDown"
+	ConditionTypeIBDown             ConditionType = "IBDown"
+	ConditionTypeIBRegisterFailed   ConditionType = "IBRegisterFailed"
+	ConditionTypeIBPcieDowngraded   ConditionType = "IBPcieDowngraded"
+	ConditionTypeRoceRegisterFailed ConditionType = "RoceRegisterFailed"
+	ConditionTypeRoceDeviceBroken   ConditionType = "RoceDeviceBroken"
+
+	// gpfs
+	ConditionTypeGpfsDown           ConditionType = "GpfsDown"
+	ConditionTypeGpfsMountLost      ConditionType = "GpfsMountLost"
+	ConditionTypeGpfsThreadDeadlock ConditionType = "GpfsThreadDeadlock"
+	ConditionTypeGpfsTestFailed     ConditionType = "GpfsTestFailed"
+	ConditionTypeGpfsRdmaError      ConditionType = "GpfsRdmaError"
+	ConditionTypeGpfsNodeNotHealthy ConditionType = "GpfsNodeNotHealthy"
+	ConditionTypeGpfsNotMounted     ConditionType = "GpfsNotMounted"
+	ConditionTypeGpfsNotStarted     ConditionType = "GpfsNotStarted"
+	ConditionTypeGpfsNotInCluster   ConditionType = "GpfsNotInCluster"
+	ConditionTypeGpfsNotInstalled   ConditionType = "GpfsNotInstalled"
+	ConditionTypeGpfsIBNotConfig    ConditionType = "GpfsIBNotConfig"
+
+	// gpu
+	ConditionTypeGpuHung                      ConditionType = "GpuHung"
+	ConditionTypeGpuCheckFailed               ConditionType = "GpuCheckFailed"
+	ConditionTypeGpuRegisterFailed            ConditionType = "GpuRegisterFailed"
+	ConditionTypeHighGpuMemoryTemp            ConditionType = "HighGpuMemoryTemp"
+	ConditionTypeHighGpuTemp                  ConditionType = "HighGpuTemp"
+	ConditionTypeXIDECCMemoryErr              ConditionType = "XIDECCMemoryErr"
+	ConditionTypeXIDHWSystemErr               ConditionType = "XIDHWSystemErr"
+	ConditionTypeGpuRowRemappingPending       ConditionType = "GpuRowRemappingPending"
+	ConditionTypeGpuRowRemappingFailure       ConditionType = "GpuRowRemappingFailure"
+	ConditionTypeGpuTooManyPageRetired        ConditionType = "GpuTooManyPageRetired"
+	ConditionTypeGpuAggSramUncorrectable      ConditionType = "GpuAggSramUncorrectable"
+	ConditionTypeGpuVolSramUncorrectable      ConditionType = "GpuVolSramUncorrectable"
+	ConditionTypeGpuVolDramUncorrectable      ConditionType = "GpuVolDramUncorrectable"
+	ConditionTypeNvidiaFabricManagerNotActive ConditionType = "NvidiaFabricManagerNotActive"
+	ConditionTypeGpuDown                      ConditionType = "GpuDown"
+	ConditionTypeGpuPcieDowngraded            ConditionType = "GpuPcieDowngraded"
+	ConditionTypeGpuGpuHWSlowdown             ConditionType = "GPUHWSlowdown"
+	ConditionTypeGpuNvlinkInactive            ConditionType = "GPUNvlinkInactive"
+	ConditionTypeGPUPersistenceModeNotEnabled ConditionType = "GPUPersistenceModeNotEnabled"
+	ConditionTypeGpuMetricsHang               ConditionType = "GpuMetricsHang"
+
+	// default
 	ConditionTypeNodeCordon                      ConditionType = "NodeCordon"
+	ConditionTypeNodeNotReady                    ConditionType = "NodeNotReady"
+	ConditionTypeNodeHasRestart                  ConditionType = "NodeHasRestart"
 	ConditionTypeKubeletFailedCreatePodContainer ConditionType = "KubeletFailedCreatePodContainer"
 	ConditionTypeNodeFrequentDown                ConditionType = "NodeFrequentDown"
 	ConditionTypeNodeInhibitAll                  ConditionType = "NodeInhibitAll"
-	ConditionTypeNodeNotReady                    ConditionType = "NodeNotReady"
-	ConditionTypeHighDProcessesCount             ConditionType = "HighDProcessesCount"
-	ConditionTypeHighZombieProcessesCount        ConditionType = "HighZombieProcessesCount"
-	ConditionTypePeerMemModuleNotReady           ConditionType = "PeerMemModuleNotReady"
-	ConditionTypePeerMemModuleNotConfig          ConditionType = "PeerMemModuleNotConfig"
+	ConditionTypeNodeHasTerminatingPod           ConditionType = "NodeHasTerminatingPod"
 )
 
 type RemedyAction string
@@ -138,4 +149,5 @@ const (
 	BreakDeadlockRemedyAction RemedyAction = "breakDeadlock"
 	DropCacheRemedyAction     RemedyAction = "DropCache"
 	PeerMemRemedyAction       RemedyAction = "ConfigPeerMem"
+	RestartKubeletAction      RemedyAction = "RestartKubelet"
 )

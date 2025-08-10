@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/scitix/aegis/api/models"
+	deviceaware "github.com/scitix/aegis/internal/device_aware"
 	"github.com/scitix/aegis/internal/k8s"
 	"github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
 	"github.com/scitix/aegis/pkg/controller"
@@ -83,6 +84,9 @@ type Configuration struct {
 	EnableHealthcheck bool
 	// nodecheck fire event
 	EnableFireNodeEvent bool
+
+	// enable device aware
+	EnableDeviceAware bool
 }
 
 type AegisController struct {
@@ -118,6 +122,9 @@ type AegisController struct {
 	nodecheckController *nodecheck.NodeCheckController
 
 	clustercheckController *clustercheck.ClusterCheckController
+
+	// device ware
+	deviceawareController *deviceaware.DeviceAwareController
 }
 
 func NewAegisController(cfg *Configuration) (*AegisController, error) {
@@ -187,6 +194,11 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 	nodecheckController := nodecheck.NewController(cfg.Client, nodecheckclientset, nodecheckInformer.Aegis().V1alpha1().AegisNodeHealthChecks(), podInformer, cmInformer, nodeInformer, lifecycle, cfg.EnableFireNodeEvent)
 	clustercheckController := clustercheck.NewController(cfg.Client, clustercheckclientset, clustercheckInformer.Aegis().V1alpha1().AegisClusterHealthChecks(), nodecheckclientset, nodecheckInformer.Aegis().V1alpha1().AegisNodeHealthChecks())
 
+	deviceawareController, err := deviceaware.NewController(cfg.Client, nodeInformer)
+	if err != nil {
+		return nil, fmt.Errorf("fail to create device aware controller: %v", err)
+	}
+
 	n := &AegisController{
 		cfg: cfg,
 		alertInterface: &controller.RealAlertController{
@@ -207,6 +219,7 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 		diagnosisController:  diagnosisController,
 		nodecheckController:    nodecheckController,
 		clustercheckController: clustercheckController,
+		deviceawareController:  deviceawareController,
 	}
 	return n, nil
 }
@@ -263,9 +276,9 @@ func (c *AegisController) run(ctx context.Context) error {
 	c.sharedInformer.Start(ctx.Done())
 
 	var wg sync.WaitGroup
-	wg.Add(6)
+	wg.Add(7)
 
-	errChan := make(chan error, 6)
+	errChan := make(chan error, 7)
 
 	go func() {
 		defer wg.Done()
@@ -343,6 +356,18 @@ func (c *AegisController) run(ctx context.Context) error {
 		c.clustercheckInformer.Start(ctx.Done())
 		if err := c.clustercheckController.Run(ctx, workers); err != nil {
 			errChan <- fmt.Errorf("error running clustercheck controller: %s", err.Error())
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		if !c.cfg.EnableDeviceAware {
+			return
+		}
+
+		if err := c.deviceawareController.Run(ctx); err != nil {
+			errChan <- fmt.Errorf("error running device aware controller: %s", err.Error())
 		}
 	}()
 
