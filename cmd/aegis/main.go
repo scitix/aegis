@@ -155,6 +155,8 @@ func parse() (bool, *controller.Configuration, error) {
 
 	ai := flags.String("ai", "openai", "backend AI Provider")
 
+	enableDeviceAware := flags.Bool("device-aware.enable", false, "enable device aware")
+
 	showVersion := flags.Bool("version", false, "Show release info.")
 
 	flags.AddGoFlagSet(flag.CommandLine)
@@ -203,6 +205,7 @@ func parse() (bool, *controller.Configuration, error) {
 		CollectorImage:            *collectorImage,
 		EnableProm:                *enableProm,
 		AiBackend:                 *ai,
+		EnableDeviceAware:         *enableDeviceAware,
 	}
 
 	return false, config, nil
