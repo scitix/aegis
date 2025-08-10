@@ -17,7 +17,7 @@ func init() {
 func alertmanager(rw http.ResponseWriter, r *http.Request, callback func(ctx context.Context, alert *models.Alert) error,
 	metrics *metrics.MetricsController,
 ) {
-	source := "alertmanager"
+	source := string(models.AlertManagerAlertSource)
 
 	response := api.CommonResponse{
 		Code: api.OK,
@@ -42,7 +42,7 @@ func alertmanager(rw http.ResponseWriter, r *http.Request, callback func(ctx con
 	metrics.RecordAPIParseSuccess(source)
 
 	for _, _alert := range alerts.Alerts {
-		alert, err := _alert.ConvertAlertManagerToCommonAlert()
+		alert, err := _alert.ConvertAlertmanagerToCommonAlert()
 		if err != nil {
 			klog.Errorf("fail convert alertmanager alert: %v", err)
 			metrics.RecordAPIParseFailure(source, "ConvertError")

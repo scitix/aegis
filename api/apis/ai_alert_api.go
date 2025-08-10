@@ -27,7 +27,7 @@ func SetAIAlertParser(parser ai.AlertParser) {
 func aiAlertHandler(rw http.ResponseWriter, r *http.Request, callback func(ctx context.Context, alert *models.Alert) error,
 	metrics *metrics.MetricsController,
 ) {
-	source := "ai"
+	source := string(models.AIAlertSource)
 
 	response := api.CommonResponse{
 		Code: api.OK,

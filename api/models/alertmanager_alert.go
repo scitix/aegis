@@ -48,7 +48,7 @@ type AlertManagerAlerts struct {
 	CommonAnnotations map[string]string `json:"commonAnnotations"`
 }
 
-func (_alert *AlertManagerAlert) ConvertAlertManagerToCommonAlert() (*Alert, error) {
+func (_alert *AlertManagerAlert) ConvertAlertmanagerToCommonAlert() (*Alert, error) {
 	if _alert == nil {
 		return nil, nil
 	}

@@ -1,8 +1,19 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: aegis-prompt
+  name: aegis
 data:
+  config.yaml: |
+    ai:
+      providers:
+      - name: openai
+        model: "qwen"
+        password: "sk-xxxx"
+        baseUrl: "https://openai/api"
+        temperature: 0.7
+        topp: 0.5
+        topk: 50
+        maxtokens: 32768
   pytorchjob.tmpl: |
     你现在需要充当一个经验丰富的 Kubernetes + Kubeflow 训练任务巡检专家，请根据以下 PyTorchJob 信息，判断任务是否健康，并生成易懂的诊断报告，供非技术人员阅读。
     

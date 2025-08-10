@@ -17,7 +17,7 @@ func init() {
 func alert(rw http.ResponseWriter, r *http.Request, callback func(ctx context.Context, alert *models.Alert) error,
 	metrics *metrics.MetricsController,
 ) {
-	source := "default"
+	source := string(models.DefaultAlertSource)
 
 	response := api.CommonResponse{
 		Code: api.OK,

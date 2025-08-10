@@ -7,6 +7,7 @@ toolchain go1.24.3
 require (
 	github.com/argoproj/argo-workflows/v3 v3.6.7
 	github.com/docker/cli v27.1.1+incompatible
+	github.com/go-errors/errors v1.5.1
 	github.com/go-openapi/spec v0.21.0
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/google/go-containerregistry v0.20.2
@@ -20,6 +21,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.20.0
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.32.2
 	k8s.io/apimachinery v0.32.2
@@ -28,6 +30,7 @@ require (
 	k8s.io/klog/hack/tools v0.0.0-20210917071902-331d2323a192
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff
+	k8s.io/kubectl v0.32.2
 	k8s.io/kubernetes v0.0.0-00010101000000-000000000000
 )
 
@@ -107,7 +110,6 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
-	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -247,7 +249,6 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	helm.sh/helm/v3 v3.17.3 // indirect
 	k8s.io/apiextensions-apiserver v0.32.2 // indirect
 	k8s.io/apiserver v0.32.2 // indirect
@@ -258,7 +259,6 @@ require (
 	k8s.io/controller-manager v0.32.2 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250207200755-1244d31929d7 // indirect
 	k8s.io/kms v0.32.2 // indirect
-	k8s.io/kubectl v0.32.2 // indirect
 	k8s.io/kubelet v0.0.0 // indirect
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979 // indirect
 	knative.dev/pkg v0.0.0-20241026180704-25f6002b00f3 // indirect
