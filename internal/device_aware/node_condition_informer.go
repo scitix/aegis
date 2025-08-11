@@ -21,7 +21,9 @@ type DeviceType string
 
 const (
 	DeviceTypeGPU       DeviceType = "gpu"
+	DeviceTypeGPFS      DeviceType = "gpfs"
 	DeviceTypeIB        DeviceType = "ib"
+	DeviceTypeRoce      DeviceType = "roce"
 	DeviceTypeCPU       DeviceType = "cpu"
 	DeviceTypeMemory    DeviceType = "memory"
 	DeviceTypeNetwork   DeviceType = "network"
@@ -30,6 +32,8 @@ const (
 	DeviceTypeDefault   DeviceType = "default"
 	DeviceTypeBaseboard DeviceType = "baseboard"
 )
+
+var defaultDeviceId = "all"
 
 // 节点状态集合
 type NodeStatus struct {
@@ -237,8 +241,12 @@ func (i *NodeStatusInformer) queryMetric(ctx context.Context, deviceType DeviceT
 			s = parseDiskStatus(statuses)
 		case DeviceTypeGPU:
 			s = parseGPUStatus(statuses)
+		case DeviceTypeGPFS:
+			s = parseGPFSDeviceStatus(statuses)
 		case DeviceTypeIB:
 			s = parseIBDeviceStatus(statuses)
+		case DeviceTypeRoce:
+			s = parseRoceDeviceStatus(statuses)
 		case DeviceTypeNetwork:
 			s = parseNetworkStatus(statuses)
 		default:
@@ -363,8 +371,6 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 
 	for _, status := range statuses {
 		switch status.Condition {
-		case string(basic.ConditionTypeGpuNvlinkInactive):
-			fallthrough
 		case string(basic.ConditionTypeGpuHung):
 			for i, _ := range disabled {
 				disabled[i] = true
@@ -381,11 +387,9 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 					disabled[i] = num
 				}
 			}
-		case string(basic.ConditionTypeGpuDown):
+		case string(basic.ConditionTypeGpuNvlinkInactive):
 			fallthrough
 		case string(basic.ConditionTypeGpuTooManyPageRetired):
-			fallthrough
-		case string(basic.ConditionTypeGpuRowRemappingFailure):
 			fallthrough
 		case string(basic.ConditionTypeGpuAggSramUncorrectable):
 			fallthrough
@@ -393,7 +397,19 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 			fallthrough
 		case string(basic.ConditionTypeGpuGpuHWSlowdown):
 			fallthrough
-		case string(basic.ConditionTypeXIDHWSystemErr):
+		case string(basic.ConditionTypeGpuPcieGenDowngraded):
+			fallthrough
+		case string(basic.ConditionTypeGpuPcieWidthDowngraded):
+			fallthrough
+		case string(basic.ConditionTypeHighGpuTemp):
+			fallthrough
+		case string(basic.ConditionTypeHighGpuMemoryTemp):
+			fallthrough
+		case string(basic.ConditionTypeXid64ECCRowremapperFailure):
+			fallthrough
+		case string(basic.ConditionTypeXid74NVLinkError):
+			fallthrough
+		case string(basic.ConditionTypeXid79GPULost):
 			if status.ID != "" {
 				id, err := strconv.Atoi(status.ID)
 				if err != nil || id > 7 {
@@ -402,17 +418,15 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 					disabled[id] = true
 				}
 			}
-		case string(basic.ConditionTypeGpuPcieDowngraded):
+		case string(basic.ConditionTypeXid48GPUMemoryDBE):
 			fallthrough
-		case string(basic.ConditionTypeHighGpuTemp):
-			fallthrough
-		case string(basic.ConditionTypeHighGpuMemoryTemp):
-			fallthrough
-		case string(basic.ConditionTypeXIDECCMemoryErr):
-			fallthrough
-		case string(basic.ConditionTypeGpuVolDramUncorrectable):
+		case string(basic.ConditionTypeXid63ECCRowremapperPending):
 			fallthrough
 		case string(basic.ConditionTypeGpuRegisterFailed):
+			fallthrough
+		case string(basic.ConditionTypeGpuMetricsHang):
+			fallthrough
+		case string(basic.ConditionTypeGpuRowRemappingFailure):
 			continue
 		default:
 			klog.Warningf("unsupported condition type %s", status.Type)
@@ -429,6 +443,28 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 	return strings.Join(indexs, ",")
 }
 
+// gpfs 状态解析
+func parseGPFSDeviceStatus(statuses []prom.AegisNodeStatus) string {
+	disabledMap := make(map[string]bool, 0)
+	for _, status := range statuses {
+		switch status.Condition {
+		case string(basic.ConditionTypeGpfsMountLost):
+			if status.ID != "" {
+				disabledMap[status.ID] = true
+			}
+		default:
+			disabledMap[defaultDeviceId] = true
+		}
+	}
+
+	disabled := make([]string, 0)
+	for id, _ := range disabledMap {
+		disabled = append(disabled, id)
+	}
+	sort.Strings(disabled)
+	return strings.Join(disabled, ",")
+}
+
 // ib 设备状态解析
 func parseIBDeviceStatus(statuses []prom.AegisNodeStatus) string {
 	disabledMap := make(map[string]bool, 0)
@@ -436,10 +472,36 @@ func parseIBDeviceStatus(statuses []prom.AegisNodeStatus) string {
 		switch status.Condition {
 		case string(basic.ConditionTypeIBDown):
 			fallthrough
+		case string(basic.ConditionTypeIBPcieDowngraded):
+			fallthrough
 		case string(basic.ConditionTypeIBLinkFrequentDown):
 			if status.ID != "" {
 				disabledMap[status.ID] = true
 			}
+		default:
+			continue
+		}
+	}
+
+	disabled := make([]string, 0)
+	for id, _ := range disabledMap {
+		disabled = append(disabled, id)
+	}
+	sort.Strings(disabled)
+	return strings.Join(disabled, ",")
+}
+
+// roce 设备状态解析
+func parseRoceDeviceStatus(statuses []prom.AegisNodeStatus) string {
+	disabledMap := make(map[string]bool, 0)
+	for _, status := range statuses {
+		switch status.Condition {
+		case string(basic.ConditionTypeRoceRegisterFailed):
+			if status.ID != "" {
+				disabledMap[status.ID] = true
+			}
+		case string(basic.ConditionTypeRoceDeviceBroken):
+			disabledMap[defaultDeviceId] = true
 		default:
 			continue
 		}

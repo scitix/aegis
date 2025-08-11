@@ -38,14 +38,25 @@ func RestartNode(ctx context.Context, bridge *sop.ApiBridge, node, reason string
 	// }
 	workflows, _ := bridge.TicketManager.GetWorkflows(ctx)
 	rebootCount := 0
+	cancelCount := 0
 	for _, w := range workflows {
-		if w.Action == ticketmodel.TicketWorkflowActionReboot {
+		if w.Action == ticketmodel.TicketWorkflowActionReboot && w.Status == ticketmodel.TicketWorkflowStatusSucceeded  {
 			rebootCount++
+		}
+
+		if w.Action == ticketmodel.TicketWorkflowActionReboot && w.Status == ticketmodel.TicketWorkflowStatusCanceled  {
+			cancelCount++
 		}
 	}
 
 	if rebootCount > 1 {
 		bridge.TicketManager.AddConclusion(ctx, "too many reboot. perhaps a hardware issue")
+		bridge.TicketManager.DispatchTicketToSRE(ctx)
+		return nil
+	}
+
+	if cancelCount > 5 {
+		bridge.TicketManager.AddConclusion(ctx, "too many reboot canceled. dispatch to sre")
 		bridge.TicketManager.DispatchTicketToSRE(ctx)
 		return nil
 	}

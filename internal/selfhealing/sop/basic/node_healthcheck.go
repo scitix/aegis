@@ -40,6 +40,7 @@ func HealthCheckNode(ctx context.Context, bridge *sop.ApiBridge, node string) (b
 	parameters := map[string]interface{}{
 		"registry":   bridge.Registry,
 		"repository": bridge.Repository,
+		"image":      bridge.OpsImage,
 		"pod_name":   podName,
 		"node_name":  node,
 		"region":     bridge.Region,
@@ -99,7 +100,7 @@ func getHardwareTypeByExitCode(exitcode int) (HardwareType, ConditionType) {
 	case 21:
 		return HardwareTypeGpu, ConditionTypeGpuRowRemappingFailure
 	case 22:
-		return HardwareTypeGpu, ConditionTypeGpuSramUncorrectable
+		return HardwareTypeGpu, ConditionTypeGpuAggSramUncorrectable
 	case 23:
 		return HardwareTypeGpu, ConditionTypeGpuCheckFailed
 	case 3:

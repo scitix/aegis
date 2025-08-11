@@ -34,12 +34,6 @@ if [ $? -eq 0 ];then
         echo "===================`date +"%Y-%m-%d %H:%M:%S"` checking nvidia-smi -L failed..."
         ExitWithTimeout 2
     fi
-    # nvidia-smi -q|grep "Correctable Error"|awk '{print $NF}'|grep -v 0  > /dev/null 2>&1
-    # if [ $? -eq 0 ];then
-    #     echo "===================`date +"%Y-%m-%d %H:%M:%S"` checking nvidia-smi -q|grep correctable failed...(Warning)"
-    # else
-    #     echo "===================`date +"%Y-%m-%d %H:%M:%S"` checking nvidia-smi -q|grep correctable success..."
-    # fi
 
     remapping_failures=$(nvidia-smi -q -d ROW_REMAPPER | grep "Remapping Failure Occurred" | awk '{print $NF}')
     for remapping_failure in $remapping_failures

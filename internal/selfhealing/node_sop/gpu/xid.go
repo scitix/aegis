@@ -14,9 +14,12 @@ import (
 )
 
 const (
-	xideccmemoryerr_registry_name    = string(basic.ConditionTypeXIDECCMemoryErr)
-	xidhwsystemerr_registry_name     = string(basic.ConditionTypeXIDHWSystemErr)
-	xidunclassifiederr_registry_name = string(basic.ConditionTypeXIDUnclassifiedErr)
+	xid48_registry_name    = string(basic.ConditionTypeXid48GPUMemoryDBE)
+	xid63_registry_name     = string(basic.ConditionTypeXid63ECCRowremapperPending)
+	xid64_registry_name     = string(basic.ConditionTypeXid64ECCRowremapperFailure)
+	xid95_registry_name     = string(basic.ConditionTypeXid95UncontainedECCError)
+	xid74_registry_name     = string(basic.ConditionTypeXid74NVLinkError)
+	xid79_registry_name     = string(basic.ConditionTypeXid79GPULost)
 )
 
 type gpu struct {
@@ -26,9 +29,12 @@ type gpu struct {
 var gpuInstance *gpu = &gpu{}
 
 func init() {
-	nodesop.RegisterSOP(xideccmemoryerr_registry_name, gpuInstance)
-	nodesop.RegisterSOP(xidhwsystemerr_registry_name, gpuInstance)
-	nodesop.RegisterSOP(xidunclassifiederr_registry_name, gpuInstance)
+	nodesop.RegisterSOP(xid48_registry_name, gpuInstance)
+	nodesop.RegisterSOP(xid63_registry_name, gpuInstance)
+	nodesop.RegisterSOP(xid64_registry_name, gpuInstance)
+	nodesop.RegisterSOP(xid95_registry_name, gpuInstance)
+	nodesop.RegisterSOP(xid74_registry_name, gpuInstance)
+	nodesop.RegisterSOP(xid79_registry_name, gpuInstance)
 }
 
 func (g *gpu) CreateInstance(ctx context.Context, bridge *sop.ApiBridge) error {
@@ -42,13 +48,11 @@ func (g *gpu) Evaluate(ctx context.Context, node string, status *prom.AegisNodeS
 
 func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	klog.Infof("aegis detect node %s, go on analysis issues", status.Condition)
-	reason := fmt.Sprintf("aegis detect node %s, go on analysis issues", status.Condition)
-	if status.ID != "" {
-		reason = fmt.Sprintf("%s id: %s", reason, status.ID)
-	}
+	reason := fmt.Sprintf("aegis detect node %s, gpu id: %s", status.Condition, status.ID)
 
-	if status.Value > 1 {
-		reason = fmt.Sprintf("%s value: %d", reason, status.Value)
+	err := basic.CordonNode(ctx, g.bridge, node, reason, "aegis")
+	if err != nil {
+		return err
 	}
 
 	g.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeGpu, reason)
@@ -56,28 +60,22 @@ func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeSt
 	g.bridge.TicketManager.AdoptTicket(ctx)
 
 	switch status.Condition {
-	case xideccmemoryerr_registry_name:
+	case xid48_registry_name:
+		fallthrough
+	case xid63_registry_name:
+		fallthrough
+	case xid64_registry_name:
+		fallthrough
+	case xid95_registry_name:
 		if !g.bridge.Aggressive {
 			g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 			return nil
 		}
 
-		err := basic.CordonNode(ctx, g.bridge, node, status.Condition, "aegis")
-		if err != nil {
-			return err
-		}
-
-		if handler, ok := gpuHandlers[status.Value]; ok {
-			return handler(ctx, g.bridge, node, status.ID, status.Value)
-		} else {
-			return fmt.Errorf("Not found handler for xid: %d", status.Value)
-		}
-	case xidhwsystemerr_registry_name:
-		err := basic.CordonNode(ctx, g.bridge, node, status.Condition, "aegis")
-		if err != nil {
-			return err
-		}
-
+		return op.RestartNode(ctx, g.bridge, node, reason, canceler)
+	case xid74_registry_name:
+		fallthrough
+	case xid79_registry_name:
 		// check frequency
 		if is, _ := g.bridge.TicketManager.IsFrequentIssue(ctx, 5, 3); is {
 			g.bridge.TicketManager.AddWhySRE(ctx, "over 3 same issue for lastest 5 tickets, perhaps a gpu hardware issue.")
@@ -90,19 +88,19 @@ func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeSt
 			return nil
 		}
 
-		if handler, ok := gpuHandlers[status.Value]; ok {
-			err := handler(ctx, g.bridge, node, status.ID, status.Value)
-			err = op.DiagnoseNode(ctx, g.bridge, node, status.Condition, status.ID, strconv.Itoa(status.Value))
-			if err != nil {
-				klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
-			}
-
+		if !g.bridge.Aggressive {
 			g.bridge.TicketManager.DispatchTicketToSRE(ctx)
-			return err
-		} else {
-			return fmt.Errorf("Not found handler for xid: %d", status.Value)
+			return nil
 		}
-	case xidunclassifiederr_registry_name:
+
+		op.RestartNode(ctx, g.bridge, node, reason, canceler)
+		err = op.DiagnoseNode(ctx, g.bridge, node, status.Condition, status.ID, strconv.Itoa(status.Value))
+		if err != nil {
+			klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
+		}
+
+		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
+		return err
 	}
 
 	return nil

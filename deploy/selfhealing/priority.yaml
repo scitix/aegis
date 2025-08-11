@@ -5,85 +5,63 @@ metadata:
   namespace: monitoring
 data:
   priority.conf: |
+    BaseBoardCriticalIssue:99
     NodeNotReady:0
     NodeInhibitAll:0
     NodeCordon:1
     KubeletFailedCreatePodContainer:50
+    NodeHasTerminatingPod:50
     NodeFrequentDown:8
     NodeHasRestarted:100
-    NetworkLinkTooManyDown:2
-    NetworkLinkFrequentDown:3
-    ICETxTimeout:2
-    KubeletOffline:100
-    KubeletHasRestarted:100
-    KubeletPlegDurationHigh:100
-    ContainerRuntimeOffline:100
-    HighAverageLoad:100
-    KernelDeadlock:100
     InodePressure:100
-    PidPressure:100
     HighZombieProcessesCount:199
-    HighDProcessesCount:199
-    PeerMemModuleNotReady:99
-    PeerMemModuleNotConfig:99
     CPUPressure:50
     CpuUnhealthy:99
     MemoryPressure:99
     KubeletMemoryPressure:90
     MemoryUnhealthy:99
     DiskPressure:100
-    DiskIOPressure:100
     DiskUnhealthy:99
-    LinkDown:100
-    DnsTestFailed:100
-    ConntrackFull:100
-    NetworkTransmitErr:100
-    NetworkReceiveErr:100
-    IBLinkFrequentDown:2
-    IBDown:3
-    RoceDeviceBroken:4
-    IBPcieDowngraded:51
-    IBModuleNotInstalled:51
-    IBSymbolError:100
-    IBReceivedError:100
-    IBTrasmittedError:100
+    NetworkLinkDown:50
     IBRegisterFailed:50
     RoceRegisterFailed:50
-    GpuDown:2    
-    HighGpuTemp:99
-    HighGpuMemoryTemp:99
+    RoceDeviceBroken:4
+    IBDown:3
+    IBLinkFrequentDown:50
+    IBPcieDowngraded:51
     GpuCheckFailed:3
     GpuHung:3
-    GpuPcieDowngraded:51
-    XIDApplicationErr:999
-    GpuApplicationFrequentError:999
-    XIDECCMemoryErr:9
-    XIDHWSystemErr:2
-    GPUNvlinkInactive:3
-    GPUPersistenceModeNotEnabled:3
-    XIDUnclassifiedErr:100
-    GpuAggSramUncorrectable:8
+    GpuRegisterFailed:50
+    HighGpuTemp:99
+    HighGpuMemoryTemp:99
+    Xid48GPUMemoryDBE:9
+    Xid63ECCRowremapperPending:9
+    Xid64ECCRowremapperFailure:9
+    Xid92HighSingleBitECCErrorRate:100
+    Xid95UncontainedECCError:9
+    Xid74NVLinkError:2
+    Xid79GPULost:2
+    GpuRowRemappingPending:9
     GpuRowRemappingFailure:8
     GpuTooManyPageRetired:8
-    GpuRowRemappingPending:9
+    GpuAggSramUncorrectable:8
     GpuVolSramUncorrectable:9
-    GpuVolDramUncorrectable:9
-    GpuVolDramCorrectable:9
-    GpuRegisterFailed:50
+    NvidiaFabricManagerNotActive:2
+    GpuPcieGenDowngraded:51
+    GpuPcieWidthDowngraded:51
+    GpuHWSlowdown:99
+    GpuNvlinkInactive:3
+    GpuPersistenceModeNotEnabled:3
     GpuMetricsHang:99
-    GPUHWSlowdown:99
     GpfsDown:2
     GpfsInactive:9
     GpfsMountLost:10
     GpfsThreadDeadlock:11
     GpfsTestFailed:50
     GpfsIBNotConfig:51
-    GpfsRdmaStatusError:52
-    GpfsQuorumConnectionDown:10
-    GpfsExpelledFromCluster:10
-    GpfsTimeClockError:52
-    GpfsOsLockup:52
-    GpfsBadTcpState:52
-    GpfsUnauthorized:52
-    GpfsBond0Lost:52
-    BaseBoardCriticalIssue:99
+    GpfsRdmaError:49
+    GpfsNodeNotHealthy:49
+    GpfsNotMounted:49
+    GpfsNotStarted:49
+    GpfsNotInCluster:49
+    GpfsNotInstalled:49

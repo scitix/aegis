@@ -66,8 +66,8 @@ const (
 type ConditionType string
 
 const (
-	ConditionTypeNull                            ConditionType = "NULL"
-	
+	ConditionTypeNull ConditionType = "NULL"
+
 	// baseboard
 	ConditionTypeBaseBoardCriticalIssue ConditionType = "BaseBoardCriticalIssue"
 
@@ -95,6 +95,8 @@ const (
 	ConditionTypeIBDown             ConditionType = "IBDown"
 	ConditionTypeIBRegisterFailed   ConditionType = "IBRegisterFailed"
 	ConditionTypeIBPcieDowngraded   ConditionType = "IBPcieDowngraded"
+
+	// roce
 	ConditionTypeRoceRegisterFailed ConditionType = "RoceRegisterFailed"
 	ConditionTypeRoceDeviceBroken   ConditionType = "RoceDeviceBroken"
 
@@ -112,26 +114,31 @@ const (
 	ConditionTypeGpfsIBNotConfig    ConditionType = "GpfsIBNotConfig"
 
 	// gpu
-	ConditionTypeGpuHung                      ConditionType = "GpuHung"
-	ConditionTypeGpuCheckFailed               ConditionType = "GpuCheckFailed"
-	ConditionTypeGpuRegisterFailed            ConditionType = "GpuRegisterFailed"
-	ConditionTypeHighGpuMemoryTemp            ConditionType = "HighGpuMemoryTemp"
-	ConditionTypeHighGpuTemp                  ConditionType = "HighGpuTemp"
-	ConditionTypeXIDECCMemoryErr              ConditionType = "XIDECCMemoryErr"
-	ConditionTypeXIDHWSystemErr               ConditionType = "XIDHWSystemErr"
-	ConditionTypeGpuRowRemappingPending       ConditionType = "GpuRowRemappingPending"
-	ConditionTypeGpuRowRemappingFailure       ConditionType = "GpuRowRemappingFailure"
-	ConditionTypeGpuTooManyPageRetired        ConditionType = "GpuTooManyPageRetired"
-	ConditionTypeGpuAggSramUncorrectable      ConditionType = "GpuAggSramUncorrectable"
-	ConditionTypeGpuVolSramUncorrectable      ConditionType = "GpuVolSramUncorrectable"
-	ConditionTypeGpuVolDramUncorrectable      ConditionType = "GpuVolDramUncorrectable"
-	ConditionTypeNvidiaFabricManagerNotActive ConditionType = "NvidiaFabricManagerNotActive"
-	ConditionTypeGpuDown                      ConditionType = "GpuDown"
-	ConditionTypeGpuPcieDowngraded            ConditionType = "GpuPcieDowngraded"
-	ConditionTypeGpuGpuHWSlowdown             ConditionType = "GPUHWSlowdown"
-	ConditionTypeGpuNvlinkInactive            ConditionType = "GPUNvlinkInactive"
-	ConditionTypeGPUPersistenceModeNotEnabled ConditionType = "GPUPersistenceModeNotEnabled"
-	ConditionTypeGpuMetricsHang               ConditionType = "GpuMetricsHang"
+	ConditionTypeGpuHung                        ConditionType = "GpuHung"
+	ConditionTypeGpuCheckFailed                 ConditionType = "GpuCheckFailed"
+	ConditionTypeGpuRegisterFailed              ConditionType = "GpuRegisterFailed"
+	ConditionTypeHighGpuMemoryTemp              ConditionType = "HighGpuMemoryTemp"
+	ConditionTypeHighGpuTemp                    ConditionType = "HighGpuTemp"
+	ConditionTypeXid48GPUMemoryDBE              ConditionType = "Xid48GPUMemoryDBE"
+	ConditionTypeXid63ECCRowremapperPending     ConditionType = "Xid63ECCRowremapperPending"
+	ConditionTypeXid64ECCRowremapperFailure     ConditionType = "Xid64ECCRowremapperFailure"
+	ConditionTypeXid92HighSingleBitECCErrorRate ConditionType = "Xid92HighSingleBitECCErrorRate"
+	ConditionTypeXid95UncontainedECCError       ConditionType = "Xid95UncontainedECCError"
+	ConditionTypeXid74NVLinkError               ConditionType = "Xid74NVLinkError"
+	ConditionTypeXid79GPULost                   ConditionType = "Xid79GPULost"
+	ConditionTypeGpuRowRemappingPending         ConditionType = "GpuRowRemappingPending"
+	ConditionTypeGpuRowRemappingFailure         ConditionType = "GpuRowRemappingFailure"
+	ConditionTypeGpuTooManyPageRetired          ConditionType = "GpuTooManyPageRetired"
+	ConditionTypeGpuAggSramUncorrectable        ConditionType = "GpuAggSramUncorrectable"
+	ConditionTypeGpuVolSramUncorrectable        ConditionType = "GpuVolSramUncorrectable"
+	ConditionTypeGpuSmClkSlowDown               ConditionType = "GpuSmClkSlowDown"
+	ConditionTypeNvidiaFabricManagerNotActive   ConditionType = "NvidiaFabricManagerNotActive"
+	ConditionTypeGpuPcieGenDowngraded           ConditionType = "GpuPcieGenDowngraded"
+	ConditionTypeGpuPcieWidthDowngraded         ConditionType = "GpuPcieWidthDowngraded"
+	ConditionTypeGpuGpuHWSlowdown               ConditionType = "GPUHWSlowdown"
+	ConditionTypeGpuNvlinkInactive              ConditionType = "GPUNvlinkInactive"
+	ConditionTypeGPUPersistenceModeNotEnabled   ConditionType = "GPUPersistenceModeNotEnabled"
+	ConditionTypeGpuMetricsHang                 ConditionType = "GpuMetricsHang"
 
 	// default
 	ConditionTypeNodeCordon                      ConditionType = "NodeCordon"
@@ -146,8 +153,10 @@ const (
 type RemedyAction string
 
 const (
-	BreakDeadlockRemedyAction RemedyAction = "breakDeadlock"
-	DropCacheRemedyAction     RemedyAction = "DropCache"
-	PeerMemRemedyAction       RemedyAction = "ConfigPeerMem"
-	RestartKubeletAction      RemedyAction = "RestartKubelet"
+	BreakDeadlockRemedyAction  RemedyAction = "breakDeadlock"
+	DropCacheRemedyAction      RemedyAction = "DropCache"
+	PeerMemRemedyAction        RemedyAction = "ConfigPeerMem"
+	RestartKubeletAction       RemedyAction = "RestartKubelet"
+	RestartFabricmanagerAction RemedyAction = "RestartFabricmanager"
+	EnableGpuPersistenceAction RemedyAction = "EnableGpuPersistence"
 )

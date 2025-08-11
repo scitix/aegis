@@ -14,8 +14,6 @@ import (
 
 const (
 	gpusramuncorrectable_registry_name = string(basic.ConditionTypeGpuVolSramUncorrectable)
-	gpudramuncorrectable_registry_name = string(basic.ConditionTypeGpuVolDramUncorrectable)
-	gpudramcorrectable_registry_name   = string(basic.ConditionTypeGpuVolDramCorrectable)
 )
 
 type volecc struct {
@@ -26,8 +24,6 @@ var voleccInstance *volecc = &volecc{}
 
 func init() {
 	nodesop.RegisterSOP(gpusramuncorrectable_registry_name, voleccInstance)
-	nodesop.RegisterSOP(gpudramuncorrectable_registry_name, voleccInstance)
-	nodesop.RegisterSOP(gpudramcorrectable_registry_name, voleccInstance)
 }
 
 func (g *volecc) CreateInstance(ctx context.Context, bridge *sop.ApiBridge) error {

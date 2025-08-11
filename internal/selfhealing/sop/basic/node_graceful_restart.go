@@ -71,6 +71,7 @@ func restartNode(ctx context.Context, bridge *sop.ApiBridge, node string) (bool,
 	parameters := map[string]interface{}{
 		"registry":   bridge.Registry,
 		"repository": bridge.Repository,
+		"image":      bridge.OpsImage,
 		"job_name":   jobName,
 		"node_name":  node,
 	}

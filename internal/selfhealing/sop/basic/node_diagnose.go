@@ -42,6 +42,7 @@ func DiagnoseNode(ctx context.Context, bridge *sop.ApiBridge, node string, tpe s
 	parameters := map[string]interface{}{
 		"registry":   bridge.Registry,
 		"repository": bridge.Repository,
+		"image":      bridge.OpsImage,
 		"pod_name":   podName,
 		"node_name":  node,
 		"alert_name": bridge.AlertName,
