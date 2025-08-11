@@ -49,30 +49,13 @@ fi
 
 # disk
 
-
 # network
-if [[ "$type" == "NetworkLinkTooManyDown" ]]; then
+if [[ "$type" == "NetworkLinkDown" ]]; then
     device=$2
-    echo "hint: 检查网卡设备对应的 down 计数是否过大"
-    echo "cmd: cat /sys/class/net/$device/carrier_down_count"
-    count=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "cat /sys/class/net/$device/carrier_down_count")
-
-    if [[ $count -gt 100 ]]; then
-        echo "result: 网卡 $device 的 down 计数过大，当前计数为 $count"
-    else
-        echo "result: ok! 网卡 $device 的 down 计数正常范围内，当前计数为 $count"
-    fi
-
-    ExitWithTimeout 0
-fi
-
-if [[ "$type" == "NetworkLinkFrequentDown" ]]; then
-    device=$2
-    echo "hint: 检查网卡设备对应的 down 计数"
-    echo "cmd: cat /sys/class/net/$device/carrier_down_count"
-    count=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "cat /sys/class/net/$device/carrier_down_count")
-    echo "result: 网卡 $device 的 down 计数当前为 $count"
-
+    echo "hint: 检查 bond0 下 slave 网卡情况"
+    echo "cmd: cat /proc/net/bonding/bond0"
+    result=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "cat /proc/net/bonding/bond0")
+    echo "result:" $result
     ExitWithTimeout 0
 fi
 
@@ -91,30 +74,6 @@ if [[ "$type" == "GpfsIBNotConfig" ]]; then
     else
         echo "result: ok"
     fi
-fi
-
-# ib
-if [[ "$type" == "IBPingFailed" ]]; then
-    echo "hint: 检查 ib 卡状态是否正常"
-    echo "cmd: ibstatus"
-
-    ibs=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c ibdev2netdev|grep ib|awk '{print $1}')
-    if [[ "$node" =~ "taurus-c" || "$node" =~ "taurus-s" ]]; then
-        ibs="mlx5_0 mlx5_2"
-    fi
-
-    for ib in $ibs
-    do
-        ibstatus $ib
-        ib_status=`nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "ibstatus $ib" | grep -v "phys state" | grep state|awk '{print $NF}'`
-        if [ $ib_status != "ACTIVE" ];then
-            echo "result: device $ib status $ib_status"
-            ExitWithTimeout 0
-        fi
-    done
-    echo "result: ok"
-
-    ExitWithTimeout $?
 fi
 
 if [[ "$type" == "IBDown" ]]; then
@@ -191,7 +150,7 @@ if [[ "$type" == "GpuRowRemappingFailure" ]]; then
     ExitWithTimeout $?
 fi
 
-if [[ "$type" == "GpuSramUncorrectable" ]]; then
+if [[ "$type" == "GpuAggSramUncorrectable" ]]; then
     echo "hint: 获取 gpu ecc sram uncorrectable 数值大于或等于 4 的情况"
     echo "cmd: nvidia-smi -q -d ECC | grep \"SRAM Uncorrectable\""
 
@@ -271,7 +230,7 @@ if [[ "$type" == "GpuCheckFailed" ]]; then
     ExitWithTimeout $?
 fi
 
-if [[ "$type" == "XIDHWSystemErr" ]]; then
+if [[ "$type" =~ ^Xid ]]; then
     device=$2
     code=$3
     echo "hint: 查看对应的 GPU XID 异常信息"
@@ -289,4 +248,25 @@ if [[ "$type" == "GpuRegisterFailed" ]]; then
     echo "hint: 查看 nvidia 驱动 Pod 异常状态"
 
     echo "hint: 查看 nvidia 驱动 Pod 错误日志"
+fi
+
+if [[ "$type" == "NvidiaFabricManagerNotActive" ]]; then
+    echo "hint: 查看 nvidia-fabricmanager 服务状态"
+    echo "cmd: systemctl status nvidia-fabricmanager"
+    result=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "systemctl status nvidia-fabricmanager")
+    echo "result:" $result
+fi
+
+if [[ "$type" == "GpuPersistenceModeNotEnabled" ]]; then
+    echo "hint: 查看 nvidia-fabricmanager 服务状态"
+    echo "cmd: nvidia-smi -q | \"Persistence Mode\""
+    result=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "nvidia-smi -q" | 'Persistence Mode')
+    echo "result:" $result
+fi
+
+if [[ "$type" == "GpuNvlinkInactive" ]]; then
+    echo "hint: 查看 nvidia nvlink 状态"
+    echo "cmd: nvidia-smi nvlink -s"
+    result=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "nvidia-smi nvlink -s")
+    echo "result:" $result
 fi

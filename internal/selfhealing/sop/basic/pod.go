@@ -42,17 +42,6 @@ func DeletePodInNodeWithTargetLabel(ctx context.Context, bridge *sop.ApiBridge, 
 		return fmt.Errorf("Unexpected pod count. expected 1, got: %d", len(pods))
 	}
 
-	// if repair {
-	// 	defer func() {
-	// 		count := 1
-	// 		if bridge.NodeStatus.RepairCount != nil {
-	// 			count = *bridge.NodeStatus.RepairCount + 1
-	// 		}
-
-	// 		AddNodeLabel(ctx, bridge, node, NodeRepairCountKey, fmt.Sprintf("%d", count), "")
-	// 	}()
-	// }
-
 	err = bridge.KubeClient.CoreV1().Pods(pods[0].Namespace).Delete(ctx, pods[0].Name, metav1.DeleteOptions{})
 	if err != nil {
 		klog.Errorf("error delete pod: %s", err)
@@ -162,5 +151,30 @@ func GetPodInNode(ctx context.Context, bridge *sop.ApiBridge, node string) ([]*v
 		p := pod.DeepCopy()
 		results = append(results, p)
 	}
+	return results, nil
+}
+
+func GetTerminatingPodInNode(ctx context.Context, bridge *sop.ApiBridge, node string) ([]*v1.Pod, error) {
+	if node == "" {
+		return nil, errors.New("Empty node name")
+	}
+
+	listOptions := metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("spec.nodeName=%s", node),
+	}
+
+	pods, err := bridge.KubeClient.CoreV1().Pods(metav1.NamespaceAll).List(ctx, listOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*v1.Pod, 0)
+    // 过滤出处于 Terminating 的 Pod
+    for _, pod := range pods.Items {
+        if pod.DeletionTimestamp != nil {
+            results = append(results, &pod)
+        }
+    }
+	
 	return results, nil
 }

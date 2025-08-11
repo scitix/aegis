@@ -110,7 +110,7 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 	}
 
 	// gpu too many sram uncorrectable error
-	if hardwareType == basic.HardwareTypeGpu && conditionType == basic.ConditionTypeGpuSramUncorrectable {
+	if hardwareType == basic.HardwareTypeGpu && conditionType == basic.ConditionTypeGpuAggSramUncorrectable {
 		if !n.bridge.TicketManager.CheckTicketExists(ctx) {
 			customTitle := fmt.Sprintf("node %s healthcheck find gpu too many sram uncorrectable error", node)
 			n.bridge.TicketManager.CreateTicket(ctx, status, string(hardwareType), customTitle)

@@ -15,33 +15,33 @@ import (
 )
 
 const (
-	persistencemode_registry_name = string(basic.ConditionTypeGPUPersistenceModeNotEnabled)
+	gpufabricmanagerinactive_registry_name = string(basic.ConditionTypeNvidiaFabricManagerNotActive)
 )
 
-type persistencemode struct {
+type gpufabricmanagerinactive struct {
 	bridge *sop.ApiBridge
 }
 
-var persistencemodeInstance *persistencemode = &persistencemode{}
+var gpufabricmanagerinactiveInstance *gpufabricmanagerinactive = &gpufabricmanagerinactive{}
 
 func init() {
-	nodesop.RegisterSOP(persistencemode_registry_name, persistencemodeInstance)
+	nodesop.RegisterSOP(gpufabricmanagerinactive_registry_name, gpufabricmanagerinactiveInstance)
 }
 
-func (g *persistencemode) CreateInstance(ctx context.Context, bridge *sop.ApiBridge) error {
-	persistencemodeInstance.bridge = bridge
+func (g *gpufabricmanagerinactive) CreateInstance(ctx context.Context, bridge *sop.ApiBridge) error {
+	gpufabricmanagerinactiveInstance.bridge = bridge
 	return nil
 }
 
-func (g *persistencemode) Evaluate(ctx context.Context, node string, status *prom.AegisNodeStatus) bool {
+func (g *gpufabricmanagerinactive) Evaluate(ctx context.Context, node string, status *prom.AegisNodeStatus) bool {
 	return true
 }
 
-func (g *persistencemode) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
-	klog.Infof("cordon node: %s, go on analysis issues", node)
+func (g *gpufabricmanagerinactive) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	klog.Infof("aegis detect node %s %s", node, status.Condition)
+	reason := fmt.Sprintf("aegis detect node %s %s, begin to restart nvidia-fabricmanager", node, status.Condition)
 
-	reason := fmt.Sprintf("aegis detect node %s %s, gpu: %s persistence mode not enabled, try to enable it", node, status.Condition, status.ID)
-	err := basic.CordonNode(ctx, g.bridge, node, reason, "aegis")
+	err := basic.CordonNode(ctx, g.bridge, node, status.Condition, "aegis")
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (g *persistencemode) Execute(ctx context.Context, node string, status *prom
 	timeOutCtx, cancel := context.WithTimeout(ctx, time.Minute*time.Duration(20))
 	defer cancel()
 	g.bridge.TicketManager.AddWorkflow(ctx, ticketmodel.TicketWorkflowActionRemedy, ticketmodel.TicketWorkflowStatusRunning, nil)
-	success, err := basic.RemedyNode(timeOutCtx, g.bridge, node, basic.EnableGpuPersistenceAction)
+	success, err := basic.RemedyNode(timeOutCtx, g.bridge, node, basic.RestartFabricmanagerAction)
 
 	if !success {
 		g.bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionRemedy, ticketmodel.TicketWorkflowStatusFailed, nil)

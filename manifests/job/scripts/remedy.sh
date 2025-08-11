@@ -8,7 +8,7 @@ node=$3
 action=$4
 current_time=`date +"%Y-%m-%d %H:%M:%S"`
 
-if [ "$action" == "breakDeadlock" ]; then
+if [ "$action" == "BreakDeadlock" ]; then
     /usr/lpp/mmfs/bin/mmdiag --deadlock -Y
 
     echo "begin to break gpfs deadlock"
@@ -66,4 +66,12 @@ fi
 
 if [ "$action" == "RestartKubelet" ]; then
     systemctl restart containerd && systemctl restart kubelet
+fi
+
+if [ "$action" == "RestartFabricmanager" ]; then
+    systemctl restart containerd
+fi
+
+if [ "$action" == "EnableGpuPersistence" ]; then
+    nvidia-persistenced
 fi

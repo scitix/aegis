@@ -16,7 +16,6 @@ import (
 const (
 	gpfsdown_registry_name      = string(basic.ConditionTypeGpfsDown)
 	gpfsmountlost_registry_name = string(basic.ConditionTypeGpfsMountLost)
-	gpfsinactive_registry_name  = string(basic.ConditionTypeGpfsInactive)
 )
 
 type gpfs struct {
@@ -26,7 +25,6 @@ type gpfs struct {
 var gpfsInstance *gpfs = &gpfs{}
 
 func init() {
-	nodesop.RegisterSOP(gpfsinactive_registry_name, gpfsInstance)
 	nodesop.RegisterSOP(gpfsdown_registry_name, gpfsInstance)
 	nodesop.RegisterSOP(gpfsmountlost_registry_name, gpfsInstance)
 }
@@ -48,10 +46,6 @@ func (g *gpfs) Execute(ctx context.Context, node string, status *prom.AegisNodeS
 	g.bridge.TicketManager.AdoptTicket(ctx)
 
 	basic.CordonNode(ctx, g.bridge, node, status.Condition, "aegis")
-
-	// if g.bridge.NodeStatus.RepairCount != nil && *g.bridge.NodeStatus.RepairCount > 5 {
-	// 	return nil
-	// }
 
 	workflows, _ := g.bridge.TicketManager.GetWorkflows(ctx)
 	repairCount := 0

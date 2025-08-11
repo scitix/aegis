@@ -33,6 +33,7 @@ import (
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/gpfs"
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/gpu"
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/ib"
+	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/roce"
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/memory"
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/network"
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/node"
@@ -85,11 +86,11 @@ func NewCommand(config *config.SelfHealingConfig, use string) *cobra.Command {
 
 	c.PersistentFlags().StringVar(&o.tpe, "type", "", "node issue type.")
 	c.PersistentFlags().StringVar(&o.priorityConfig, "priority-config", "/selfhealing/config/priority.conf", "node status priority config")
-	c.PersistentFlags().IntVar(&o.level, "level", 0, "node issue selfhealing level")
 
+	c.PersistentFlags().IntVar(&o.level, "level", 0, "node issue selfhealing level")
 	c.PersistentFlags().BoolVar(&o.onlyTicket, "ticket.only", false, "only create ticket record for issue, no operation actions")
 	c.PersistentFlags().StringVar(&o.ticketSystem, "ticket.system", "Node", "ticket system for record issue")
-
+	c.PersistentFlags().StringVar(&o.opsImage, "ops.image", "", "selfhealing ops image")
 	return c
 }
 
@@ -114,6 +115,8 @@ type nodeOptions struct {
 
 	onlyTicket   bool
 	ticketSystem string
+
+	opsImage string
 
 	node   *v1.Node
 	bridge *sop.ApiBridge
@@ -193,16 +196,18 @@ func (o *nodeOptions) complete(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	o.bridge = &sop.ApiBridge{
-		ClusterName:   o.config.ClusterName,
-		Region:        o.config.Region,
-		AlertName:     alertName,
-		Aggressive:    o.level > 0,
-		Registry:      o.config.Registry,
-		Repository:    o.config.Repository,
-		KubeClient:    o.config.KubeClient,
-		PromClient:    o.promApi,
-		TicketManager: ticketManager,
-		EventRecorder: recorder,
+		ClusterName:     o.config.ClusterName,
+		Region:          o.config.Region,
+		AlertName:       alertName,
+		Aggressive:      o.level > 0,
+		AggressiveLevel: o.level,
+		Registry:        o.config.Registry,
+		Repository:      o.config.Repository,
+		OpsImage:        o.opsImage,
+		KubeClient:      o.config.KubeClient,
+		PromClient:      o.promApi,
+		TicketManager:   ticketManager,
+		EventRecorder:   recorder,
 	}
 
 	gatekeeper, err := gatekeeper.CreateGateKeeper(context.Background(), o.bridge)

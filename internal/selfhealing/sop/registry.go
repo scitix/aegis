@@ -14,13 +14,15 @@ type NodeStatus struct {
 }
 
 type ApiBridge struct {
-	ClusterName string
-	Region      string
-	AlertName   string
-	Aggressive  bool
+	ClusterName     string
+	Region          string
+	AlertName       string
+	Aggressive      bool
+	AggressiveLevel int
 
 	Registry   string
 	Repository string
+	OpsImage   string
 
 	KubeClient kubernetes.Interface
 	PromClient *prom.PromAPI

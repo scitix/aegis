@@ -64,8 +64,8 @@ func (g *ibregisterfail) Execute(ctx context.Context, node string, status *prom.
 		message := fmt.Sprintf("fail to restart rdma pod: %s", err)
 		g.bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionRestartPod, ticketmodel.TicketWorkflowStatusFailed, &message)
 
-		if count > 6 {
-			g.bridge.TicketManager.AddConclusion(ctx, "failed over 6 times")
+		if count > 1 {
+			g.bridge.TicketManager.AddConclusion(ctx, "failed over 1 times")
 			g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 		}
 	} else {

@@ -19,7 +19,7 @@ import (
 // drain node
 // try to shutdown node
 func NodeGracefulShutdown(ctx context.Context, bridge *sop.ApiBridge, node, reason, remark string, cancel WaitCancelFunc) (bool, error) {
-	// wait cirtical pod running completed, 3d
+	// wait cirtical pod running completed, 4d
 	dayCtx, dayCancel := context.WithTimeout(ctx, time.Hour*time.Duration(4*24))
 	defer dayCancel()
 	err := WaitNodeCriticalPodCompeleted(dayCtx, bridge, node, cancel)
@@ -73,6 +73,7 @@ func shutdownNode(ctx context.Context, bridge *sop.ApiBridge, node string) (bool
 	parameters := map[string]interface{}{
 		"registry":   bridge.Registry,
 		"repository": bridge.Repository,
+		"image":      bridge.OpsImage,
 		"job_name":   jobName,
 		"node_name":  node,
 	}
