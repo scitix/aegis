@@ -35,20 +35,6 @@ func (g *volecc) Evaluate(ctx context.Context, node string, status *prom.AegisNo
 	return true
 }
 
-func (g *volecc) KickTicket(ctx context.Context, node string, status *prom.AegisNodeStatus) bool {
-	err := g.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeGpu)
-	if err != nil {
-		klog.Warningf("create ticket failed: %v", err)
-		return false
-	}
-
-	g.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
-	g.bridge.TicketManager.AddConclusion(ctx, status.Condition)
-	g.bridge.TicketManager.DispatchTicketToSRE(ctx)
-
-	return true
-}
-
 func (g *volecc) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	klog.Infof("cordon node: %s, go on analysis issues", node)
 
