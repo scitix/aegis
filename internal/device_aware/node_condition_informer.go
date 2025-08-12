@@ -395,6 +395,8 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 			fallthrough
 		case string(basic.ConditionTypeGpuVolSramUncorrectable):
 			fallthrough
+		case string(basic.ConditionTypeGpuSmClkSlowDown):
+			fallthrough
 		case string(basic.ConditionTypeGpuGpuHWSlowdown):
 			fallthrough
 		case string(basic.ConditionTypeGpuPcieGenDowngraded):
@@ -429,7 +431,7 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 		case string(basic.ConditionTypeGpuRowRemappingFailure):
 			continue
 		default:
-			klog.Warningf("unsupported condition type %s", status.Type)
+			klog.Warningf("unsupported condition: %s", status.Condition)
 		}
 	}
 

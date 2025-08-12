@@ -11,7 +11,6 @@ case "$ACTION" in
     ;;
   healthcheck)
     cp /opt/aegis/healthcheck.sh /var/selfhealing/
-    cp /opt/aegis/check_gpu_status.py /var/selfhealing/
     nsenter -m/proc/1/ns/mnt -- chmod +x /var/selfhealing/healthcheck.sh
     nsenter -m/proc/1/ns/mnt -- mkdir -p /scratch/AIInfra/selfhealing/healthcheck
     nsenter -m/proc/1/ns/mnt -- /bin/bash -c "cd /var/selfhealing/ && ./healthcheck.sh $@"

@@ -6,7 +6,7 @@ metadata:
 spec:
   priorityClassName: system-node-critical
   containers:
-  - image: {{.registry}}/{{.repository}}/aegis-sop:v2.0.0
+  - image: {{.image}}
     imagePullPolicy: Always
     name: diagnose
     command:
