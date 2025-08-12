@@ -46,7 +46,7 @@ func (g *gpubroken) Execute(ctx context.Context, node string, status *prom.Aegis
 	}
 
 	if !g.bridge.TicketManager.CheckTicketExists(ctx) {
-		g.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeGpu)
+		g.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeGpu, reason)
 		g.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
 		g.bridge.TicketManager.AdoptTicket(ctx)
 		return nil
