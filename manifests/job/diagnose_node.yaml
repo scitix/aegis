@@ -10,6 +10,7 @@ spec:
     imagePullPolicy: Always
     name: diagnose
     command:
+      - /entrypoint.sh
       - diagnose
       - {{.type}}
       - {{.parameters}}
@@ -23,8 +24,8 @@ spec:
     securityContext:
       privileged: true
     volumeMounts:
-    - mountPath: /dev
-      name: dev
+    - mountPath: /var/selfhealing
+      name: script
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   hostNetwork: true
@@ -41,7 +42,7 @@ spec:
     operator: Exists
     tolerationSeconds: 300
   volumes:
-  - name: dev
-    hostPath:
-      path: /dev
-      type: Directory
+  - hostPath:
+      path: /var/selfhealing
+      type: ""
+    name: script

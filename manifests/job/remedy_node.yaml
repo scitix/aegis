@@ -25,8 +25,8 @@ spec:
     securityContext:
       privileged: true
     volumeMounts:
-    - mountPath: /tmp
-      name: tmp
+    - name: script
+      mountPath: /var/selfhealing
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   hostNetwork: true
@@ -44,6 +44,6 @@ spec:
     tolerationSeconds: 300
   volumes:
   - hostPath:
-      path: /tmp
+      path: /var/selfhealing
       type: ""
-    name: tmp
+    name: script

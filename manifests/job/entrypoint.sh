@@ -7,23 +7,24 @@ shift
 
 case "$ACTION" in
   diagnose)
-    /opt/aegis/diagnose.sh "$@"
+    cp /opt/aegis/diagnose.sh /var/selfhealing/
+    nsenter -m/proc/1/ns/mnt -- chmod +x /var/selfhealing/diagnose.sh
+    nsenter -m/proc/1/ns/mnt -- /bin/bash -c "cd /var/selfhealing/ && ./diagnose.sh $@"
     ;;
   healthcheck)
     cp /opt/aegis/healthcheck.sh /var/selfhealing/
     nsenter -m/proc/1/ns/mnt -- chmod +x /var/selfhealing/healthcheck.sh
-    nsenter -m/proc/1/ns/mnt -- mkdir -p /scratch/AIInfra/selfhealing/healthcheck
     nsenter -m/proc/1/ns/mnt -- /bin/bash -c "cd /var/selfhealing/ && ./healthcheck.sh $@"
     ;;
   remedy)
-    cp /opt/aegis/remedy.sh /tmp/
-    chmod +x /tmp/remedy.sh
-    nsenter -m/proc/1/ns/mnt -- /bin/bash -c "cd /tmp && ./remedy.sh $@"
+    cp /opt/aegis/remedy.sh /var/selfhealing/
+    nsenter -m/proc/1/ns/mnt -- chmod +x /var/selfhealing/remedy.sh
+    nsenter -m/proc/1/ns/mnt -- /bin/bash -c "cd /var/selfhealing/ && ./remedy.sh $@"
     ;;
   repair)
-    cp /opt/aegis/repair.sh /tmp/
-    chmod +x /tmp/repair.sh
-    nsenter -m/proc/1/ns/mnt -- /bin/bash -c "cd /tmp && ./repair.sh $@"
+    cp /opt/aegis/repair.sh /var/selfhealing/
+    nsenter -m/proc/1/ns/mnt -- chmod +x /var/selfhealing/repair.sh
+    nsenter -m/proc/1/ns/mnt -- /bin/bash -c "cd /var/selfhealing/ && ./repair.sh $@"
     ;;
   reboot)
     cp /opt/aegis/restart_node.sh /var/selfhealing/
