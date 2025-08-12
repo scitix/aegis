@@ -431,7 +431,7 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 		case string(basic.ConditionTypeGpuRowRemappingFailure):
 			continue
 		default:
-			klog.Warningf("unsupported condition type %s", status.Type)
+			klog.Warningf("unsupported condition: %s", status.Condition)
 		}
 	}
 

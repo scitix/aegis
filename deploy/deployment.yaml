@@ -41,7 +41,7 @@ spec:
         - --diagnosis.cache=true
         - --diagnosis.language=chinese
         - --diagnosis.collector-image=registry-ap-southeast.scitix.ai/k8s/aegis-collector:v1.0.0
-        - device-aware.enable=true
+        - --device-aware.enable=true
         - --config=/aegis/config/config.yaml
         - --web.route-prefix=/
         - --v=4

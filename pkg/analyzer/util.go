@@ -28,14 +28,14 @@ func FetchEvents(
 		if prom == nil {
 			return nil, fmt.Errorf("EnableProm=true but prom is nil")
 		}
-		if timeRange == "" {
-			timeRange = "7d"
-		}
+
 		switch objectKind {
 		case "Pod":
-			return prom.GetEventWithRange(ctx, "Pod", namespace, name, eventType, timeRange)
-		case "Node", "PyTorchJob": // GetEvent
-			return prom.GetEvent(ctx, objectKind, namespace, name, eventType)
+			return prom.GetEventWithRange(ctx, "Pod", namespace, name, eventType, "7d")
+		case "PyTorchJob":
+			return prom.GetEventWithRange(ctx, "PyTorchJob", namespace, name, eventType, "7d")
+		case "Node":
+			return prom.GetEventWithRange(ctx, "Node", namespace, name, eventType, "2d")
 		default:
 			return nil, fmt.Errorf("unsupported objectKind for Prometheus: %s", objectKind)
 		}
