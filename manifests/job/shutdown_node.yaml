@@ -10,7 +10,7 @@ spec:
   template:
     spec:
       containers:
-      - image: {{.registry}}/{{.repository}}/aegis-sop:v2.0.0
+      - image: {{.image}}
         imagePullPolicy: Always
         name: shutdown
         command:

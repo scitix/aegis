@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/klog/v2"
 	"github.com/scitix/aegis/internal/selfhealing"
 	"github.com/scitix/aegis/internal/selfhealing/sop"
 )
@@ -28,7 +29,7 @@ func CreateGateKeeper(ctx context.Context, bridge *sop.ApiBridge) (*GateKeeper, 
 
 	return &GateKeeper{
 		bridge:            bridge,
-		NodesDisableLimit: int(nodesDisableRatio * float64(len(nodes) - len(disables))),
+		NodesDisableLimit: int(nodesDisableRatio * float64(len(nodes)-len(disables))),
 	}, nil
 }
 
@@ -43,8 +44,10 @@ func (g *GateKeeper) Pass(ctx context.Context) (bool, string) {
 		return false, fmt.Sprintf("Error get node disabled list from prometheus: %s", err)
 	}
 
-	if cordonNum := len(statuses); cordonNum - len(disables) > g.NodesDisableLimit {
+	if cordonNum := len(statuses); cordonNum-len(disables) > g.NodesDisableLimit {
 		return false, fmt.Sprintf("cluster cordon %d node, over the limit: %d", cordonNum, g.NodesDisableLimit)
+	} else {
+		klog.V(4).Infof("pass gatekeeper. cluster cordon %d node, disabled %d node, gate limit %d")
 	}
 
 	return true, ""

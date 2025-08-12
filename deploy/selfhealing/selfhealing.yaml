@@ -75,10 +75,11 @@ spec:
                     - --orgname=siflow
                     - --registry=registry-ap-southeast.scitix.ai
                     - --repository=k8s
-                    - --ticket.system=Node
                     - node
                     - {{.InvolvedObjectNode}}
                     - --level=1
+                    - --ticket.system=Node
+                    - --ops.image=registry-ap-southeast.scitix.ai/k8s/aegis:ops-bcb7b48
                     env:
                     - name: SRE
                       value: syuan,cfeng,xfchen

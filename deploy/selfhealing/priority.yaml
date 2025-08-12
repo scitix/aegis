@@ -46,6 +46,7 @@ data:
     GpuTooManyPageRetired:8
     GpuAggSramUncorrectable:8
     GpuVolSramUncorrectable:9
+    GpuSmClkSlowDown:51
     NvidiaFabricManagerNotActive:2
     GpuPcieGenDowngraded:51
     GpuPcieWidthDowngraded:51
