@@ -49,6 +49,11 @@ func (n *memoryunhealthy) Execute(ctx context.Context, node string, status *prom
 	if err != nil {
 		klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
 	}
+
+	if !n.bridge.Aggressive {
+		n.bridge.TicketManager.DispatchTicketToSRE(ctx)
+		return nil
+	}
 	
 	cancelled := false
 	if !basic.CheckNodeIsCritical(ctx, n.bridge, node) {

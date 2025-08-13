@@ -49,6 +49,11 @@ func (c *cpuunhealthy) Execute(ctx context.Context, node string, status *prom.Ae
 		klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
 	}
 
+	if !c.bridge.Aggressive {
+		c.bridge.TicketManager.DispatchTicketToSRE(ctx)
+		return nil
+	}
+
 	cancelled := false
 	if !basic.CheckNodeIsCritical(ctx, c.bridge, node) {
 		// shutdown

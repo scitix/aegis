@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/scitix/aegis/pkg/nodeticket"
+	"github.com/scitix/aegis/pkg/noneticket"
 	"github.com/scitix/aegis/pkg/opticket"
 	"github.com/scitix/aegis/pkg/ticketmodel"
 	"github.com/scitix/aegis/pkg/uticket"
@@ -13,6 +14,7 @@ import (
 type TicketSystem string
 
 const (
+	TicketSystemNone   TicketSystem = "None"
 	TicketSystemNode   TicketSystem = "Node"
 	TicketSystemScitix TicketSystem = "Scitix"
 	TicketSystemUcp    TicketSystem = "UCP"
@@ -20,6 +22,8 @@ const (
 
 func NewTicketManagerBySystem(ctx context.Context, system TicketSystem, args *ticketmodel.TicketManagerArgs) (ticketmodel.TicketManagerInterface, error) {
 	switch system {
+	case TicketSystemNone:
+		return noneticket.NewNoneTicketManager(ctx, args)
 	case TicketSystemNode:
 		return nodeticket.NewNodeTicketManager(ctx, args)
 	case TicketSystemScitix:
