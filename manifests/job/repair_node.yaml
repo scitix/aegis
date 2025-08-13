@@ -20,8 +20,8 @@ spec:
         - {{.cluster}}
         - {{.node_name}}
         volumeMounts:
-        - name: tmp
-          mountPath: /tmp
+        - name: script
+          mountPath: /var/selfhealing
         securityContext:
           privileged: true
       restartPolicy: Never
@@ -29,9 +29,10 @@ spec:
       hostPID: true
       nodeName: {{.node_name}}
       volumes:
-      - name: tmp
-        hostPath:
-          path: /tmp
+      - hostPath:
+          path: /var/selfhealing
+          type: ""
+        name: script
       tolerations:
       - effect: NoExecute
         key: node.kubernetes.io/not-ready

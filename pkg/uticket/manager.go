@@ -1,4 +1,4 @@
-package opticket
+package uticket
 
 import (
 	"context"
@@ -10,61 +10,43 @@ import (
 	"k8s.io/klog/v2"
 )
 
-type OpTicketManager struct {
-	region   string
-	cluster  string
-	orgname  string
-	nodename string
-	ip       string
-	sn       string
-	user     string
-	ticket   *OpTicket
-	u        *OpTicketClient
+type TicketManager struct {
+	cluster string
+	node    string
+	user    string
+	ticket  *TicketInfo
+	u       *Client
 }
 
-func NewOPTicketManager(ctx context.Context, args *ticketmodel.TicketManagerArgs) (ticketmodel.TicketManagerInterface, error) {
-	endpoint := os.Getenv("OP_ENDPOINT")
+func NewTicketManager(ctx context.Context, args *ticketmodel.TicketManagerArgs) (*TicketManager, error) {
+	endpoint := os.Getenv("U_ENDPOINT")
 	if endpoint == "" {
 		return nil, fmt.Errorf("ticketing system endpoint not found.")
 	}
 
-	u, err := CreateOpTicketClient(endpoint)
+	u, err := CreateClient(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	instance, err := u.GetNodeInfo(ctx, args.Region, args.OrgName, args.Ip)
-	if err != nil {
-		return nil, err
-	}
-	if instance == nil {
-		return nil, fmt.Errorf("error get node info: %s", err)
-	}
-	klog.Infof("CES Node Instance info: %+v", instance)
-
-	sn := instance.SN
-
-	ticket, err := u.GetNodeFirstUnResovledTicket(ctx, args.Region, sn)
+	ticket, err := u.GetNodeFirstUnResovledTicket(ctx, args.ClusterName, args.NodeName)
 	if err != nil {
 		return nil, fmt.Errorf("error get node ticket info: %s", err)
 	}
+
 	klog.Infof("Node Ticket info: %+v", ticket)
 
-	return &OpTicketManager{
-		region:   args.Region,
-		cluster:  args.ClusterName,
-		orgname:  args.OrgName,
-		nodename: args.NodeName,
-		ip:       args.Ip,
-		sn:       sn,
-		user:     args.User,
-		ticket:   ticket,
-		u:        u,
+	return &TicketManager{
+		cluster: args.ClusterName,
+		node:    args.NodeName,
+		user:    args.User,
+		ticket:  ticket,
+		u:       u,
 	}, nil
 }
 
-func (t *OpTicketManager) Reset(ctx context.Context) error {
-	ticket, err := t.u.GetNodeFirstUnResovledTicket(ctx, t.region, t.sn)
+func (t *TicketManager) Reset(ctx context.Context) error {
+	ticket, err := t.u.GetNodeFirstUnResovledTicket(ctx, t.cluster, t.node)
 	if err != nil {
 		return fmt.Errorf("error get node ticket info: %s", err)
 	}
@@ -76,39 +58,39 @@ func (t *OpTicketManager) Reset(ctx context.Context) error {
 	return nil
 }
 
-func (t *OpTicketManager) CanDealWithTicket(ctx context.Context) bool {
+func (t *TicketManager) CanDealWithTicket(ctx context.Context) bool {
 	return t.ticket == nil || t.ticket.Supervisor == t.user
 }
 
-func (t *OpTicketManager) CheckTicketExists(ctx context.Context) bool {
+func (t *TicketManager) CheckTicketExists(ctx context.Context) bool {
 	return t.ticket != nil
 }
 
-func (t *OpTicketManager) CheckTicketSupervisor(ctx context.Context, user string) bool {
+func (t *TicketManager) CheckTicketSupervisor(ctx context.Context, user string) bool {
 	if t.ticket == nil {
 		return false
 	}
 	return t.ticket.Supervisor == user
 }
 
-func (t *OpTicketManager) CreateTicket(ctx context.Context, status *prom.AegisNodeStatus, hardwareType string, customTitle ...string) error {
+func (t *TicketManager) CreateTicket(ctx context.Context, status *prom.AegisNodeStatus, hardwareType string, customTitle ...string) error {
 	if t.ticket != nil {
 		return ticketmodel.TicketAlreadyExistErr
 	}
 
 	title := fmt.Sprintf("aegis detect node %s %s, type: %s %s, reason: %s",
-		t.nodename, status.Condition, status.Type, status.ID, status.Msg)
+		t.node, status.Condition, status.Type, status.ID, status.Msg)
 
 	if len(customTitle) > 0 && customTitle[0] != "" {
 		title = customTitle[0]
 	}
 
-	err := t.u.CreateTicket(ctx, t.region, t.orgname, t.nodename, t.sn, title, "", hardwareType)
+	err := t.u.CreateTicket(ctx, t.cluster, t.node, title, "", hardwareType, RangeTypeNode)
 	if err != nil {
 		return fmt.Errorf("error create ticket: %s", err)
 	}
 
-	t.ticket, err = t.u.GetNodeFirstUnResovledTicket(ctx, t.region, t.sn)
+	t.ticket, err = t.u.GetNodeFirstUnResovledTicket(ctx, t.cluster, t.node)
 	if err != nil {
 		return fmt.Errorf("error get ticket: %s", err)
 	}
@@ -116,17 +98,17 @@ func (t *OpTicketManager) CreateTicket(ctx context.Context, status *prom.AegisNo
 	return nil
 }
 
-func (t *OpTicketManager) CreateComponentTicket(ctx context.Context, title, model, component string) error {
+func (t *TicketManager) CreateComponentTicket(ctx context.Context, title, model, component string) error {
 	if t.ticket != nil {
 		return ticketmodel.TicketAlreadyExistErr
 	}
 
-	err := t.u.CreateComponentTicket(ctx, t.region, t.orgname, t.nodename, t.sn, title, "", model, component)
+	err := t.u.CreateComponentTicket(ctx, t.cluster, t.node, title, "", model, component)
 	if err != nil {
 		return fmt.Errorf("error create component ticket: %s", err)
 	}
 
-	t.ticket, err = t.u.GetNodeFirstUnResovledTicket(ctx, t.region, t.sn)
+	t.ticket, err = t.u.GetNodeFirstUnResovledTicket(ctx, t.cluster, t.node)
 	if err != nil {
 		return fmt.Errorf("error get ticket: %s", err)
 	}
@@ -134,7 +116,7 @@ func (t *OpTicketManager) CreateComponentTicket(ctx context.Context, title, mode
 	return nil
 }
 
-func (t *OpTicketManager) AdoptTicket(ctx context.Context) (err error) {
+func (t *TicketManager) AdoptTicket(ctx context.Context) (err error) {
 	defer func() {
 		if err != nil {
 			klog.Errorf("error adopt ticket: %s", err)
@@ -155,14 +137,14 @@ func (t *OpTicketManager) AdoptTicket(ctx context.Context) (err error) {
 		return fmt.Errorf("error dispatch ticket: %s", err)
 	}
 
-	t.ticket, err = t.u.GetNodeFirstUnResovledTicket(ctx, t.region, t.sn)
+	t.ticket, err = t.u.GetNodeFirstUnResovledTicket(ctx, t.cluster, t.node)
 	if err != nil {
 		return fmt.Errorf("error get ticket: %s", err)
 	}
 	return nil
 }
 
-func (t *OpTicketManager) DispatchTicket(ctx context.Context, user string) (err error) {
+func (t *TicketManager) DispatchTicket(ctx context.Context, user string) (err error) {
 	defer func() {
 		if err != nil {
 			klog.Errorf("error dispatch to sre: %s", err)
@@ -182,35 +164,35 @@ func (t *OpTicketManager) DispatchTicket(ctx context.Context, user string) (err 
 		return fmt.Errorf("error dispatch ticket: %s", err)
 	}
 
-	t.ticket, err = t.u.GetNodeFirstUnResovledTicket(ctx, t.region, t.sn)
+	t.ticket, err = t.u.GetNodeFirstUnResovledTicket(ctx, t.cluster, t.node)
 	if err != nil {
 		return fmt.Errorf("error get ticket: %s", err)
 	}
 	return nil
 }
 
-func (t *OpTicketManager) DispatchTicketToSRE(ctx context.Context) (err error) {
+func (t *TicketManager) DispatchTicketToSRE(ctx context.Context) (err error) {
 	return t.DispatchTicket(ctx, GetTicketSupervisorSRE())
 }
 
-func (t *OpTicketManager) ResolveTicket(ctx context.Context, answer, operation string) error {
+func (t *TicketManager) ResolveTicket(ctx context.Context, answer, operation string) error {
 	if t.ticket == nil {
 		return nil
 	}
 
-	err := t.u.ResolveTicket(ctx, t.ticket.TicketId, answer, operation, t.ticket.IsHardwareIssue)
+	err := t.u.ResolveTicket(ctx, t.ticket.TicketId, t.cluster, t.node, answer, operation, t.ticket.IsHardwareIssue)
 	if err != nil {
 		return fmt.Errorf("error resolve ticket: %s", err)
 	}
 
-	t.ticket, err = t.u.GetNodeFirstUnResovledTicket(ctx, t.region, t.sn)
+	t.ticket, err = t.u.GetNodeFirstUnResovledTicket(ctx, t.cluster, t.node)
 	if err != nil {
 		return fmt.Errorf("error get ticket: %s", err)
 	}
 	return nil
 }
 
-func (t *OpTicketManager) CloseTicket(ctx context.Context) error {
+func (t *TicketManager) CloseTicket(ctx context.Context) error {
 	if t.ticket == nil {
 		return nil
 	}
@@ -224,12 +206,22 @@ func (t *OpTicketManager) CloseTicket(ctx context.Context) error {
 	return nil
 }
 
-func (t *OpTicketManager) DeleteTicket(ctx context.Context) error {
-	return t.CloseTicket(ctx)
+func (t *TicketManager) DeleteTicket(ctx context.Context) error {
+	if t.ticket == nil {
+		return nil
+	}
+
+	err := t.u.DeleteTicket(ctx, t.ticket.TicketId)
+	if err != nil {
+		return fmt.Errorf("error delete ticket: %s", err)
+	}
+
+	t.ticket = nil
+	return nil
 }
 
-func (t *OpTicketManager) IsFrequentIssue(ctx context.Context, size, frequency int) (bool, error) {
-	tickets, err := t.u.ListNodeTickets(ctx, t.region, t.sn, size)
+func (t *TicketManager) IsFrequentIssue(ctx context.Context, size, frequency int) (bool, error) {
+	tickets, err := t.u.ListNodeTickets(ctx, t.cluster, t.node, size)
 	if err != nil {
 		return false, fmt.Errorf("error list latest 10 ticket: %s", err)
 	}

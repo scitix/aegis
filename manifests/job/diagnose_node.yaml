@@ -10,6 +10,7 @@ spec:
     imagePullPolicy: Always
     name: diagnose
     command:
+      - /entrypoint.sh
       - diagnose
       - {{.type}}
       - {{.parameters}}

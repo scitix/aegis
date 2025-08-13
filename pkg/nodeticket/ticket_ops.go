@@ -100,3 +100,12 @@ func (m *NodeTicketManager) UpdateWorkflow(ctx context.Context, action ticketmod
 
 	return m.save(m.ticket)
 }
+
+
+func (m *NodeTicketManager) AddShutdownDescription(ctx context.Context, status ticketmodel.TicketWorkflowStatus, message *string) error {
+	return nil
+}
+
+func (m *NodeTicketManager) UpdateShutdownDescription(ctx context.Context, status ticketmodel.TicketWorkflowStatus, message *string) error {
+	return nil
+}
