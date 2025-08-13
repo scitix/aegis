@@ -60,3 +60,14 @@ func (g *ibdown) Execute(ctx context.Context, node string, status *prom.AegisNod
 
 	return nil
 }
+
+func (g *ibdown) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	reason := fmt.Sprintf("aegis detect node %s %s", node, status.Condition)
+
+	// add ib unavailabel label
+	err := basic.AddNodeLabel(ctx, g.bridge, node, basic.NodeIBUnavailableLabelKey, basic.NodeIBUnavailableLabelValue, reason)
+	if err != nil {
+		return fmt.Errorf("Error add node label %s: %s", node, err)
+	}
+	return nil
+}

@@ -52,3 +52,7 @@ func (n *terminatingpod) Execute(ctx context.Context, node string, status *prom.
 
 	return nil
 }
+
+func (n *terminatingpod) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

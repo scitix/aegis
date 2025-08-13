@@ -72,6 +72,18 @@ func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeSt
 			return nil
 		}
 
+		// check frequency
+		if is, _ := g.bridge.TicketManager.IsFrequentIssue(ctx, 5, 3); is {
+			g.bridge.TicketManager.AddWhySRE(ctx, "over 3 same issue for lastest 5 tickets, perhaps a gpu hardware issue.")
+			g.bridge.TicketManager.DispatchTicketToSRE(ctx)
+
+			if g.bridge.AggressiveLevel > 1 {
+				// shutdown
+				op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
+			}
+			return nil
+		}
+
 		return op.RestartNode(ctx, g.bridge, node, reason, canceler)
 	case xid74_registry_name:
 		fallthrough
@@ -85,7 +97,17 @@ func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeSt
 			if err != nil {
 				klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
 			}
+
+			if g.bridge.AggressiveLevel > 1 {
+				// shutdown
+				op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
+			}
 			return nil
+		}
+
+		err = op.DiagnoseNode(ctx, g.bridge, node, status.Condition, status.ID, strconv.Itoa(status.Value))
+		if err != nil {
+			klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
 		}
 
 		if !g.bridge.Aggressive {
@@ -93,15 +115,20 @@ func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeSt
 			return nil
 		}
 
-		op.RestartNode(ctx, g.bridge, node, reason, canceler)
-		err = op.DiagnoseNode(ctx, g.bridge, node, status.Condition, status.ID, strconv.Itoa(status.Value))
-		if err != nil {
-			klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
+		if g.bridge.AggressiveLevel > 1 {
+			// shutdown
+			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
+		} else {
+			op.RestartNode(ctx, g.bridge, node, reason, canceler)
 		}
 
 		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 		return err
 	}
 
+	return nil
+}
+
+func (g *gpu) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	return nil
 }

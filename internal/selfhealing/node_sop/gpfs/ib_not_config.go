@@ -55,3 +55,14 @@ func (g *gpfsibnotconfig) Execute(ctx context.Context, node string, status *prom
 
 	return nil
 }
+
+func (g *gpfsibnotconfig) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	reason := fmt.Sprintf("aegis detect node %s %s", node, status.Condition)
+
+	// add gpfs unavailabel label
+	err := basic.AddNodeLabel(ctx, g.bridge, node, basic.NodeGpfsUnavailableLabelKey, basic.NodeGpfsUnavailableLabelValue, reason)
+	if err != nil {
+		return fmt.Errorf("Error add node label %s: %s", node, err)
+	}
+	return nil
+}

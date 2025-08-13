@@ -88,6 +88,20 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 			n.bridge.TicketManager.CloseTicket(ctx)
 		}
 
+		// remove gpfs labels
+		err = basic.DeleteNodeLabel(ctx, n.bridge, node, basic.NodeGpfsUnavailableLabelKey, basic.NodeGpfsUnavailableLabelValue, "gpfs ok")
+		if err != nil {
+			klog.Errorf("Error delete node label %s: %s", node, err)
+			return err
+		}
+
+		// remove ib labels
+		err = basic.DeleteNodeLabel(ctx, n.bridge, node, basic.NodeIBUnavailableLabelKey, basic.NodeIBUnavailableLabelValue, "ib ok")
+		if err != nil {
+			klog.Errorf("Error delete node label %s: %s", node, err)
+			return err
+		}
+
 		return nil
 	}
 
@@ -96,6 +110,10 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 
 	// gpu remapping failure
 	if hardwareType == basic.HardwareTypeGpu && conditionType == basic.ConditionTypeGpuRowRemappingFailure {
+		if !n.bridge.TicketManager.CheckTicketExists(ctx) {
+			n.bridge.TicketManager.CreateTicket(ctx, status, string(hardwareType), fmt.Sprintf("node %s healthcheck find gpu remapping failure", node))
+			n.bridge.TicketManager.AddRootCauseDescription(ctx, fmt.Sprintf("%s broken", string(hardwareType)), status)
+		}
 		n.bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionHealthCheck, ticketmodel.TicketWorkflowStatusFailed, &result)
 		n.bridge.TicketManager.AddWhySRE(ctx, "gpu remapping failure, require replace")
 
@@ -103,6 +121,13 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 		err := op.DiagnoseNode(ctx, n.bridge, node, string(conditionType))
 		if err != nil {
 			klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
+		}
+
+		// shutdown
+		if n.bridge.AggressiveLevel > 1 {
+			op.ShutdownNode(ctx, n.bridge, node, "shutdown node for gpu remapping failure", func(ctx context.Context) bool {
+				return false
+			})
 		}
 
 		n.bridge.TicketManager.DispatchTicketToSRE(ctx)
@@ -126,6 +151,12 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 			klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
 		}
 
+		// shutdown
+		if n.bridge.AggressiveLevel > 1 {
+			op.ShutdownNode(ctx, n.bridge, node, "shutdown node for gpu too sram uncorrectable error", func(ctx context.Context) bool {
+				return false
+			})
+		}
 		n.bridge.TicketManager.DispatchTicketToSRE(ctx)
 		return nil
 	}
@@ -140,5 +171,9 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 	n.bridge.TicketManager.AddWhySRE(ctx, fmt.Sprintf("failed run node %s health check", node))
 	n.bridge.TicketManager.DispatchTicketToSRE(ctx)
 
+	return nil
+}
+
+func (n *nodecordon) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	return nil
 }

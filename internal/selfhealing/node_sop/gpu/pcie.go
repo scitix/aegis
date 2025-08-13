@@ -3,18 +3,18 @@ package gpu
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	nodesop "github.com/scitix/aegis/internal/selfhealing/node_sop"
 	"github.com/scitix/aegis/internal/selfhealing/sop"
 	"github.com/scitix/aegis/internal/selfhealing/sop/basic"
 	"github.com/scitix/aegis/internal/selfhealing/sop/op"
 	"github.com/scitix/aegis/pkg/prom"
+	"github.com/scitix/aegis/pkg/ticketmodel"
 	"k8s.io/klog/v2"
 )
 
 const (
-	gpupciegen_registry_name = string(basic.ConditionTypeGpuPcieGenDowngraded)
+	gpupciegen_registry_name   = string(basic.ConditionTypeGpuPcieGenDowngraded)
 	gpupciewidth_registry_name = string(basic.ConditionTypeGpuPcieWidthDowngraded)
 )
 
@@ -44,34 +44,45 @@ func (g *gpupcie) Execute(ctx context.Context, node string, status *prom.AegisNo
 	g.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeGpu, customTitle)
 	g.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
 	g.bridge.TicketManager.AddWhySRE(ctx, "requrie replace")
-	g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 
 	err := basic.CordonNode(ctx, g.bridge, node, status.Condition, "aegis")
 	if err != nil {
 		return err
 	}
 
-	// check pcie status
-	statuses, err := g.bridge.PromClient.GetNodeStatuses(ctx, node, "gpu")
-	if err != nil {
-		return err
+	if !g.bridge.Aggressive {
+		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 	}
 
-	ids := make([]string, 0)
-	for _, st := range statuses {
-		if st.Condition == status.Condition {
-			for _, id := range strings.Split(strings.Trim(strings.SplitN(status.Msg, ":", 2)[1], " "), " ") {
-				ids = append(ids, strings.SplitN(id, ":", 2)[1])
-			}
+	workflows, _ := g.bridge.TicketManager.GetWorkflows(ctx)
+	rebootCount := 0
+	for _, w := range workflows {
+		if w.Action == ticketmodel.TicketWorkflowActionReboot && w.Status == ticketmodel.TicketWorkflowStatusSucceeded {
+			rebootCount++
 		}
 	}
 
-	if len(ids) > 0 {
-		// diagnose
-		err := op.DiagnoseNode(ctx, g.bridge, node, status.Condition, ids...)
-		if err != nil {
-			klog.Infof("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
+	if rebootCount > 0 {
+		g.bridge.TicketManager.AddWhySRE(ctx, "pcie downgraded still exists after a reboot.")
+
+		// shutdown
+		if g.bridge.AggressiveLevel > 1 {
+			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu pcied downgraded", func(ctx context.Context) bool {
+				return false
+			})
+		}
+
+		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
+	} else {
+		if err = op.RestartNode(ctx, g.bridge, node, customTitle, func(ctx context.Context) bool {
+			return false
+		}); err != nil {
+			return err
 		}
 	}
+	return nil
+}
+
+func (g *gpupcie) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	return nil
 }

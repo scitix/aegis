@@ -19,10 +19,24 @@ import (
 // drain node
 // try to restart node
 func NodeGracefulRestart(ctx context.Context, bridge *sop.ApiBridge, node, reason, remark string, cancel WaitCancelFunc) (bool, error) {
-	// check no system pod running
-	has := CheckNodeHasUserPod(ctx, bridge, node)
-	if has {
-		return false, nil
+	if !bridge.Aggressive {
+		return false, fmt.Errorf("cannot restart node because of disable Aggressive mode")
+	}
+
+	if bridge.AggressiveLevel == 1 {
+		// check no system pod running
+		has := CheckNodeHasUserPod(ctx, bridge, node)
+		if has {
+			return false, nil
+		}
+	} else {
+		// wait cirtical pod running completed, 4d
+		dayCtx, dayCancel := context.WithTimeout(ctx, time.Hour*time.Duration(4*24))
+		defer dayCancel()
+		err := WaitNodeCriticalPodCompeleted(dayCtx, bridge, node, cancel)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	if cancel(ctx) {

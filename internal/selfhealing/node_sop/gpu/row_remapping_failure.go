@@ -56,3 +56,7 @@ func (g *gpurowremapping) Execute(ctx context.Context, node string, status *prom
 	g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 	return nil
 }
+
+func (g *gpurowremapping) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

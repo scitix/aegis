@@ -69,3 +69,7 @@ func (g *roceregisterfail) Execute(ctx context.Context, node string, status *pro
 	}
 	return err
 }
+
+func (n *roceregisterfail) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

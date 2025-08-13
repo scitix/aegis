@@ -42,3 +42,7 @@ func (g *metricshang) Execute(ctx context.Context, node string, status *prom.Aeg
 
 	return basic.DeletePodInNodeWithTargetLabel(timeOutCtx, g.bridge, node, map[string]string{"app.kubernetes.io/name": "dcgm-exporter"}, false)
 }
+
+func (g *metricshang) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

@@ -160,6 +160,10 @@ func (u *Client) DeleteNodeLabel(ctx context.Context, cluster, node, label, reas
 }
 
 func (u *Client) CreateTicket(ctx context.Context, clusterName, node, title, description, hardwareType string, rangerType string) error {
+	if err := u.CordonNode(ctx, clusterName, node, title, "aegis"); err != nil {
+		klog.Warningf("error cordon node from api: %s", err)
+	}
+
 	data := map[string]interface{}{
 		"cluster":         clusterName,
 		"creator":         "aegis",
@@ -193,6 +197,10 @@ func (u *Client) DeleteTicket(ctx context.Context, ticketId string) error {
 }
 
 func (u *Client) CreateComponentTicket(ctx context.Context, clusterName, node, title, description, model, component string) error {
+	if err := u.CordonNode(ctx, clusterName, node, title, "aegis"); err != nil {
+		klog.Warningf("error cordon node from api: %s", err)
+	}
+
 	data := map[string]interface{}{
 		"cluster":         clusterName,
 		"creator":         "aegis",
@@ -213,7 +221,7 @@ func (u *Client) CreateComponentTicket(ctx context.Context, clusterName, node, t
 	return post(ctx, address, data, headers)
 }
 
-func (u *Client) CreateExtraUniqTicket(ctx context.Context, clusterName, uniqueName, title, description, model, supervisor string) error {
+func (u *Client) CreateExtraUniqTicket(ctx context.Context, clusterName, uniqueName, title, description, model, supervisor string) error {	
 	data := map[string]interface{}{
 		"cluster":         clusterName,
 		"creator":         "aegis",
@@ -307,6 +315,10 @@ func (u *Client) DispatchTicket(ctx context.Context, ticketId string, user strin
 }
 
 func (u *Client) ResolveTicket(ctx context.Context, ticketId, clusterName, nodeName, answer, operation string, isHardwareIssue bool) error {
+	if err := u.UncordonNode(ctx, clusterName, nodeName, "aegis healthcheck success"); err != nil {
+		klog.Warningf("error cordon node from api: %s", err)
+	}
+
 	data := map[string]interface{}{
 		"ticketID":        ticketId,
 		"answer":          answer,

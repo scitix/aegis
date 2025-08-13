@@ -391,7 +391,7 @@ func (o *nodeOptions) run(ctx context.Context) error {
 		return nil
 	}
 
-	if basic.CheckNodeIsMasterNode(ctx, o.bridge, o.name) {
+	if basic.CheckNodeIsMaster(ctx, o.bridge, o.name) {
 		return nil
 	}
 

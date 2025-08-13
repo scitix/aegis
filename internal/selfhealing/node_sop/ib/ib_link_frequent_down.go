@@ -72,3 +72,8 @@ func (n *iblinkfrequentdown) Execute(ctx context.Context, node string, status *p
 
 	return nil
 }
+
+func (g *iblinkfrequentdown) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}
+

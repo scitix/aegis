@@ -99,3 +99,7 @@ func (n *nodeinhibit) Execute(ctx context.Context, node string, status *prom.Aeg
 	}
 	return nil
 }
+
+func (n *nodeinhibit) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

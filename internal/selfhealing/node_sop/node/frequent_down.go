@@ -80,3 +80,7 @@ func (n *nodefrequentdown) Execute(ctx context.Context, node string, status *pro
 
 	return nil
 }
+
+func (n *nodefrequentdown) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

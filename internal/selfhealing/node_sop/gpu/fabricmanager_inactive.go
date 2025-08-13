@@ -85,3 +85,7 @@ func (g *gpufabricmanagerinactive) Execute(ctx context.Context, node string, sta
 
 	return nil
 }
+
+func (g *gpufabricmanagerinactive) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

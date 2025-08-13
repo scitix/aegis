@@ -58,3 +58,7 @@ func (n *network) Execute(ctx context.Context, node string, status *prom.AegisNo
 	}
 	return nil
 }
+
+func (n *network) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

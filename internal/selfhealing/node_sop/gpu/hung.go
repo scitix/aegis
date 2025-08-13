@@ -69,6 +69,11 @@ func (g *gpuhung) Execute(ctx context.Context, node string, status *prom.AegisNo
 			klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
 		}
 
+		if g.bridge.AggressiveLevel > 1 {
+			// shutdown
+			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu hung", canceler)
+		}
+
 		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 		return nil
 	}
@@ -85,4 +90,8 @@ func (g *gpuhung) Execute(ctx context.Context, node string, status *prom.AegisNo
 		}
 		return false
 	})
+}
+
+func (g *gpuhung) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
 }

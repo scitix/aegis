@@ -59,3 +59,7 @@ func (g *gpupageretired) Execute(ctx context.Context, node string, status *prom.
 
 	return nil
 }
+
+func (g *gpupageretired) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

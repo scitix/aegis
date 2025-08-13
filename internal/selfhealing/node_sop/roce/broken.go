@@ -49,3 +49,14 @@ func (g *rocedevicebroken) Execute(ctx context.Context, node string, status *pro
 
 	return nil
 }
+
+func (n *rocedevicebroken) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	reason := fmt.Sprintf("aegis detect node %s %s", node, status.Condition)
+
+	// add gpfs unavailabel label
+	err := basic.AddNodeLabel(ctx, n.bridge, node, basic.NodeGpfsUnavailableLabelKey, basic.NodeGpfsUnavailableLabelValue, reason)
+	if err != nil {
+		return fmt.Errorf("Error add node label %s: %s", node, err)
+	}
+	return nil
+}

@@ -74,3 +74,7 @@ func (n *failedcreatepodcontainer) Execute(ctx context.Context, node string, sta
 	n.bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionSleepWait, ticketmodel.TicketWorkflowStatusSucceeded, nil)
 	return nil
 }
+
+func (n *failedcreatepodcontainer) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

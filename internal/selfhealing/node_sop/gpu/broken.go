@@ -69,6 +69,10 @@ func (g *gpubroken) Execute(ctx context.Context, node string, status *prom.Aegis
 			klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
 		}
 
+		if g.bridge.AggressiveLevel > 1 {
+			// shutdown
+			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
+		}
 		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 		return nil
 	}
@@ -85,4 +89,8 @@ func (g *gpubroken) Execute(ctx context.Context, node string, status *prom.Aegis
 		}
 		return false
 	})
+}
+
+func (g *gpubroken) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
 }

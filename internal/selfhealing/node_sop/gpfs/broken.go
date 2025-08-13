@@ -2,6 +2,7 @@ package gpfs
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	nodesop "github.com/scitix/aegis/internal/selfhealing/node_sop"
@@ -52,5 +53,16 @@ func (g *gpfsbroken) Execute(ctx context.Context, node string, status *prom.Aegi
 		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 	}
 
+	return nil
+}
+
+func (g *gpfsbroken) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	reason := fmt.Sprintf("aegis detect node %s %s", node, status.Condition)
+
+	// add gpfs unavailabel label
+	err := basic.AddNodeLabel(ctx, g.bridge, node, basic.NodeGpfsUnavailableLabelKey, basic.NodeGpfsUnavailableLabelValue, reason)
+	if err != nil {
+		return fmt.Errorf("Error add node label %s: %s", node, err)
+	}
 	return nil
 }

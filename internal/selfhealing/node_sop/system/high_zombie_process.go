@@ -55,3 +55,7 @@ func (n *highzombie) Execute(ctx context.Context, node string, status *prom.Aegi
 		return !n.Evaluate(ctx, node, status)
 	})
 }
+
+func (n *highzombie) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

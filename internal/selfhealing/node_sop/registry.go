@@ -40,5 +40,5 @@ type SOP interface {
 	Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error
 
 	// 在有工单状态下，执行非自愈的清理动作
-	// Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error
+	Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error
 }

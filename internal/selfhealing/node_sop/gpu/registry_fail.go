@@ -105,3 +105,7 @@ func (g *gpuregisterfail) Execute(ctx context.Context, node string, status *prom
 
 	return nil
 }
+
+func (g *gpuregisterfail) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

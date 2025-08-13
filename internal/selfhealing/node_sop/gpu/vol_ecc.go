@@ -57,3 +57,7 @@ func (g *volecc) Execute(ctx context.Context, node string, status *prom.AegisNod
 		return false
 	})
 }
+
+func (g *volecc) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

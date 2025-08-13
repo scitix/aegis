@@ -53,7 +53,23 @@ func (g *gpurowremappingpending) Execute(ctx context.Context, node string, statu
 		return nil
 	}
 
+	// check frequency
+	if is, _ := g.bridge.TicketManager.IsFrequentIssue(ctx, 5, 3); is {
+		g.bridge.TicketManager.AddWhySRE(ctx, "over 3 same issue for lastest 5 tickets, perhaps a gpu hardware issue.")
+		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
+
+		if g.bridge.AggressiveLevel > 1 {
+			// shutdown
+			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
+		}
+		return nil
+	}
+
 	return op.RestartNode(ctx, g.bridge, node, reason, func(ctx context.Context) bool {
 		return false
 	})
+}
+
+func (g *gpurowremappingpending) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
 }
