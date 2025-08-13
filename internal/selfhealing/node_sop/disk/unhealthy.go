@@ -54,3 +54,7 @@ func (n *diskunhealthy) Execute(ctx context.Context, node string, status *prom.A
 
 	return nil
 }
+
+func (n *diskunhealthy) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

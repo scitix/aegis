@@ -52,3 +52,7 @@ func (g *temperature) Execute(ctx context.Context, node string, status *prom.Aeg
 	g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 	return nil
 }
+
+func (g *temperature) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

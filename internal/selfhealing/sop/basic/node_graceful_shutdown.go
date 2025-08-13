@@ -19,6 +19,10 @@ import (
 // drain node
 // try to shutdown node
 func NodeGracefulShutdown(ctx context.Context, bridge *sop.ApiBridge, node, reason, remark string, cancel WaitCancelFunc) (bool, error) {
+	if bridge.AggressiveLevel < 2 {
+		return false, fmt.Errorf("cannot shutdown node because of AggressiveLevel: %d which should > 1", bridge.AggressiveLevel)
+	}
+
 	// wait cirtical pod running completed, 4d
 	dayCtx, dayCancel := context.WithTimeout(ctx, time.Hour*time.Duration(4*24))
 	defer dayCancel()

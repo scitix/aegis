@@ -73,3 +73,7 @@ func (g *ibregisterfail) Execute(ctx context.Context, node string, status *prom.
 	}
 	return err
 }
+
+func (g *ibregisterfail) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

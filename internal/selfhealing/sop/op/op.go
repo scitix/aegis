@@ -33,6 +33,10 @@ func DiagnoseNode(ctx context.Context, bridge *sop.ApiBridge, node, tpe string, 
 // 2. repair
 // 3. sleep wait
 func RestartNode(ctx context.Context, bridge *sop.ApiBridge, node, reason string, canceler basic.WaitCancelFunc) error {
+	if !bridge.Aggressive {
+		return fmt.Errorf("cannot restart node because of disable Aggressive mode")
+	}
+
 	// if bridge.NodeStatus.RebootCount != nil && *bridge.NodeStatus.RebootCount > 1 {
 	// 	return nil
 	// }
@@ -95,5 +99,28 @@ func RestartNode(ctx context.Context, bridge *sop.ApiBridge, node, reason string
 	bridge.TicketManager.AddWorkflow(ctx, ticketmodel.TicketWorkflowActionSleepWait, ticketmodel.TicketWorkflowStatusRunning, nil)
 	time.Sleep(basic.SleepWaitDuration)
 	bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionSleepWait, ticketmodel.TicketWorkflowStatusSucceeded, nil)
+	return nil
+}
+
+func ShutdownNode(ctx context.Context, bridge *sop.ApiBridge, node, reason string, canceler basic.WaitCancelFunc) error {
+	if bridge.AggressiveLevel < 2 {
+		return fmt.Errorf("cannot shutdown node because of AggressiveLevel: %d which should > 1", bridge.AggressiveLevel)
+	}
+
+	bridge.TicketManager.AddShutdownDescription(ctx, ticketmodel.TicketWorkflowStatusRunning, nil)
+
+	success, err := basic.NodeGracefulShutdown(ctx, bridge, node, reason, "aegis", canceler)
+	if success {
+		bridge.TicketManager.UpdateShutdownDescription(ctx, ticketmodel.TicketWorkflowStatusSucceeded, nil)
+	} else if err != nil {
+		message := fmt.Sprintf("shutdown failed: %s", err)
+		bridge.TicketManager.UpdateShutdownDescription(ctx, ticketmodel.TicketWorkflowStatusFailed, &message)
+		return err
+	} else {
+		message := "shutdown canceled"
+		bridge.TicketManager.AddShutdownDescription(ctx, ticketmodel.TicketWorkflowStatusCanceled, &message)
+		return nil
+	}
+
 	return nil
 }

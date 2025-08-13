@@ -47,3 +47,7 @@ func (n *diskpressure) Execute(ctx context.Context, node string, status *prom.Ae
 
 	return nil
 }
+
+func (n *diskpressure) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

@@ -7,6 +7,7 @@ import (
 	nodesop "github.com/scitix/aegis/internal/selfhealing/node_sop"
 	"github.com/scitix/aegis/internal/selfhealing/sop"
 	"github.com/scitix/aegis/internal/selfhealing/sop/basic"
+	"github.com/scitix/aegis/internal/selfhealing/sop/op"
 	"github.com/scitix/aegis/pkg/prom"
 	"k8s.io/klog/v2"
 )
@@ -42,6 +43,16 @@ func (g *gpuaggsram) Execute(ctx context.Context, node string, status *prom.Aegi
 	g.bridge.TicketManager.AdoptTicket(ctx)
 	g.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
 	g.bridge.TicketManager.AddWhySRE(ctx, "requrie replace")
+	
+	if g.bridge.AggressiveLevel > 1 {
+		// shutdown
+		op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu agg sram uncorrectable", canceler)
+	}
+
 	g.bridge.TicketManager.DispatchTicketToSRE(ctx)
+	return nil
+}
+
+func (g *gpuaggsram) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	return nil
 }

@@ -85,7 +85,37 @@ func (g *baseboard) Execute(ctx context.Context, node string, status *prom.Aegis
 			klog.Infof("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
 		}
 	}
-	g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 
+	cancelled := false
+	switch status.ID {
+	case "fan":
+		fallthrough
+	case "temperature":
+		fallthrough
+	case "voltage":
+		fallthrough
+	case "pcie":
+		fallthrough
+	case "sysHealth":
+		if !basic.CheckNodeIsCritical(ctx, g.bridge, node) {
+			// shutdown
+			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for machine repair", func(ctx context.Context) bool {
+				statuses, err := g.bridge.PromClient.GetNodeStatuses(ctx, node, status.Type)
+				if err == nil && len(statuses) == 0 {
+					cancelled = true
+					return true
+				}
+				return false
+			})
+		}
+	}
+
+	if !cancelled {
+		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
+	}
+	return nil
+}
+
+func (g *baseboard) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	return nil
 }

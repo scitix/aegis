@@ -49,7 +49,28 @@ func (n *memoryunhealthy) Execute(ctx context.Context, node string, status *prom
 	if err != nil {
 		klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
 	}
-	n.bridge.TicketManager.DispatchTicketToSRE(ctx)
+	
+	cancelled := false
+	if !basic.CheckNodeIsCritical(ctx, n.bridge, node) {
+		// shutdown
+		op.ShutdownNode(ctx, n.bridge, node, "shutdown node for machine repair", func(ctx context.Context) bool {
+			statuses, err := n.bridge.PromClient.GetNodeStatuses(ctx, node, status.Type)
+			if err == nil && len(statuses) == 0 {
+				cancelled = true
+				return true
+			}
+			return false
+		})
+	}
+
+	if !cancelled {
+		n.bridge.TicketManager.DispatchTicketToSRE(ctx)
+	}
 
 	return nil
 }
+
+func (n *memoryunhealthy) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}
+

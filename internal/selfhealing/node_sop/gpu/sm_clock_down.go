@@ -50,3 +50,7 @@ func (g *smclockslowdown) Execute(ctx context.Context, node string, status *prom
 
 	return nil
 }
+
+func (g *smclockslowdown) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

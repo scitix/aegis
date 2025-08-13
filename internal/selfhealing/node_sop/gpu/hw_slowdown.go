@@ -48,3 +48,7 @@ func (g *hwslowdown) Execute(ctx context.Context, node string, status *prom.Aegi
 
 	return nil
 }
+
+func (g *hwslowdown) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

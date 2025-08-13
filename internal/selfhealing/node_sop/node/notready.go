@@ -57,3 +57,7 @@ func (n *notready) Execute(ctx context.Context, node string, status *prom.AegisN
 
 	return nil
 }
+
+func (n *notready) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

@@ -85,3 +85,7 @@ func (g *persistencemode) Execute(ctx context.Context, node string, status *prom
 
 	return nil
 }
+
+func (g *persistencemode) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

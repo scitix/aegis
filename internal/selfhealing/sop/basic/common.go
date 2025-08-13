@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/scitix/aegis/internal/selfhealing/sop"
@@ -244,7 +246,26 @@ func CheckNodeLabelKeyExists(ctx context.Context, node *corev1.Node, key string)
 	return ok
 }
 
-func CheckNodeIsMasterNode(ctx context.Context, bridge *sop.ApiBridge, nodeName string) bool {
+func CheckNodeIsCritical(ctx context.Context, bridge *sop.ApiBridge, nodeName string) bool {
+	node, err := bridge.KubeClient.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
+	if err != nil {
+		klog.Errorf("Error get node %s: %s", nodeName, node)
+		return false
+	}
+
+	keys := os.Getenv("CRITICAL_NODE_LABEL_KEYS")
+	for _, k := range strings.Split(keys, ",") {
+		for key, _ := range node.Labels {
+			if key == k {
+				return false
+			}
+		}
+	}
+
+	return  true
+}
+
+func CheckNodeIsMaster(ctx context.Context, bridge *sop.ApiBridge, nodeName string) bool {
 	node, err := bridge.KubeClient.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
 		klog.Errorf("Error get node %s: %s", nodeName, node)

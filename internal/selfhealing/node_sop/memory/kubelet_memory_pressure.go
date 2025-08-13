@@ -58,3 +58,7 @@ func (n *kubeletmemorypressure) Execute(ctx context.Context, node string, status
 
 	return nil
 }
+
+func (n *kubeletmemorypressure) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}

@@ -66,3 +66,7 @@ func (g *gpfsstatus) Execute(ctx context.Context, node string, status *prom.Aegi
 
 	return nil
 }
+
+func (g *gpfsstatus) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	return nil
+}
