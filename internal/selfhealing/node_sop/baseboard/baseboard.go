@@ -86,6 +86,11 @@ func (g *baseboard) Execute(ctx context.Context, node string, status *prom.Aegis
 		}
 	}
 
+	if !g.bridge.Aggressive {
+		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
+		return nil
+	}
+
 	cancelled := false
 	switch status.ID {
 	case "fan":
