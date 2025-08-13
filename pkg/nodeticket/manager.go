@@ -125,13 +125,17 @@ func (m *NodeTicketManager) AdoptTicket(ctx context.Context) error {
 	return nil
 }
 
-func (m *NodeTicketManager) DispatchTicketToSRE(ctx context.Context) error {
+func (m *NodeTicketManager) DispatchTicket(ctx context.Context, user string) error {
 	if m.ticket == nil {
-		klog.Warningf("[ticket] DispatchTicketToSRE called but ticket is nil (no-op)")
+		klog.Warningf("[ticket] DispatchTicket called but ticket is nil (no-op)")
 		return ticketmodel.TicketNotFoundErr
 	}
-	klog.Infof("[ticket] DispatchTicketToSRE called (no-op in NodeTicketManager)")
+	klog.Infof("[ticket] DispatchTicket called (no-op in NodeTicketManager)")
 	return nil
+}
+
+func (m *NodeTicketManager) DispatchTicketToSRE(ctx context.Context) error {
+	return m.DispatchTicket(ctx, "")
 }
 
 func (m *NodeTicketManager) ResolveTicket(ctx context.Context, answer, operation string) error {
@@ -159,6 +163,10 @@ func (m *NodeTicketManager) CloseTicket(ctx context.Context) error {
 		m.ticket = nil
 	}
 	return err
+}
+
+func (t *NodeTicketManager) DeleteTicket(ctx context.Context) error {
+	return t.CloseTicket(ctx)
 }
 
 func (m *NodeTicketManager) IsFrequentIssue(ctx context.Context, size, frequency int) (bool, error) {

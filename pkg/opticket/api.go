@@ -19,8 +19,6 @@ import (
 	"github.com/scitix/aegis/pkg/ticketmodel"
 )
 
-var digest string
-
 const (
 	createTicketPath   string = "/api/v1/support/ticket/create"
 	getTicketPath      string = "/api/v1/support/ticket/get"

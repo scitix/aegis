@@ -1,4 +1,4 @@
-package opticket
+package uticket
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func (t *OpTicketManager) GetRootCauseDescription(ctx context.Context) (*ticketmodel.TicketCause, error) {
+func (t *TicketManager) GetRootCauseDescription(ctx context.Context) (*ticketmodel.TicketCause, error) {
 	if t.ticket == nil {
 		return nil, ticketmodel.TicketNotFoundErr
 	}
@@ -24,7 +24,7 @@ func (t *OpTicketManager) GetRootCauseDescription(ctx context.Context) (*ticketm
 	return &description.Cause, nil
 }
 
-func (t *OpTicketManager) AddRootCauseDescription(ctx context.Context, cause string, condition interface{}) (count int, err error) {
+func (t *TicketManager) AddRootCauseDescription(ctx context.Context, cause string, condition interface{}) (count int, err error) {
 	defer func() {
 		if err != nil {
 			klog.Errorf("error add root cause description: %s", err)
@@ -75,7 +75,7 @@ func (t *OpTicketManager) AddRootCauseDescription(ctx context.Context, cause str
 	return int(description.Cause.Count), nil
 }
 
-func (t *OpTicketManager) AddOrUpdateRootCauseDescription(ctx context.Context, cause string, condition interface{}) (updated bool, err error) {
+func (t *TicketManager) AddOrUpdateRootCauseDescription(ctx context.Context, cause string, condition interface{}) (updated bool, err error) {
 	if t.ticket == nil {
 		return false, ticketmodel.TicketNotFoundErr
 	}
@@ -125,7 +125,7 @@ func (t *OpTicketManager) AddOrUpdateRootCauseDescription(ctx context.Context, c
 	return updated, nil
 }
 
-func (t *OpTicketManager) GetActionCount(ctx context.Context, action ticketmodel.TicketWorkflowAction) (int, error) {
+func (t *TicketManager) GetActionCount(ctx context.Context, action ticketmodel.TicketWorkflowAction) (int, error) {
 	if t.ticket == nil {
 		return 0, ticketmodel.TicketNotFoundErr
 	}
@@ -146,7 +146,7 @@ func (t *OpTicketManager) GetActionCount(ctx context.Context, action ticketmodel
 	return count, nil
 }
 
-func (t *OpTicketManager) AddConclusion(ctx context.Context, conclusion string) (err error) {
+func (t *TicketManager) AddConclusion(ctx context.Context, conclusion string) (err error) {
 	defer func() {
 		if err != nil {
 			klog.Errorf("error add conclusion: %s", err)
@@ -181,7 +181,7 @@ func (t *OpTicketManager) AddConclusion(ctx context.Context, conclusion string) 
 	return nil
 }
 
-func (t *OpTicketManager) AddDiagnosis(ctx context.Context, diagnosis []ticketmodel.Diagnose) (err error) {
+func (t *TicketManager) AddDiagnosis(ctx context.Context, diagnosis []ticketmodel.Diagnose) (err error) {
 	defer func() {
 		if err != nil {
 			klog.Errorf("error add diagnosis: %s", err)
@@ -216,7 +216,7 @@ func (t *OpTicketManager) AddDiagnosis(ctx context.Context, diagnosis []ticketmo
 	return nil
 }
 
-func (t *OpTicketManager) AddWhySRE(ctx context.Context, whySRE string) (err error) {
+func (t *TicketManager) AddWhySRE(ctx context.Context, whySRE string) (err error) {
 	defer func() {
 		if err != nil {
 			klog.Errorf("error add whySRE: %s", err)
@@ -251,7 +251,7 @@ func (t *OpTicketManager) AddWhySRE(ctx context.Context, whySRE string) (err err
 	return nil
 }
 
-func (t *OpTicketManager) GetWorkflows(ctx context.Context) ([]ticketmodel.TicketWorkflow, error) {
+func (t *TicketManager) GetWorkflows(ctx context.Context) ([]ticketmodel.TicketWorkflow, error) {
 	if t.ticket == nil {
 		return nil, ticketmodel.TicketNotFoundErr
 	}
@@ -265,7 +265,7 @@ func (t *OpTicketManager) GetWorkflows(ctx context.Context) ([]ticketmodel.Ticke
 	return description.Workflows, nil
 }
 
-func (t *OpTicketManager) GetLastWorkflow(ctx context.Context) (*ticketmodel.TicketWorkflow, error) {
+func (t *TicketManager) GetLastWorkflow(ctx context.Context) (*ticketmodel.TicketWorkflow, error) {
 	if t.ticket == nil {
 		return nil, ticketmodel.TicketNotFoundErr
 	}
@@ -283,7 +283,7 @@ func (t *OpTicketManager) GetLastWorkflow(ctx context.Context) (*ticketmodel.Tic
 	}
 }
 
-func (t *OpTicketManager) AddWorkflow(ctx context.Context, action ticketmodel.TicketWorkflowAction, status ticketmodel.TicketWorkflowStatus, message *string) error {
+func (t *TicketManager) AddWorkflow(ctx context.Context, action ticketmodel.TicketWorkflowAction, status ticketmodel.TicketWorkflowStatus, message *string) error {
 	if t.ticket == nil {
 		return ticketmodel.TicketNotFoundErr
 	}
@@ -323,7 +323,7 @@ func (t *OpTicketManager) AddWorkflow(ctx context.Context, action ticketmodel.Ti
 	return nil
 }
 
-func (t *OpTicketManager) UpdateWorkflow(ctx context.Context, action ticketmodel.TicketWorkflowAction, status ticketmodel.TicketWorkflowStatus, message *string) error {
+func (t *TicketManager) UpdateWorkflow(ctx context.Context, action ticketmodel.TicketWorkflowAction, status ticketmodel.TicketWorkflowStatus, message *string) error {
 	if t.ticket == nil {
 		return ticketmodel.TicketNotFoundErr
 	}
@@ -364,7 +364,7 @@ func (t *OpTicketManager) UpdateWorkflow(ctx context.Context, action ticketmodel
 	return nil
 }
 
-func (t *OpTicketManager) AddShutdownDescription(ctx context.Context, status ticketmodel.TicketWorkflowStatus, message *string) error {
+func (t *TicketManager) AddShutdownDescription(ctx context.Context, status ticketmodel.TicketWorkflowStatus, message *string) error {
 	if t.ticket == nil {
 		return ticketmodel.TicketNotFoundErr
 	}
@@ -396,7 +396,7 @@ func (t *OpTicketManager) AddShutdownDescription(ctx context.Context, status tic
 	return nil
 }
 
-func (t *OpTicketManager) UpdateShutdownDescription(ctx context.Context, status ticketmodel.TicketWorkflowStatus, message *string) error {
+func (t *TicketManager) UpdateShutdownDescription(ctx context.Context, status ticketmodel.TicketWorkflowStatus, message *string) error {
 	if t.ticket == nil {
 		return ticketmodel.TicketNotFoundErr
 	}

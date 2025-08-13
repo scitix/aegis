@@ -15,9 +15,11 @@ type TicketManagerInterface interface {
 	CreateTicket(ctx context.Context, status *prom.AegisNodeStatus, hardwareType string, customTitle ...string) error
 	CreateComponentTicket(ctx context.Context, title, model, component string) error
 	AdoptTicket(ctx context.Context) error
+	DispatchTicket(ctx context.Context, user string) error
 	DispatchTicketToSRE(ctx context.Context) error
 	ResolveTicket(ctx context.Context, answer, operation string) error
 	CloseTicket(ctx context.Context) error
+	DeleteTicket(ctx context.Context) error
 	IsFrequentIssue(ctx context.Context, size, frequency int) (bool, error)
 
 	// Description Manager
@@ -34,4 +36,7 @@ type TicketManagerInterface interface {
 	GetLastWorkflow(ctx context.Context) (*TicketWorkflow, error)
 	AddWorkflow(ctx context.Context, action TicketWorkflowAction, status TicketWorkflowStatus, message *string) error
 	UpdateWorkflow(ctx context.Context, action TicketWorkflowAction, status TicketWorkflowStatus, message *string) error
+
+	AddShutdownDescription(ctx context.Context, status TicketWorkflowStatus, message *string) error
+	UpdateShutdownDescription(ctx context.Context, status TicketWorkflowStatus, message *string) error
 }
