@@ -38,7 +38,11 @@ func (g *gpuregisterfail) Evaluate(ctx context.Context, node string, status *pro
 // restart nvidia-plugin pod
 func (g *gpuregisterfail) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	klog.Infof("cordon node: %s, restart nvidia-device-plugin pod and waiting new pod ready for 20m", node)
-
+	err := basic.CordonNode(ctx, g.bridge, node, status.Condition, "aegis")
+	if err != nil {
+		return err
+	}
+	
 	// check frequency
 	if count, err := g.bridge.TicketManager.GetActionCount(ctx, ticketmodel.TicketWorkflowActionRestartPod); err == nil && count > 10 {
 		g.bridge.TicketManager.AddConclusion(ctx, "failed after over 10 times success restart gpu plugin")

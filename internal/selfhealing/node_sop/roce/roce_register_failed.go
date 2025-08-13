@@ -34,6 +34,11 @@ func (g *roceregisterfail) Evaluate(ctx context.Context, node string, status *pr
 }
 
 func (g *roceregisterfail) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+	err := basic.CordonNode(ctx, g.bridge, node, status.Condition, "aegis")
+	if err != nil {
+		return err
+	}
+
 	// check frequency
 	if count, err := g.bridge.TicketManager.GetActionCount(ctx, ticketmodel.TicketWorkflowActionRestartPod); err == nil && count > 2 {
 		g.bridge.TicketManager.AddConclusion(ctx, "failed after over 2 times success restart roce plugin")
@@ -51,7 +56,7 @@ func (g *roceregisterfail) Execute(ctx context.Context, node string, status *pro
 
 	g.bridge.TicketManager.AddWorkflow(ctx, ticketmodel.TicketWorkflowActionRestartPod, ticketmodel.TicketWorkflowStatusRunning, nil)
 
-	err := basic.DeletePodInNodeWithTargetLabel(timeOutCtx, g.bridge, node, map[string]string{"app": "sriovdp"}, true)
+	err = basic.DeletePodInNodeWithTargetLabel(timeOutCtx, g.bridge, node, map[string]string{"app": "sriovdp"}, true)
 	if err == nil {
 		err = basic.WaitPodInNodeWithTargetLabelReady(timeOutCtx, g.bridge, node, map[string]string{"app": "sriovdp"})
 	}

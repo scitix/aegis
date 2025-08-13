@@ -41,13 +41,18 @@ func (g *gpupcie) Evaluate(ctx context.Context, node string, status *prom.AegisN
 func (g *gpupcie) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	klog.Infof("aegis detect node %s %s, pci_bdf: %s", node, status.Condition, status.PciBdf)
 	customTitle := fmt.Sprintf("aegis detect node %s %s, pci_bdf: %s", node, status.Condition, status.PciBdf)
-	g.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeGpu, customTitle)
-	g.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
-	g.bridge.TicketManager.AddWhySRE(ctx, "requrie replace")
 
 	err := basic.CordonNode(ctx, g.bridge, node, status.Condition, "aegis")
 	if err != nil {
 		return err
+	}
+
+	if !g.bridge.TicketManager.CheckTicketExists(ctx) {
+		g.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeGpu, customTitle)
+		g.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
+		g.bridge.TicketManager.AdoptTicket(ctx)
+		g.bridge.TicketManager.AddWhySRE(ctx, "requrie replace")
+		return nil
 	}
 
 	if !g.bridge.Aggressive {
