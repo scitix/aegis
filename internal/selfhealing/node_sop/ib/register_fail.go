@@ -37,6 +37,10 @@ func (g *ibregisterfail) Evaluate(ctx context.Context, node string, status *prom
 // restart rdma pod
 func (g *ibregisterfail) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	klog.Infof("cordon node: %s, restart rdma-devices pod and waiting new pod ready for 20m", node)
+	err := basic.CordonNode(ctx, g.bridge, node, status.Condition, "aegis")
+	if err != nil {
+		return err
+	}
 
 	// check frequency
 	if count, err := g.bridge.TicketManager.GetActionCount(ctx, ticketmodel.TicketWorkflowActionRestartPod); err == nil && count > 10 {
@@ -55,7 +59,7 @@ func (g *ibregisterfail) Execute(ctx context.Context, node string, status *prom.
 
 	g.bridge.TicketManager.AddWorkflow(ctx, ticketmodel.TicketWorkflowActionRestartPod, ticketmodel.TicketWorkflowStatusRunning, nil)
 
-	err := basic.DeletePodInNodeWithTargetLabel(timeOutCtx, g.bridge, node, map[string]string{"name": "rdma-devices-ds-all"}, true)
+	err = basic.DeletePodInNodeWithTargetLabel(timeOutCtx, g.bridge, node, map[string]string{"name": "rdma-devices-ds-all"}, true)
 	if err == nil {
 		err = basic.WaitPodInNodeWithTargetLabelReady(timeOutCtx, g.bridge, node, map[string]string{"name": "rdma-devices-ds-all"})
 	}
