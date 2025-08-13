@@ -21,7 +21,6 @@ import (
 
 var (
 	defaultPrometheusEndpoint = "http://prometheus-k8s.monitoring:9090"
-	defaultOpEndpoint         = "https://op.example.com"
 )
 
 func init() {
@@ -107,14 +106,6 @@ func GetPrometheusEndpoint() string {
 
 func GetElasticSearchConfig() (string, string, string) {
 	return os.Getenv("ELASTICSEARCH_ENDPOINT"), os.Getenv("ELASTICSEARCH_USERNAME"), os.Getenv("ELASTICSEARCH_PASSWORD")
-}
-
-func GetOpEndpoint() string {
-	if endpoint := os.Getenv("OP_ENDPOINT"); endpoint != "" {
-		return endpoint
-	}
-
-	return defaultOpEndpoint
 }
 
 func GetCurrentTimestamp() string {

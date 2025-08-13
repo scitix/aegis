@@ -7,9 +7,7 @@ shift
 
 case "$ACTION" in
   diagnose)
-    cp /opt/aegis/diagnose.sh /var/selfhealing/
-    nsenter -m/proc/1/ns/mnt -- chmod +x /var/selfhealing/diagnose.sh
-    nsenter -m/proc/1/ns/mnt -- /bin/bash -c "cd /var/selfhealing/ && ./diagnose.sh $@"
+    /opt/aegis/diagnose.sh "$@"
     ;;
   healthcheck)
     cp /opt/aegis/healthcheck.sh /var/selfhealing/

@@ -3,10 +3,10 @@ package opticket
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/scitix/aegis/pkg/prom"
 	"github.com/scitix/aegis/pkg/ticketmodel"
-	"github.com/scitix/aegis/tools"
 	"k8s.io/klog/v2"
 )
 
@@ -23,7 +23,12 @@ type OpTicketManager struct {
 }
 
 func NewOPTicketManager(ctx context.Context, args *ticketmodel.TicketManagerArgs) (ticketmodel.TicketManagerInterface, error) {
-	u, err := CreateOpTicketClient(tools.GetOpEndpoint())
+	endpoint := os.Getenv("OP_ENDPOINT")
+	if endpoint == "" {
+		return nil, fmt.Errorf("ticketing system endpoint not found.")
+	}
+
+	u, err := CreateOpTicketClient(endpoint)
 	if err != nil {
 		return nil, err
 	}

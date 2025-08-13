@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -21,10 +22,6 @@ import (
 var digest string
 
 const (
-	appID  string = "aegis"
-	token  string = "pYgKDRvIaReKRdJGY7"
-	ranstr string = "aegis12345"
-
 	createTicketPath   string = "/api/v1/support/ticket/create"
 	getTicketPath      string = "/api/v1/support/ticket/get"
 	patchTicketPath    string = "/api/v1/support/ticket/patch"
@@ -53,6 +50,10 @@ func CreateOpTicketClient(endpoint string) (*OpTicketClient, error) {
 }
 
 func getHeader() map[string]string {
+	appID := os.Getenv("AppID")
+	token := os.Getenv("Token")
+	ranstr := os.Getenv("Ranstr")
+
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	strA := token + ranstr + timestamp
 	hash := sha256.Sum256([]byte(strA))

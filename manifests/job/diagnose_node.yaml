@@ -24,8 +24,8 @@ spec:
     securityContext:
       privileged: true
     volumeMounts:
-    - mountPath: /var/selfhealing
-      name: script
+    - mountPath: /dev
+      name: dev
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   hostNetwork: true
@@ -42,7 +42,7 @@ spec:
     operator: Exists
     tolerationSeconds: 300
   volumes:
-  - hostPath:
-      path: /var/selfhealing
-      type: ""
-    name: script
+  - name: dev
+    hostPath:
+      path: /dev
+      type: Directory

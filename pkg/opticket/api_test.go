@@ -2,15 +2,14 @@ package opticket
 
 import (
 	"context"
+	"os"
 
 	// "strings"
 	"testing"
-
-	"github.com/scitix/aegis/tools"
 )
 
 func TestCreateTicket(t *testing.T) {
-	client, err := CreateOpTicketClient(tools.GetOpEndpoint())
+	client, err := CreateOpTicketClient(os.Getenv("OP_ENDPOINT"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -22,7 +21,7 @@ func TestCreateTicket(t *testing.T) {
 }
 
 func TestGetTicket(t *testing.T) {
-	client, err := CreateOpTicketClient(tools.GetOpEndpoint())
+	client, err := CreateOpTicketClient(os.Getenv("OP_ENDPOINT"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -36,7 +35,7 @@ func TestGetTicket(t *testing.T) {
 }
 
 func TestDispatchTicket(t *testing.T) {
-	client, err := CreateOpTicketClient(tools.GetOpEndpoint())
+	client, err := CreateOpTicketClient(os.Getenv("OP_ENDPOINT"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -55,7 +54,7 @@ func TestDispatchTicket(t *testing.T) {
 }
 
 func TestAcceptTicket(t *testing.T) {
-	client, err := CreateOpTicketClient(tools.GetOpEndpoint())
+	client, err := CreateOpTicketClient(os.Getenv("OP_ENDPOINT"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -67,7 +66,7 @@ func TestAcceptTicket(t *testing.T) {
 }
 
 func TestPatchTicket(t *testing.T) {
-	client, err := CreateOpTicketClient(tools.GetOpEndpoint())
+	client, err := CreateOpTicketClient(os.Getenv("OP_ENDPOINT"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -79,7 +78,7 @@ func TestPatchTicket(t *testing.T) {
 }
 
 func TestResolveTicket(t *testing.T) {
-	client, err := CreateOpTicketClient(tools.GetOpEndpoint())
+	client, err := CreateOpTicketClient(os.Getenv("OP_ENDPOINT"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -90,38 +89,8 @@ func TestResolveTicket(t *testing.T) {
 	}
 }
 
-// func TestCloseTicket(t *testing.T) {
-// 	client, err := CreateUcpClient(tools.GetUcpEndpoint())
-// 	if err != nil {
-// 		t.Fatalf("%v", err)
-// 	}
-
-// 	machine, err := client.GetMachineInfo(context.Background(), "odysseus", "odysseus-g20-011")
-// 	if err != nil {
-// 		t.Fatalf("%v", err)
-// 	}
-
-// 	t.Logf("machine: %v", machine)
-
-// 	err = client.CloseTicket(context.Background(), machine.TicketId)
-// 	if err != nil {
-// 		t.Fatalf("%v", err)
-// 	}
-// }
-
-// func TestCreateComponentTicket(t *testing.T) {
-// 	client, err := CreateUcpClient(tools.GetUcpEndpoint())
-// 	if err != nil {
-// 		t.Fatalf("%v", err)
-// 	}
-// 	err = client.CreateComponentTicket(context.Background(), "odysseus", "odysseus-m-001", "aegis test", "this is just a test", "gpu/dcgm-exporter", "dcgm-exporter")
-// 	if err != nil {
-// 		t.Fatalf("%v", err)
-// 	}
-// }
-
 func TestGetNodeFirstUnResolvedTicket(t *testing.T) {
-	client, err := CreateOpTicketClient(tools.GetOpEndpoint())
+	client, err := CreateOpTicketClient(os.Getenv("OP_ENDPOINT"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -135,7 +104,7 @@ func TestGetNodeFirstUnResolvedTicket(t *testing.T) {
 }
 
 func TestListNodeTickets(t *testing.T) {
-	client, err := CreateOpTicketClient(tools.GetOpEndpoint())
+	client, err := CreateOpTicketClient(os.Getenv("OP_ENDPOINT"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -151,7 +120,7 @@ func TestListNodeTickets(t *testing.T) {
 }
 
 func TestNodeInfo(t *testing.T) {
-	client, err := CreateOpTicketClient(tools.GetOpEndpoint())
+	client, err := CreateOpTicketClient(os.Getenv("OP_ENDPOINT"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
