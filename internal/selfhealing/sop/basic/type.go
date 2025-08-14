@@ -17,7 +17,7 @@ var repair_job_file string = filepath.Join(job_dir, "repair_node.yaml")
 var remedy_job_file string = filepath.Join(job_dir, "remedy_node.yaml")
 var perf_job_file string = filepath.Join(job_dir, "perf_node.yaml")
 
-var SleepWaitDuration = time.Minute * time.Duration(30)
+var SleepWaitDuration = time.Minute * time.Duration(10)
 
 const (
 	SystemNamespace = "kube-system"
