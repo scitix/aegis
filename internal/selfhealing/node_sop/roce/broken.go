@@ -31,7 +31,7 @@ func (g *rocedevicebroken) CreateInstance(ctx context.Context, bridge *sop.ApiBr
 }
 
 func (g *rocedevicebroken) Evaluate(ctx context.Context, node string, status *prom.AegisNodeStatus) bool {
-	return status.Value > 1
+	return status.Value > 0
 }
 
 func (g *rocedevicebroken) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
