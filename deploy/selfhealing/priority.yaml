@@ -20,7 +20,7 @@ data:
     MemoryPressure:99
     KubeletMemoryPressure:90
     MemoryUnhealthy:99
-    DiskPressure:100
+    DiskPressure:99
     DiskUnhealthy:99
     NetworkLinkDown:50
     IBRegisterFailed:50

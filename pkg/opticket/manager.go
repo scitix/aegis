@@ -165,7 +165,7 @@ func (t *OpTicketManager) AdoptTicket(ctx context.Context) (err error) {
 func (t *OpTicketManager) DispatchTicket(ctx context.Context, user string) (err error) {
 	defer func() {
 		if err != nil {
-			klog.Errorf("error dispatch to sre: %s", err)
+			klog.Errorf("error dispatch: %s", err)
 		}
 	}()
 
