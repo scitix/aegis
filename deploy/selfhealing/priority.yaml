@@ -23,12 +23,19 @@ data:
     DiskPressure:99
     DiskUnhealthy:99
     NetworkLinkDown:50
-    IBRegisterFailed:50
     RoceRegisterFailed:50
     RoceDeviceBroken:4
-    IBDown:3
     IBLinkFrequentDown:50
-    IBPcieDowngraded:51
+    IBLost:3
+    IBModuleLost:10
+    IBNetDriverFailedLoad:10
+    IBPCIeMRRNotAlign:10
+    IBPortSpeedAbnormal:10
+    IBPCIeSpeedAbnormal:10
+    IBPCIeWidthAbnormal:10
+    IBLinkAbnormal:10
+    IBProtoclAbnormal:10
+    IBRegisterFailed:50
     GpuCheckFailed:3
     GpuHung:3
     GpuRegisterFailed:50

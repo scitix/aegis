@@ -13,35 +13,29 @@ import (
 )
 
 const (
-	ibdriverfailedload_registry_name = string(basic.ConditionTypeIBNetDriverFailedLoad)
-	ibpciemrr_registry_name = string(basic.ConditionTypeIBPCIeMRRNotAlign)
-	ibportabnormal_registry_name = string(basic.ConditionTypeIBPortSpeedAbnormal)
-	ibprotoclabnormal_registry_name = string(basic.ConditionTypeIBProtoclAbnormal)
+	ibmodulelost_registry_name = string(basic.ConditionTypeIBModuleLost)
 )
 
-type ib struct {
+type ibmodulelost struct {
 	bridge *sop.ApiBridge
 }
 
-var ibInstance *ib = &ib{}
+var ibmodulelostInstance *ibmodulelost = &ibmodulelost{}
 
 func init() {
-	nodesop.RegisterSOP(ibdriverfailedload_registry_name, ibInstance)
-	nodesop.RegisterSOP(ibpciemrr_registry_name, ibInstance)
-	nodesop.RegisterSOP(ibportabnormal_registry_name, ibInstance)
-	nodesop.RegisterSOP(ibprotoclabnormal_registry_name, ibInstance)
+	nodesop.RegisterSOP(ibmodulelost_registry_name, ibmodulelostInstance)
 }
 
-func (g *ib) CreateInstance(ctx context.Context, bridge *sop.ApiBridge) error {
-	ibInstance.bridge = bridge
+func (g *ibmodulelost) CreateInstance(ctx context.Context, bridge *sop.ApiBridge) error {
+	ibmodulelostInstance.bridge = bridge
 	return nil
 }
 
-func (g *ib) Evaluate(ctx context.Context, node string, status *prom.AegisNodeStatus) bool {
+func (g *ibmodulelost) Evaluate(ctx context.Context, node string, status *prom.AegisNodeStatus) bool {
 	return true
 }
 
-func (g *ib) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+func (g *ibmodulelost) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	klog.Infof("aegis detect node %s %s", node, status.Condition)
 
 	reason := fmt.Sprintf("aegis detect node %s %s, module: %s", node, status.Condition, status.ID)
@@ -67,7 +61,7 @@ func (g *ib) Execute(ctx context.Context, node string, status *prom.AegisNodeSta
 	return nil
 }
 
-func (g *ib) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+func (g *ibmodulelost) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	reason := fmt.Sprintf("aegis detect node %s %s", node, status.Condition)
 
 	// add ib unavailabel label

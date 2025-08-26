@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	ibpcie_registry_name = string(basic.ConditionTypeIBPcieDowngraded)
+	ibpciespeed_registry_name = string(basic.ConditionTypeIBPCIeSpeedAbnormal)
+	ibpciewidth_registry_name = string(basic.ConditionTypeIBPCIeWidthAbnormal)
 )
 
 type ibpcie struct {
@@ -24,7 +25,8 @@ type ibpcie struct {
 var ibpcieInstance *ibpcie = &ibpcie{}
 
 func init() {
-	nodesop.RegisterSOP(ibpcie_registry_name, ibpcieInstance)
+	nodesop.RegisterSOP(ibpciespeed_registry_name, ibpcieInstance)
+	nodesop.RegisterSOP(ibpciewidth_registry_name, ibpcieInstance)
 }
 
 func (g *ibpcie) CreateInstance(ctx context.Context, bridge *sop.ApiBridge) error {

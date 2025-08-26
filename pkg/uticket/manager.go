@@ -78,8 +78,15 @@ func (t *TicketManager) CreateTicket(ctx context.Context, status *prom.AegisNode
 		return ticketmodel.TicketAlreadyExistErr
 	}
 
-	title := fmt.Sprintf("aegis detect node %s %s, type: %s %s, reason: %s",
-		t.node, status.Condition, status.Type, status.ID, status.Msg)
+	title := fmt.Sprintf("aegis detect node %s %s, type: %s",
+		status.Name, status.Condition, status.Type)
+	if status.ID != "" {
+		title = fmt.Sprintf("%s, id: %s", title, status.ID)
+	}
+
+	if status.Msg != "" {
+		title = fmt.Sprintf("%s, msg: %s", title, status.Msg)
+	}
 
 	if len(customTitle) > 0 && customTitle[0] != "" {
 		title = customTitle[0]
@@ -171,7 +178,7 @@ func (t *TicketManager) DispatchTicket(ctx context.Context, user string) (err er
 	return nil
 }
 
-func (t *TicketManager) DispatchTicketToSRE(ctx context.Context) (err error) {
+func (t *TicketManager) DispatchTicketToSRE(ctx context.Context, opts ...string) (err error) {
 	return t.DispatchTicket(ctx, GetTicketSupervisorSRE())
 }
 

@@ -40,7 +40,7 @@ func (n *failedcreatepodcontainer) Execute(ctx context.Context, node string, sta
 		return err
 	}
 
-	n.bridge.TicketManager.CreateComponentTicket(ctx, reason, "kubelet", "kubelet")
+	n.bridge.TicketManager.CreateComponentTicket(ctx, reason, basic.ModelTypeKubelet, basic.ComponentTypeKebelet)
 	n.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
 	n.bridge.TicketManager.AdoptTicket(ctx)
 
@@ -54,7 +54,7 @@ func (n *failedcreatepodcontainer) Execute(ctx context.Context, node string, sta
 
 	if remedyCount > 1 {
 		n.bridge.TicketManager.AddConclusion(ctx, "too many remedy workflows")
-		n.bridge.TicketManager.DispatchTicketToSRE(ctx)
+		n.bridge.TicketManager.DispatchTicketToSRE(ctx, basic.ModelTypeKubelet, basic.ComponentTypeKebelet)
 
 		return nil
 	}

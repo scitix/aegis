@@ -56,7 +56,15 @@ const (
 	HardwareTypeDisk      = "disk"
 	HardwareTypeUnknown   = "unknown"
 	HardwareTypeNone      = "none"
+)
 
+const (
+	ModelTypeHardware = "hardware"
+	ModelTypeKubelet  = "kubelet"
+)
+
+const (
+	ComponentTypeKebelet            = "kubelet"
 	ComponentTypeDcgmExporter       = "dcgm-exporter"
 	ComponentTypeNvidiaDevicePlugin = "nvidia-device-plugin"
 	ComponentTypeRdmaDevicePlugin   = "rdma-device-plugin"
@@ -91,10 +99,17 @@ const (
 	ConditionTypeHighZombieProcessesCount ConditionType = "HighZombieProcessesCount"
 
 	// ib
-	ConditionTypeIBLinkFrequentDown ConditionType = "IBLinkFrequentDown"
-	ConditionTypeIBDown             ConditionType = "IBDown"
-	ConditionTypeIBRegisterFailed   ConditionType = "IBRegisterFailed"
-	ConditionTypeIBPcieDowngraded   ConditionType = "IBPcieDowngraded"
+	ConditionTypeIBLinkFrequentDown    ConditionType = "IBLinkFrequentDown"
+	ConditionTypeIBLost                ConditionType = "IBLost"
+	ConditionTypeIBRegisterFailed      ConditionType = "IBRegisterFailed"
+	ConditionTypeIBModuleLost          ConditionType = "IBModuleLost"
+	ConditionTypeIBNetDriverFailedLoad ConditionType = "IBNetDriverFailedLoad"
+	ConditionTypeIBPCIeMRRNotAlign     ConditionType = "IBPCIeMRRNotAlign"
+	ConditionTypeIBPortSpeedAbnormal   ConditionType = "IBPortSpeedAbnormal"
+	ConditionTypeIBPCIeSpeedAbnormal   ConditionType = "IBPCIeSpeedAbnormal"
+	ConditionTypeIBPCIeWidthAbnormal   ConditionType = "IBPCIeWidthAbnormal"
+	ConditionTypeIBLinkAbnormal        ConditionType = "IBLinkAbnormal"
+	ConditionTypeIBProtoclAbnormal     ConditionType = "IBProtoclAbnormal"
 
 	// roce
 	ConditionTypeRoceRegisterFailed ConditionType = "RoceRegisterFailed"

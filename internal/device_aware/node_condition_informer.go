@@ -472,14 +472,28 @@ func parseIBDeviceStatus(statuses []prom.AegisNodeStatus) string {
 	disabledMap := make(map[string]bool, 0)
 	for _, status := range statuses {
 		switch status.Condition {
-		case string(basic.ConditionTypeIBDown):
+		case string(basic.ConditionTypeIBNetDriverFailedLoad):
 			fallthrough
-		case string(basic.ConditionTypeIBPcieDowngraded):
+		case string(basic.ConditionTypeIBPCIeMRRNotAlign):
+			fallthrough
+		case string(basic.ConditionTypeIBPortSpeedAbnormal):
+			fallthrough
+		case string(basic.ConditionTypeIBPCIeSpeedAbnormal):
+			fallthrough
+		case string(basic.ConditionTypeIBPCIeWidthAbnormal):
+			fallthrough
+		case string(basic.ConditionTypeIBProtoclAbnormal):
+			fallthrough
+		case string(basic.ConditionTypeIBLinkAbnormal):
 			fallthrough
 		case string(basic.ConditionTypeIBLinkFrequentDown):
 			if status.ID != "" {
 				disabledMap[status.ID] = true
 			}
+		case string(basic.ConditionTypeIBModuleLost):
+			fallthrough
+		case string(basic.ConditionTypeIBLost):
+			disabledMap[defaultDeviceId] = true
 		default:
 			continue
 		}

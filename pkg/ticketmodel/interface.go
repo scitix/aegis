@@ -16,7 +16,7 @@ type TicketManagerInterface interface {
 	CreateComponentTicket(ctx context.Context, title, model, component string) error
 	AdoptTicket(ctx context.Context) error
 	DispatchTicket(ctx context.Context, user string) error
-	DispatchTicketToSRE(ctx context.Context) error
+	DispatchTicketToSRE(ctx context.Context, opts ...string) error
 	ResolveTicket(ctx context.Context, answer, operation string) error
 	CloseTicket(ctx context.Context) error
 	DeleteTicket(ctx context.Context) error
