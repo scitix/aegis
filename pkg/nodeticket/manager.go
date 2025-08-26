@@ -134,7 +134,7 @@ func (m *NodeTicketManager) DispatchTicket(ctx context.Context, user string) err
 	return nil
 }
 
-func (m *NodeTicketManager) DispatchTicketToSRE(ctx context.Context) error {
+func (m *NodeTicketManager) DispatchTicketToSRE(ctx context.Context, opts ...string) error {
 	return m.DispatchTicket(ctx, "")
 }
 

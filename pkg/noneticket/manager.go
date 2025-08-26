@@ -53,7 +53,7 @@ func (m *NoneTicketManager) DispatchTicket(ctx context.Context, user string) err
 	return nil
 }
 
-func (m *NoneTicketManager) DispatchTicketToSRE(ctx context.Context) error {
+func (m *NoneTicketManager) DispatchTicketToSRE(ctx context.Context, opts ...string) error {
 	return nil
 }
 

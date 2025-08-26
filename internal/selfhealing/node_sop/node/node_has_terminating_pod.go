@@ -45,10 +45,10 @@ func (n *terminatingpod) Execute(ctx context.Context, node string, status *prom.
 		return err
 	}
 
-	n.bridge.TicketManager.CreateComponentTicket(ctx, reason, "kubelet", "kubelet")
+	n.bridge.TicketManager.CreateComponentTicket(ctx, reason, basic.ModelTypeKubelet, basic.ComponentTypeKebelet)
 	n.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
 	n.bridge.TicketManager.AdoptTicket(ctx)
-	n.bridge.TicketManager.DispatchTicketToSRE(ctx)
+	n.bridge.TicketManager.DispatchTicketToSRE(ctx, basic.ModelTypeKubelet, basic.ComponentTypeKebelet)
 
 	return nil
 }

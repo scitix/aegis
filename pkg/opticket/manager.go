@@ -96,8 +96,15 @@ func (t *OpTicketManager) CreateTicket(ctx context.Context, status *prom.AegisNo
 		return ticketmodel.TicketAlreadyExistErr
 	}
 
-	title := fmt.Sprintf("aegis detect node %s %s, type: %s %s, reason: %s",
-		t.nodename, status.Condition, status.Type, status.ID, status.Msg)
+	title := fmt.Sprintf("aegis detect node %s %s, type: %s",
+		status.Name, status.Condition, status.Type)
+	if status.ID != "" {
+		title = fmt.Sprintf("%s, id: %s", title, status.ID)
+	}
+
+	if status.Msg != "" {
+		title = fmt.Sprintf("%s, msg: %s", title, status.Msg)
+	}
 
 	if len(customTitle) > 0 && customTitle[0] != "" {
 		title = customTitle[0]
@@ -165,7 +172,7 @@ func (t *OpTicketManager) AdoptTicket(ctx context.Context) (err error) {
 func (t *OpTicketManager) DispatchTicket(ctx context.Context, user string) (err error) {
 	defer func() {
 		if err != nil {
-			klog.Errorf("error dispatch to sre: %s", err)
+			klog.Errorf("error dispatch: %s", err)
 		}
 	}()
 
@@ -189,7 +196,7 @@ func (t *OpTicketManager) DispatchTicket(ctx context.Context, user string) (err 
 	return nil
 }
 
-func (t *OpTicketManager) DispatchTicketToSRE(ctx context.Context) (err error) {
+func (t *OpTicketManager) DispatchTicketToSRE(ctx context.Context, opts ...string) (err error) {
 	return t.DispatchTicket(ctx, GetTicketSupervisorSRE())
 }
 

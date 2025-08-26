@@ -33,10 +33,10 @@ import (
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/gpfs"
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/gpu"
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/ib"
-	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/roce"
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/memory"
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/network"
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/node"
+	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/roce"
 	_ "github.com/scitix/aegis/internal/selfhealing/node_sop/system"
 	selfticket "github.com/scitix/aegis/internal/selfhealing/ticket"
 	"github.com/scitix/aegis/pkg/ticketmodel"
@@ -169,6 +169,7 @@ func (o *nodeOptions) complete(cmd *cobra.Command, args []string) (err error) {
 		Region:      o.config.Region,
 		ClusterName: o.config.ClusterName,
 		OrgName:     o.config.OrgName,
+		NodeName:    o.name,
 		Ip:          o.ip,
 		User:        config.TicketSupervisorAegis,
 	}

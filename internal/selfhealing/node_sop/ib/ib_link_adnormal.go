@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	ibdown_registry_name = string(basic.ConditionTypeIBDown)
+	ibdown_registry_name = string(basic.ConditionTypeIBLinkAbnormal)
 )
 
 type ibdown struct {

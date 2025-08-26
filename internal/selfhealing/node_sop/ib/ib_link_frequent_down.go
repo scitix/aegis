@@ -16,17 +16,17 @@ type iblinkfrequentdown struct {
 	bridge *sop.ApiBridge
 }
 
-var ibInstance *iblinkfrequentdown = &iblinkfrequentdown{}
+var iblinkfrequentdownInstance *iblinkfrequentdown = &iblinkfrequentdown{}
 
 func init() {
-	nodesop.RegisterSOP(iblinkfrequentdown_registry_name, ibInstance)
+	nodesop.RegisterSOP(iblinkfrequentdown_registry_name, iblinkfrequentdownInstance)
 	// nodesop.RegisterSOP(iblinkdown_registry_name, ibInstance)
 	// nodesop.RegisterSOP(ibreceivederr_registry_name, ibInstance)
 	// nodesop.RegisterSOP(ibtransmittederr_registry_name, ibInstance)
 }
 
 func (n *iblinkfrequentdown) CreateInstance(ctx context.Context, bridge *sop.ApiBridge) error {
-	ibInstance.bridge = bridge
+	iblinkfrequentdownInstance.bridge = bridge
 	return nil
 }
 

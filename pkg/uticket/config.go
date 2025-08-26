@@ -1,6 +1,10 @@
 package uticket
 
-import "os"
+import (
+	"os"
+
+	"github.com/scitix/aegis/internal/selfhealing/sop/basic"
+)
 
 const (
 	DefaultTicketSupervisorSRE = "admin"
@@ -8,9 +12,15 @@ const (
 )
 
 // GetTicketSupervisorSRE gets default SRE supervisor.
-func GetTicketSupervisorSRE() string {
-	if s := os.Getenv("SRE"); s != "" {
-		return s
+func GetTicketSupervisorSRE(opts ...string) string {
+	sre := os.Getenv("SRE")
+
+	if len(opts) > 0 && opts[0] != basic.ModelTypeHardware {
+		sre = os.Getenv("NonHardwareSRE")
+	}
+
+	if sre != "" {
+		return sre
 	}
 	return DefaultTicketSupervisorSRE
 }
