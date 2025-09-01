@@ -150,9 +150,9 @@ const (
 	ConditionTypeNvidiaFabricManagerNotActive   ConditionType = "NvidiaFabricManagerNotActive"
 	ConditionTypeGpuPcieGenDowngraded           ConditionType = "GpuPcieGenDowngraded"
 	ConditionTypeGpuPcieWidthDowngraded         ConditionType = "GpuPcieWidthDowngraded"
-	ConditionTypeGpuGpuHWSlowdown               ConditionType = "GPUHWSlowdown"
-	ConditionTypeGpuNvlinkInactive              ConditionType = "GPUNvlinkInactive"
-	ConditionTypeGPUPersistenceModeNotEnabled   ConditionType = "GPUPersistenceModeNotEnabled"
+	ConditionTypeGpuGpuHWSlowdown               ConditionType = "GpuHWSlowdown"
+	ConditionTypeGpuNvlinkInactive              ConditionType = "GpuNvlinkInactive"
+	ConditionTypeGPUPersistenceModeNotEnabled   ConditionType = "GpuPersistenceModeNotEnabled"
 	ConditionTypeGpuMetricsHang                 ConditionType = "GpuMetricsHang"
 
 	// default
