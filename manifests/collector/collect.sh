@@ -3,8 +3,8 @@ set -u
 
 NSENTER="nsenter --mount=/proc/1/ns/mnt --"
 TMP_OUTPUT=$(mktemp)
-MAX_TOTAL_CHARS=80000   # ≈ 20k tokens
-MAX_SECTION_LINES=200   # 每类日志最多保留 N 行
+MAX_TOTAL_CHARS=20000   # ≈ 5k tokens
+MAX_SECTION_LINES=50   # 每类日志最多保留 N 行
 DEFAULT_TIMEOUT=10      # 每个命令最长执行秒数
 
 write_section() {
