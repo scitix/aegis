@@ -69,7 +69,7 @@ if [ "$action" == "RestartKubelet" ]; then
 fi
 
 if [ "$action" == "RestartFabricmanager" ]; then
-    systemctl restart containerd
+    systemctl restart nvidia-fabricmanager
 fi
 
 if [ "$action" == "EnableGpuPersistence" ]; then
