@@ -44,7 +44,7 @@ func (g *gpuaggsram) Execute(ctx context.Context, node string, status *prom.Aegi
 	g.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
 	g.bridge.TicketManager.AddWhySRE(ctx, "requrie replace")
 	
-	if g.bridge.AggressiveLevel > 1 {
+	if g.bridge.Aggressive {
 		// shutdown
 		op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu agg sram uncorrectable", canceler)
 	}

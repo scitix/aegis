@@ -250,19 +250,19 @@ func CheckNodeIsCritical(ctx context.Context, bridge *sop.ApiBridge, nodeName st
 	node, err := bridge.KubeClient.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
 		klog.Errorf("Error get node %s: %s", nodeName, node)
-		return false
+		return true
 	}
 
 	keys := os.Getenv("CRITICAL_NODE_LABEL_KEYS")
 	for _, k := range strings.Split(keys, ",") {
 		for key, _ := range node.Labels {
 			if key == k {
-				return false
+				return true
 			}
 		}
 	}
 
-	return  true
+	return  false
 }
 
 func CheckNodeIsMaster(ctx context.Context, bridge *sop.ApiBridge, nodeName string) bool {

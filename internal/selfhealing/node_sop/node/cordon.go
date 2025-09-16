@@ -124,7 +124,7 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 		}
 
 		// shutdown
-		if n.bridge.AggressiveLevel > 1 {
+		if n.bridge.Aggressive {
 			op.ShutdownNode(ctx, n.bridge, node, "shutdown node for gpu remapping failure", func(ctx context.Context) bool {
 				return false
 			})
@@ -152,7 +152,7 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 		}
 
 		// shutdown
-		if n.bridge.AggressiveLevel > 1 {
+		if n.bridge.Aggressive {
 			op.ShutdownNode(ctx, n.bridge, node, "shutdown node for gpu too sram uncorrectable error", func(ctx context.Context) bool {
 				return false
 			})

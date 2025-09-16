@@ -19,23 +19,32 @@ import (
 // drain node
 // try to shutdown node
 func NodeGracefulShutdown(ctx context.Context, bridge *sop.ApiBridge, node, reason, remark string, cancel WaitCancelFunc) (bool, error) {
-	if bridge.AggressiveLevel < 2 {
-		return false, fmt.Errorf("cannot shutdown node because of AggressiveLevel: %d which should > 1", bridge.AggressiveLevel)
+	if !bridge.Aggressive {
+		return false, fmt.Errorf("cannot shutdown node because of disable Aggressive mode")
 	}
 
-	// wait cirtical pod running completed, 4d
-	dayCtx, dayCancel := context.WithTimeout(ctx, time.Hour*time.Duration(4*24))
-	defer dayCancel()
-	err := WaitNodeCriticalPodCompeleted(dayCtx, bridge, node, cancel)
-	if err != nil {
-		return false, err
-	}
+
+	if bridge.AggressiveLevel == 1 {
+		// check no system pod running
+		has := CheckNodeHasUserPod(ctx, bridge, node)
+		if has {
+			return false, nil
+		}
+	} else {
+		// wait cirtical pod running completed, 4d
+		dayCtx, dayCancel := context.WithTimeout(ctx, time.Hour*time.Duration(4*24))
+		defer dayCancel()
+		err := WaitNodeCriticalPodCompeleted(dayCtx, bridge, node, cancel)
+		if err != nil {
+			return false, err
+		}
+	}	
 
 	if cancel(ctx) {
 		return false, nil
 	}
 
-	err = FireEventForNodePod(ctx, bridge, node, EventReasonEviction, reason)
+	err := FireEventForNodePod(ctx, bridge, node, EventReasonEviction, reason)
 	if err != nil {
 		klog.Warningf("fail to send evivtion event: %s", err)
 	}

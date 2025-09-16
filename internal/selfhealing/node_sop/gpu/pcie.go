@@ -71,7 +71,7 @@ func (g *gpupcie) Execute(ctx context.Context, node string, status *prom.AegisNo
 		g.bridge.TicketManager.AddWhySRE(ctx, "pcie downgraded still exists after a reboot.")
 
 		// shutdown
-		if g.bridge.AggressiveLevel > 1 {
+		if g.bridge.Aggressive {
 			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu pcied downgraded", func(ctx context.Context) bool {
 				return false
 			})

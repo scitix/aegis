@@ -197,7 +197,7 @@ func (t *OpTicketManager) DispatchTicket(ctx context.Context, user string) (err 
 }
 
 func (t *OpTicketManager) DispatchTicketToSRE(ctx context.Context, opts ...string) (err error) {
-	return t.DispatchTicket(ctx, GetTicketSupervisorSRE())
+	return t.DispatchTicket(ctx, t.GetTicketSupervisorSRE(ctx))
 }
 
 func (t *OpTicketManager) ResolveTicket(ctx context.Context, answer, operation string) error {
