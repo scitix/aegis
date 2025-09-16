@@ -69,7 +69,7 @@ func (g *gpuhung) Execute(ctx context.Context, node string, status *prom.AegisNo
 			klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
 		}
 
-		if g.bridge.AggressiveLevel > 1 {
+		if g.bridge.Aggressive {
 			// shutdown
 			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu hung", canceler)
 		}

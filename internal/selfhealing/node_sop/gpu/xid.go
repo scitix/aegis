@@ -77,7 +77,7 @@ func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeSt
 			g.bridge.TicketManager.AddWhySRE(ctx, "over 3 same issue for lastest 5 tickets, perhaps a gpu hardware issue.")
 			g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 
-			if g.bridge.AggressiveLevel > 1 {
+			if g.bridge.Aggressive {
 				// shutdown
 				op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
 			}
@@ -98,7 +98,7 @@ func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeSt
 				klog.Errorf("aegis error run diagnose for node %s %s type: %s %s, err: %s", node, status.Condition, status.Type, status.ID, err)
 			}
 
-			if g.bridge.AggressiveLevel > 1 {
+			if g.bridge.Aggressive {
 				// shutdown
 				op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
 			}
@@ -115,7 +115,7 @@ func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeSt
 			return nil
 		}
 
-		if g.bridge.AggressiveLevel > 1 {
+		if g.bridge.Aggressive {
 			// shutdown
 			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
 		} else {

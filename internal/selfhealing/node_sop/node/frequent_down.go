@@ -7,6 +7,7 @@ import (
 	nodesop "github.com/scitix/aegis/internal/selfhealing/node_sop"
 	"github.com/scitix/aegis/internal/selfhealing/sop"
 	"github.com/scitix/aegis/internal/selfhealing/sop/basic"
+	"github.com/scitix/aegis/internal/selfhealing/sop/op"
 	"github.com/scitix/aegis/pkg/prom"
 	"github.com/scitix/aegis/pkg/ticketmodel"
 	"k8s.io/klog/v2"
@@ -66,19 +67,9 @@ func (n *nodefrequentdown) Execute(ctx context.Context, node string, status *pro
 	n.bridge.TicketManager.AdoptTicket(ctx)
 	n.bridge.TicketManager.AddWorkflow(ctx, ticketmodel.TicketWorkflowActionReboot, ticketmodel.TicketWorkflowStatusRunning, nil)
 
-	success, err := basic.NodeGracefulRestart(ctx, n.bridge, node, status.Condition, "aegis", func(ctx context.Context) bool {
+	return op.RestartNode(ctx, n.bridge, node, reason, func(ctx context.Context) bool {
 		return !n.Evaluate(ctx, node, status)
 	})
-
-	if success {
-		n.bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionReboot, ticketmodel.TicketWorkflowStatusSucceeded, nil)
-	} else {
-		message := fmt.Sprintf("reboot failed: %s", err)
-		n.bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionReboot, ticketmodel.TicketWorkflowStatusFailed, &message)
-		return err
-	}
-
-	return nil
 }
 
 func (n *nodefrequentdown) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {

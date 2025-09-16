@@ -37,30 +37,23 @@ func RestartNode(ctx context.Context, bridge *sop.ApiBridge, node, reason string
 		return fmt.Errorf("cannot restart node because of disable Aggressive mode")
 	}
 
-	// if bridge.NodeStatus.RebootCount != nil && *bridge.NodeStatus.RebootCount > 1 {
-	// 	return nil
-	// }
+	cause, _ := bridge.TicketManager.GetRootCauseDescription(ctx)
+	if time.Now().Sub(cause.Timestamps) > 48 * time.Hour {
+		bridge.TicketManager.AddConclusion(ctx, "ticket deal over 48h. dispatch to sre")
+		bridge.TicketManager.DispatchTicketToSRE(ctx)
+		return nil
+	}
+
 	workflows, _ := bridge.TicketManager.GetWorkflows(ctx)
 	rebootCount := 0
-	cancelCount := 0
 	for _, w := range workflows {
 		if w.Action == ticketmodel.TicketWorkflowActionReboot && w.Status == ticketmodel.TicketWorkflowStatusSucceeded  {
 			rebootCount++
-		}
-
-		if w.Action == ticketmodel.TicketWorkflowActionReboot && w.Status == ticketmodel.TicketWorkflowStatusCanceled  {
-			cancelCount++
 		}
 	}
 
 	if rebootCount > 1 {
 		bridge.TicketManager.AddConclusion(ctx, "too many reboot. perhaps a hardware issue")
-		bridge.TicketManager.DispatchTicketToSRE(ctx)
-		return nil
-	}
-
-	if cancelCount > 5 {
-		bridge.TicketManager.AddConclusion(ctx, "too many reboot canceled. dispatch to sre")
 		bridge.TicketManager.DispatchTicketToSRE(ctx)
 		return nil
 	}
@@ -103,8 +96,15 @@ func RestartNode(ctx context.Context, bridge *sop.ApiBridge, node, reason string
 }
 
 func ShutdownNode(ctx context.Context, bridge *sop.ApiBridge, node, reason string, canceler basic.WaitCancelFunc) error {
-	if bridge.AggressiveLevel < 2 {
-		return fmt.Errorf("cannot shutdown node because of AggressiveLevel: %d which should > 1", bridge.AggressiveLevel)
+	if !bridge.Aggressive {
+		return fmt.Errorf("cannot shutdown node because of disable Aggressive mode")
+	}
+
+	cause, _ := bridge.TicketManager.GetRootCauseDescription(ctx)
+	if time.Now().Sub(cause.Timestamps) > 48 * time.Hour {
+		bridge.TicketManager.AddConclusion(ctx, "ticket deal over 48h. dispatch to sre")
+		bridge.TicketManager.DispatchTicketToSRE(ctx)
+		return nil
 	}
 
 	bridge.TicketManager.AddShutdownDescription(ctx, ticketmodel.TicketWorkflowStatusRunning, nil)
