@@ -10,7 +10,6 @@ import (
 	"github.com/scitix/aegis/internal/selfhealing/sop"
 	"github.com/scitix/aegis/internal/selfhealing/sop/basic"
 	"github.com/scitix/aegis/pkg/prom"
-	"github.com/scitix/aegis/pkg/ticketmodel"
 )
 
 const kubeletmemorypressure_registry_name = string(basic.ConditionTypeKubeletMemoryPressure)
@@ -36,25 +35,26 @@ func (n *kubeletmemorypressure) Evaluate(ctx context.Context, node string, statu
 }
 
 func (n *kubeletmemorypressure) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
-	klog.Infof("cordon node: %s", node)
+	// klog.Infof("cordon node: %s", node)
 
-	basic.CordonNode(ctx, n.bridge, node, status.Condition, "aegis")
+	// basic.CordonNode(ctx, n.bridge, node, status.Condition, "aegis")
 
-	n.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeGpfs)
-	n.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
-	n.bridge.TicketManager.AdoptTicket(ctx)
+	// n.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeGpfs)
+	// n.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
+	// n.bridge.TicketManager.AdoptTicket(ctx)
 
 	timeOutCtx, cancel := context.WithTimeout(ctx, time.Minute*time.Duration(20))
 	defer cancel()
-	n.bridge.TicketManager.AddWorkflow(ctx, ticketmodel.TicketWorkflowActionRemedy, ticketmodel.TicketWorkflowStatusRunning, nil)
+	// n.bridge.TicketManager.AddWorkflow(ctx, ticketmodel.TicketWorkflowActionRemedy, ticketmodel.TicketWorkflowStatusRunning, nil)
 	success, err := basic.RemedyNode(timeOutCtx, n.bridge, node, basic.DropCacheRemedyAction)
 
 	if !success {
-		n.bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionRemedy, ticketmodel.TicketWorkflowStatusFailed, nil)
+		// n.bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionRemedy, ticketmodel.TicketWorkflowStatusFailed, nil)
 		klog.Warningf("fail to run remedy ops for node %s: %s.", node, err)
-	} else {
-		n.bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionRemedy, ticketmodel.TicketWorkflowStatusSucceeded, nil)
 	}
+	//  else {
+	// 	n.bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionRemedy, ticketmodel.TicketWorkflowStatusSucceeded, nil)
+	// }
 
 	return nil
 }
