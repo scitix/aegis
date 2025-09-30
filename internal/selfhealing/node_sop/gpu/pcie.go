@@ -72,7 +72,7 @@ func (g *gpupcie) Execute(ctx context.Context, node string, status *prom.AegisNo
 
 		// shutdown
 		if g.bridge.Aggressive {
-			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu pcied downgraded", func(ctx context.Context) bool {
+			return op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu pcied downgraded", func(ctx context.Context) bool {
 				return false
 			})
 		}

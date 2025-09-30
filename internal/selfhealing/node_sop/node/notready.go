@@ -46,6 +46,21 @@ func (n *notready) Execute(ctx context.Context, node string, status *prom.AegisN
 		return nil
 	}
 
+	// force clean terminating pod
+	pods, err := basic.GetTerminatingPodInNode(ctx, n.bridge, node)
+	if err != nil {
+		klog.Warningf("fail to get terminating pods in node: %s, skip", err)
+	} else {
+		for _, pod := range pods {
+			err = basic.DeletePodForcely(ctx, n.bridge, pod.Namespace, pod.Name)
+			if err != nil {
+				klog.Warningf("fail to force delete pod %s/%s: %s", pod.Namespace, pod.Name, err)
+			} else {
+				klog.Infof("succeed force delete pod %s/%s", pod.Namespace, pod.Name)
+			}
+		}
+	}
+
 	if n.bridge.TicketManager.CheckTicketExists(ctx) {
 		n.bridge.TicketManager.AddConclusion(ctx, "node not ready over 1h")
 		n.bridge.TicketManager.DispatchTicketToSRE(ctx)

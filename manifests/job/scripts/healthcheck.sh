@@ -61,6 +61,14 @@ if [ $? -eq 0 ];then
         echo "===================`date +"%Y-%m-%d %H:%M:%S"` checking gpu status failed..."
         ExitWithTimeout 23
     fi
+
+    sichek nccltest
+    if [ $? -eq 0 ]; then
+        echo "===================`date +"%Y-%m-%d %H:%M:%S"` checking nccl test success..."
+    else
+        echo "===================`date +"%Y-%m-%d %H:%M:%S"` checking nccl test failed..."
+        ExitWithTimeout 24
+    fi
 else
     echo "===================`date +"%Y-%m-%d %H:%M:%S"` this is not GPU node..."
 fi

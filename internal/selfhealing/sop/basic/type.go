@@ -152,6 +152,7 @@ const (
 	ConditionTypeGpuPcieWidthDowngraded         ConditionType = "GpuPcieWidthDowngraded"
 	ConditionTypeGpuGpuHWSlowdown               ConditionType = "GpuHWSlowdown"
 	ConditionTypeGpuNvlinkInactive              ConditionType = "GpuNvlinkInactive"
+	ConditionTypeGpuNvlinkError                 ConditionType = "GpuNvlinkError"
 	ConditionTypeGPUPersistenceModeNotEnabled   ConditionType = "GpuPersistenceModeNotEnabled"
 	ConditionTypeGpuMetricsHang                 ConditionType = "GpuMetricsHang"
 

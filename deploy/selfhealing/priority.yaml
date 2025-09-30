@@ -59,6 +59,7 @@ data:
     GpuPcieWidthDowngraded:51
     GpuHWSlowdown:99
     GpuNvlinkInactive:3
+    GpuNvlinkError:3
     GpuPersistenceModeNotEnabled:3
     GpuMetricsHang:99
     GpfsDown:2

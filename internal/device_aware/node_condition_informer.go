@@ -389,6 +389,8 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 			}
 		case string(basic.ConditionTypeGpuNvlinkInactive):
 			fallthrough
+		case string(basic.ConditionTypeGpuNvlinkError):
+			fallthrough
 		case string(basic.ConditionTypeGpuTooManyPageRetired):
 			fallthrough
 		case string(basic.ConditionTypeGpuAggSramUncorrectable):
@@ -406,6 +408,8 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 		case string(basic.ConditionTypeHighGpuTemp):
 			fallthrough
 		case string(basic.ConditionTypeHighGpuMemoryTemp):
+			fallthrough
+		case string(basic.ConditionTypeXid95UncontainedECCError):
 			fallthrough
 		case string(basic.ConditionTypeXid64ECCRowremapperFailure):
 			fallthrough

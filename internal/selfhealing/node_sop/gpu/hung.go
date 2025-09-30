@@ -71,7 +71,7 @@ func (g *gpuhung) Execute(ctx context.Context, node string, status *prom.AegisNo
 
 		if g.bridge.Aggressive {
 			// shutdown
-			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu hung", canceler)
+			return op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu hung", canceler)
 		}
 
 		g.bridge.TicketManager.DispatchTicketToSRE(ctx)

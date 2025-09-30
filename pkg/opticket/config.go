@@ -39,6 +39,10 @@ func (t *OpTicketManager) GetTicketSupervisorSRE(ctx context.Context) string {
 		HardwareSRE = SRE
 	}
 
+	if t.ticket == nil {
+		return SRE
+	}
+
 	var description ticketmodel.TicketDescription
 	err := description.Unmarshal([]byte(t.ticket.Description))
 	if err != nil {

@@ -54,26 +54,20 @@ func (c *cpuunhealthy) Execute(ctx context.Context, node string, status *prom.Ae
 		return nil
 	}
 
-	cancelled := false
 	if !basic.CheckNodeIsCritical(ctx, c.bridge, node) {
 		// shutdown
-		op.ShutdownNode(ctx, c.bridge, node, "shutdown node for machine repair", func(ctx context.Context) bool {
+		return op.ShutdownNode(ctx, c.bridge, node, "shutdown node for machine repair", func(ctx context.Context) bool {
 			statuses, err := c.bridge.PromClient.GetNodeStatuses(ctx, node, status.Type)
 			if err == nil && len(statuses) == 0 {
-				cancelled = true
 				return true
 			}
 			return false
 		})
 	}
 
-	if !cancelled {
-		c.bridge.TicketManager.DispatchTicketToSRE(ctx)
-	}
-
-	return err
+	return c.bridge.TicketManager.DispatchTicketToSRE(ctx)
 }
 
-func (g *cpuunhealthy) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
+func (c *cpuunhealthy) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	return nil
 }

@@ -52,7 +52,7 @@ func NodeGracefulShutdown(ctx context.Context, bridge *sop.ApiBridge, node, reas
 	// drain node
 	err = DrainNode(ctx, bridge, node, reason, remark)
 	if err != nil {
-		return false, err
+		klog.Warningf("fail to drain node: %s", err)
 	}
 
 	// shutdown node, 20min

@@ -71,7 +71,7 @@ func (g *gpubroken) Execute(ctx context.Context, node string, status *prom.Aegis
 
 		if g.bridge.Aggressive {
 			// shutdown
-			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
+			return op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
 		}
 		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 		return nil
