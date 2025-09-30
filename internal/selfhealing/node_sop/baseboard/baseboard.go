@@ -91,7 +91,6 @@ func (g *baseboard) Execute(ctx context.Context, node string, status *prom.Aegis
 		return nil
 	}
 
-	cancelled := false
 	switch status.ID {
 	case "fan":
 		fallthrough
@@ -104,10 +103,9 @@ func (g *baseboard) Execute(ctx context.Context, node string, status *prom.Aegis
 	case "sysHealth":
 		if !basic.CheckNodeIsCritical(ctx, g.bridge, node) {
 			// shutdown
-			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for machine repair", func(ctx context.Context) bool {
+			return op.ShutdownNode(ctx, g.bridge, node, "shutdown node for machine repair", func(ctx context.Context) bool {
 				statuses, err := g.bridge.PromClient.GetNodeStatuses(ctx, node, status.Type)
 				if err == nil && len(statuses) == 0 {
-					cancelled = true
 					return true
 				}
 				return false
@@ -115,10 +113,7 @@ func (g *baseboard) Execute(ctx context.Context, node string, status *prom.Aegis
 		}
 	}
 
-	if !cancelled {
-		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
-	}
-	return nil
+	return g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 }
 
 func (g *baseboard) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {

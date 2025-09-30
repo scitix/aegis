@@ -35,13 +35,20 @@ func DiagnoseNode(ctx context.Context, bridge *sop.ApiBridge, node, tpe string, 
 func RestartNode(ctx context.Context, bridge *sop.ApiBridge, node, reason string, canceler basic.WaitCancelFunc) error {
 	if !bridge.Aggressive {
 		return fmt.Errorf("cannot restart node because of disable Aggressive mode")
-	}
-
-	cause, _ := bridge.TicketManager.GetRootCauseDescription(ctx)
-	if time.Now().Sub(cause.Timestamps) > 48 * time.Hour {
-		bridge.TicketManager.AddConclusion(ctx, "ticket deal over 48h. dispatch to sre")
-		bridge.TicketManager.DispatchTicketToSRE(ctx)
-		return nil
+	} else if bridge.AggressiveLevel == 1 {
+		cause, _ := bridge.TicketManager.GetRootCauseDescription(ctx)
+		if time.Now().Sub(cause.Timestamps) > 48 * time.Hour {
+			bridge.TicketManager.AddConclusion(ctx, "ticket deal over 48h. dispatch to sre")
+			bridge.TicketManager.DispatchTicketToSRE(ctx)
+			return nil
+		}	
+	} else {
+		cause, _ := bridge.TicketManager.GetRootCauseDescription(ctx)
+		if time.Now().Sub(cause.Timestamps) > 96 * time.Hour {
+			bridge.TicketManager.AddConclusion(ctx, "ticket deal over 96h. dispatch to sre")
+			bridge.TicketManager.DispatchTicketToSRE(ctx)
+			return nil
+		}
 	}
 
 	workflows, _ := bridge.TicketManager.GetWorkflows(ctx)
@@ -98,13 +105,20 @@ func RestartNode(ctx context.Context, bridge *sop.ApiBridge, node, reason string
 func ShutdownNode(ctx context.Context, bridge *sop.ApiBridge, node, reason string, canceler basic.WaitCancelFunc) error {
 	if !bridge.Aggressive {
 		return fmt.Errorf("cannot shutdown node because of disable Aggressive mode")
-	}
-
-	cause, _ := bridge.TicketManager.GetRootCauseDescription(ctx)
-	if time.Now().Sub(cause.Timestamps) > 48 * time.Hour {
-		bridge.TicketManager.AddConclusion(ctx, "ticket deal over 48h. dispatch to sre")
-		bridge.TicketManager.DispatchTicketToSRE(ctx)
-		return nil
+	}  else if bridge.AggressiveLevel == 1 {
+		cause, _ := bridge.TicketManager.GetRootCauseDescription(ctx)
+		if time.Now().Sub(cause.Timestamps) > 48 * time.Hour {
+			bridge.TicketManager.AddConclusion(ctx, "ticket deal over 48h. dispatch to sre")
+			bridge.TicketManager.DispatchTicketToSRE(ctx)
+			return nil
+		}	
+	} else {
+		cause, _ := bridge.TicketManager.GetRootCauseDescription(ctx)
+		if time.Now().Sub(cause.Timestamps) > 96 * time.Hour {
+			bridge.TicketManager.AddConclusion(ctx, "ticket deal over 96h. dispatch to sre")
+			bridge.TicketManager.DispatchTicketToSRE(ctx)
+			return nil
+		}
 	}
 
 	bridge.TicketManager.AddShutdownDescription(ctx, ticketmodel.TicketWorkflowStatusRunning, nil)

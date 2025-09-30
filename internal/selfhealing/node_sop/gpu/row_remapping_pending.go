@@ -60,7 +60,7 @@ func (g *gpurowremappingpending) Execute(ctx context.Context, node string, statu
 
 		if g.bridge.Aggressive {
 			// shutdown
-			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
+			return op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
 		}
 		return nil
 	}

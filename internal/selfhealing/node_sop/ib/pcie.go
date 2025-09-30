@@ -52,6 +52,12 @@ func (g *ibpcie) Execute(ctx context.Context, node string, status *prom.AegisNod
 
 	if !g.bridge.Aggressive {
 		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
+		return nil
+	}
+
+	if !basic.CheckNodeIsCritical(ctx, g.bridge, node) {
+		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
+		return nil
 	}
 
 	workflows, _ := g.bridge.TicketManager.GetWorkflows(ctx)
@@ -67,7 +73,7 @@ func (g *ibpcie) Execute(ctx context.Context, node string, status *prom.AegisNod
 
 		// shutdown
 		if g.bridge.Aggressive {
-			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for ib pcied downgraded", func(ctx context.Context) bool {
+			return op.ShutdownNode(ctx, g.bridge, node, "shutdown node for ib pcied downgraded", func(ctx context.Context) bool {
 				return false
 			})
 		}

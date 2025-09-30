@@ -79,7 +79,7 @@ func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeSt
 
 			if g.bridge.Aggressive {
 				// shutdown
-				op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
+				return op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
 			}
 			return nil
 		}
@@ -100,7 +100,7 @@ func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeSt
 
 			if g.bridge.Aggressive {
 				// shutdown
-				op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
+				return op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
 			}
 			return nil
 		}
@@ -117,7 +117,7 @@ func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeSt
 
 		if g.bridge.Aggressive {
 			// shutdown
-			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
+			return op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu broken", canceler)
 		} else {
 			op.RestartNode(ctx, g.bridge, node, reason, canceler)
 		}

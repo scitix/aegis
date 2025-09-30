@@ -270,3 +270,10 @@ if [[ "$type" == "GpuNvlinkInactive" ]]; then
     result=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "nvidia-smi nvlink -s")
     echo "result:" $result
 fi
+
+if [[ "$type" == "GpuNvlinkError" ]]; then
+    echo "hint: 执行 sichek nccl 测试"
+    echo "cmd: sichek nccltest"
+    result=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "sichek nccltest")
+    echo "result:" $result
+fi

@@ -46,11 +46,10 @@ func (g *gpuaggsram) Execute(ctx context.Context, node string, status *prom.Aegi
 	
 	if g.bridge.Aggressive {
 		// shutdown
-		op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu agg sram uncorrectable", canceler)
+		return op.ShutdownNode(ctx, g.bridge, node, "shutdown node for gpu agg sram uncorrectable", canceler)
 	}
 
-	g.bridge.TicketManager.DispatchTicketToSRE(ctx)
-	return nil
+	return g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 }
 
 func (g *gpuaggsram) Cleanup(ctx context.Context, node string, status *prom.AegisNodeStatus) error {

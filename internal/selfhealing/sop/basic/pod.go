@@ -178,3 +178,16 @@ func GetTerminatingPodInNode(ctx context.Context, bridge *sop.ApiBridge, node st
 	
 	return results, nil
 }
+
+func DeletePodForcely(ctx context.Context, bridge *sop.ApiBridge, namespace, pod string) error {
+	zero := int64(0)
+	deletePolicy := metav1.DeletePropagationForeground
+	return bridge.KubeClient.CoreV1().Pods(namespace).Delete(
+        context.TODO(),
+        pod,
+        metav1.DeleteOptions{
+            GracePeriodSeconds: &zero,
+            PropagationPolicy:  &deletePolicy,
+        },
+    )
+}

@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	gpunvlink_registry_name = string(basic.ConditionTypeGpuNvlinkInactive)
+	gpunvlinkinactive_registry_name = string(basic.ConditionTypeGpuNvlinkInactive)
+	gpunvlinkerror_registry_name = string(basic.ConditionTypeGpuNvlinkError)
 )
 
 type gpunvlink struct {
@@ -24,7 +25,8 @@ type gpunvlink struct {
 var gpunvlinkInstance *gpunvlink = &gpunvlink{}
 
 func init() {
-	nodesop.RegisterSOP(gpunvlink_registry_name, gpunvlinkInstance)
+	nodesop.RegisterSOP(gpunvlinkinactive_registry_name, gpunvlinkInstance)
+	nodesop.RegisterSOP(gpunvlinkerror_registry_name, gpunvlinkInstance)
 }
 
 func (g *gpunvlink) CreateInstance(ctx context.Context, bridge *sop.ApiBridge) error {
@@ -68,7 +70,7 @@ func (g *gpunvlink) Execute(ctx context.Context, node string, status *prom.Aegis
 
 		if g.bridge.Aggressive {
 			// shutdown
-			op.ShutdownNode(ctx, g.bridge, node, "shutdown node for nvlink down", canceler)
+			return op.ShutdownNode(ctx, g.bridge, node, "shutdown node for nvlink down", canceler)
 		}
 
 		g.bridge.TicketManager.DispatchTicketToSRE(ctx)

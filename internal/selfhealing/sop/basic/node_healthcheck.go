@@ -103,6 +103,8 @@ func getHardwareTypeByExitCode(exitcode int) (HardwareType, ConditionType) {
 		return HardwareTypeGpu, ConditionTypeGpuAggSramUncorrectable
 	case 23:
 		return HardwareTypeGpu, ConditionTypeGpuCheckFailed
+	case 24:
+		return HardwareTypeGpu, ConditionTypeGpuNvlinkError
 	case 3:
 		return HardwareTypeGpfs, ConditionTypeNull
 	case 4:
