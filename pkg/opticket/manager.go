@@ -91,7 +91,13 @@ func (t *OpTicketManager) CheckTicketSupervisor(ctx context.Context, user string
 	return t.ticket.Supervisor == user
 }
 
-func (t *OpTicketManager) CreateTicket(ctx context.Context, status *prom.AegisNodeStatus, hardwareType string, customTitle ...string) error {
+func (t *OpTicketManager) CreateTicket(ctx context.Context, status *prom.AegisNodeStatus, hardwareType string, customTitle ...string) (err error) {
+	defer func() {
+		if err != nil {
+			klog.Errorf("error create ticket: %s", err)
+		}
+	}()
+
 	if t.ticket != nil {
 		return ticketmodel.TicketAlreadyExistErr
 	}
@@ -110,7 +116,7 @@ func (t *OpTicketManager) CreateTicket(ctx context.Context, status *prom.AegisNo
 		title = customTitle[0]
 	}
 
-	err := t.u.CreateTicket(ctx, t.region, t.orgname, t.nodename, t.sn, title, "", hardwareType)
+	err = t.u.CreateTicket(ctx, t.region, t.orgname, t.nodename, t.sn, title, "", hardwareType)
 	if err != nil {
 		return fmt.Errorf("error create ticket: %s", err)
 	}

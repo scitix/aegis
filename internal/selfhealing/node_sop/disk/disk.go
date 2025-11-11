@@ -3,6 +3,7 @@ package disk
 import (
 	"context"
 	"fmt"
+	"time"
 
 	nodesop "github.com/scitix/aegis/internal/selfhealing/node_sop"
 	"github.com/scitix/aegis/internal/selfhealing/sop"
@@ -35,16 +36,24 @@ func (n *diskpressure) Evaluate(ctx context.Context, node string, status *prom.A
 func (n *diskpressure) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	klog.Infof("aegis detect node %s disk pressure, used: %d", status.Condition, status.ID, status.Value)
 
-	customTitle := fmt.Sprintf("aegis detect node %s disk pressure, used: %d", status.Condition, status.ID, status.Value)
+	customTitle := fmt.Sprintf("aegis detect node %s disk pressure, used: %d", status.Name, status.Value)
+
+	basic.CordonNode(ctx, n.bridge, node, status.Condition, "aegis")
 
 	n.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeDisk, customTitle)
 	n.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
-	n.bridge.TicketManager.AddWhySRE(ctx, "disk pressure")
-	n.bridge.TicketManager.DispatchTicketToSRE(ctx)
+	n.bridge.TicketManager.AdoptTicket(ctx)
 
-	basic.CordonNode(ctx, n.bridge, node, status.Condition, "aegis")
-	n.bridge.TicketManager.DispatchTicketToSRE(ctx)
+	description, err := n.bridge.TicketManager.GetRootCauseDescription(ctx)
+	if err != nil {
+		return err
+	}
 
+	startAt := description.Timestamps
+	if time.Since(startAt) > 24*time.Hour {
+		n.bridge.TicketManager.AddWhySRE(ctx, "disk pressure for 24h")
+		n.bridge.TicketManager.DispatchTicketToSRE(ctx)
+	}
 	return nil
 }
 

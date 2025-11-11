@@ -82,11 +82,8 @@ func (g *gpunvlink) Execute(ctx context.Context, node string, status *prom.Aegis
 		return nil
 	}
 
+	// try to restart 
 	return op.RestartNode(ctx, g.bridge, node, reason, func(ctx context.Context) bool {
-		statuses, err := g.bridge.PromClient.GetNodeStatuses(ctx, node, status.Type)
-		if err == nil && len(statuses) == 0 {
-			return true
-		}
 		return false
 	})
 }

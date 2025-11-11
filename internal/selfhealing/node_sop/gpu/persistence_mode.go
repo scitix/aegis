@@ -53,7 +53,7 @@ func (g *persistencemode) Execute(ctx context.Context, node string, status *prom
 	workflows, _ := g.bridge.TicketManager.GetWorkflows(ctx)
 	remedyCount := 0
 	for _, w := range workflows {
-		if w.Action == ticketmodel.TicketWorkflowActionRemedy && w.Status == ticketmodel.TicketWorkflowStatusSucceeded {
+		if w.Action == ticketmodel.TicketWorkflowActionRemedy {
 			remedyCount++
 		}
 	}

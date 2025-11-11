@@ -71,7 +71,7 @@ func (u *OpTicketClient) CreateTicket(ctx context.Context, region, orgName, node
 		"creator":         "aegis",
 		"title":           title,
 		"priority":        "high",
-		"node":            node,
+		"nodeName":        node,
 		"nodeSN":          nodeSN,
 		"isHardwareIssue": true,
 		"model":           "hardware",
@@ -420,7 +420,7 @@ func getAll(ctx context.Context, address string, params map[string]string, heade
 		return nil, errors.New(rMap["error"].(string))
 	}
 
-	if len(rMap["rows"].([]interface{})) == 0 {
+	if rMap["rows"] == nil || len(rMap["rows"].([]interface{})) == 0 {
 		return nil, nil
 	}
 
