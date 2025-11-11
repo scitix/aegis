@@ -15,7 +15,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func HealthCheckNode(ctx context.Context, bridge *sop.ApiBridge, node string) (bool, HardwareType, ConditionType, error) {
+func HealthCheckNode(ctx context.Context, bridge *sop.ApiBridge, node string) (bool, HardwareType, ConditionType, *string, error) {
 	podName := fmt.Sprintf("healthcheck-%s", node)
 	_, err := bridge.KubeClient.CoreV1().Pods(job_namespace).Get(ctx, podName, metav1.GetOptions{})
 	if err == nil {
@@ -23,7 +23,7 @@ func HealthCheckNode(ctx context.Context, bridge *sop.ApiBridge, node string) (b
 		deletePolicy := metav1.DeletePropagationForeground
 		err = bridge.KubeClient.CoreV1().Pods(job_namespace).Delete(ctx, podName, metav1.DeleteOptions{PropagationPolicy: &deletePolicy})
 		if err != nil {
-			return false, HardwareTypeNone, ConditionTypeNull, fmt.Errorf("Error delete exists healthchech pod %s: %v", podName, err)
+			return false, HardwareTypeNone, ConditionTypeNull, nil, fmt.Errorf("Error delete exists healthchech pod %s: %v", podName, err)
 		}
 	}
 
@@ -34,7 +34,7 @@ func HealthCheckNode(ctx context.Context, bridge *sop.ApiBridge, node string) (b
 	jobContent, err := os.ReadFile(healthcheck_job_file)
 	if err != nil {
 		klog.Errorf("Error read healthcheck template file: %v", err)
-		return false, HardwareTypeNone, ConditionTypeNull, err
+		return false, HardwareTypeNone, ConditionTypeNull, nil, err
 	}
 
 	parameters := map[string]interface{}{
@@ -50,21 +50,21 @@ func HealthCheckNode(ctx context.Context, bridge *sop.ApiBridge, node string) (b
 	yamlContent, err := tools.RenderWorkflowTemplate(string(jobContent), parameters)
 	if err != nil {
 		klog.Errorf("Error render healthcheck template: %v", err)
-		return false, HardwareTypeNone, ConditionTypeNull, err
+		return false, HardwareTypeNone, ConditionTypeNull, nil, err
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode([]byte(yamlContent), nil, nil)
 	if err != nil {
 		klog.Errorf("Error decode healthcheck pod content: %v", err)
-		return false, HardwareTypeNone, ConditionTypeNull, err
+		return false, HardwareTypeNone, ConditionTypeNull, nil, err
 	}
 	pod := obj.(*corev1.Pod)
 
 	_, err = bridge.KubeClient.CoreV1().Pods(job_namespace).Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {
 		klog.Errorf("Error create healthcheck job: %v", err)
-		return false, HardwareTypeNone, ConditionTypeNull, err
+		return false, HardwareTypeNone, ConditionTypeNull, nil, err
 	}
 
 	// check pod compeleted --> node restart
@@ -74,16 +74,25 @@ func HealthCheckNode(ctx context.Context, bridge *sop.ApiBridge, node string) (b
 	for {
 		select {
 		case <-ctx.Done():
-			return false, HardwareTypeNone, ConditionTypeNull, errors.New("context done")
+			return false, HardwareTypeNone, ConditionTypeNull, nil, errors.New("context done")
 		case <-ticker.C:
 			status, exitcode, err := CheckPodStatus(ctx, bridge, podName)
 			hardwareType, conditionType := getHardwareTypeByExitCode(exitcode)
 			if err != nil {
-				return false, hardwareType, conditionType, err
+				logs, err := GetPodLogs(ctx, bridge, podName)
+				if err != nil {
+					klog.Errorf("Error get pod %s logs: %s", podName, err)
+				}
+				return false, hardwareType, conditionType, &logs, err
 			}
 
 			if status != 0 {
-				return status == 1, hardwareType, conditionType, nil
+				logs, err := GetPodLogs(ctx, bridge, podName)
+				if err != nil {
+					klog.Errorf("Error get pod %s logs: %s", podName, err)
+				}
+
+				return status == 1, hardwareType, conditionType, &logs, nil
 			}
 		}
 	}
