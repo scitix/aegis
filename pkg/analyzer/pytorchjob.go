@@ -20,20 +20,14 @@ import (
 )
 
 type PytorchJobAnalyzer struct {
-	prometheus *prom.PromAPI
-	client     kfclientset.Interface
+	prometheus   *prom.PromAPI
+	client       kfclientset.Interface
 }
 
-func NewPytorchJobAnalyzer(enableProm bool, client kfclientset.Interface) PytorchJobAnalyzer {
-	var promAPI *prom.PromAPI
-	if enableProm {
-		promAPI = prom.GetPromAPI()
-	} else {
-		promAPI = nil
-	}
+func NewPytorchJobAnalyzer(prometheus *prom.PromAPI, client kfclientset.Interface) PytorchJobAnalyzer {
 	return PytorchJobAnalyzer{
 		client:     client,
-		prometheus: promAPI,
+		prometheus: prometheus,
 	}
 }
 
@@ -156,7 +150,7 @@ func (p PytorchJobAnalyzer) analyzePytorchJobPods(a common.Analyzer, job *kubefl
 	result.Metadata["MasterCreatedCount"] = strconv.Itoa(masterCreatedCount)
 	result.Metadata["WorkerCreatedCount"] = strconv.Itoa(workerCreatedCount)
 
-	podAnalyzer := NewPodAnalyzer(a.EnableProm)
+	podAnalyzer := NewPodAnalyzer(p.prometheus)
 
 	// Master 分析
 	if masterPod != nil {
@@ -187,7 +181,7 @@ func (p PytorchJobAnalyzer) analyzeWorkerPods(a common.Analyzer, workerPods []*v
 	const maxDetailedAbnormalWorkers = 5
 	const maxRunningSummaryWorkers = 3
 
-	podAnalyzer := NewPodAnalyzer(a.EnableProm)
+	podAnalyzer := NewPodAnalyzer(p.prometheus)
 
 	var abnormalWorkers []*v1.Pod
 	var normalWorkers []*v1.Pod

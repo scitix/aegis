@@ -20,6 +20,7 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/scitix/aegis/pkg/controller"
+	"github.com/scitix/aegis/pkg/prom"
 
 	kKubernetes "github.com/k8sgpt-ai/k8sgpt/pkg/kubernetes"
 	kfclientset "github.com/kubeflow/training-operator/pkg/client/clientset/versioned"
@@ -114,6 +115,7 @@ func NewController(kubeclient kubernetes.Interface,
 	language string,
 	collectorImage string,
 	enableProm bool,
+	prometheus *prom.PromAPI,
 	explain bool,
 	noCache bool,
 ) (*DiagnosisController, error) {
@@ -147,7 +149,7 @@ func NewController(kubeclient kubernetes.Interface,
 		return nil, fmt.Errorf("failed to create PyTorchJob client: %w", err)
 	}
 
-	dignosis, err := NewDiagnosis(client, ptClient, backend, language, collectorImage, enableProm, noCache, explain, nil)
+	dignosis, err := NewDiagnosis(client, ptClient, backend, language, collectorImage, enableProm, prometheus, noCache, explain, nil)
 	if err != nil {
 		return nil, err
 	}

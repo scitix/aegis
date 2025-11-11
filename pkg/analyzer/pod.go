@@ -23,15 +23,9 @@ type PodAnalyzer struct {
 	prometheus *prom.PromAPI
 }
 
-func NewPodAnalyzer(enableProm bool) PodAnalyzer {
-	var promAPI *prom.PromAPI
-	if enableProm {
-		promAPI = prom.GetPromAPI()
-	} else {
-		promAPI = nil
-	}
+func NewPodAnalyzer(prometheus *prom.PromAPI) PodAnalyzer {
 	return PodAnalyzer{
-		prometheus: promAPI,
+		prometheus: prometheus,
 	}
 }
 

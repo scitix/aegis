@@ -21,6 +21,7 @@ import (
 	"github.com/scitix/aegis/pkg/controller/rule"
 	"github.com/scitix/aegis/pkg/controller/template"
 	"github.com/scitix/aegis/pkg/metrics"
+	"github.com/scitix/aegis/pkg/prom"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -70,6 +71,10 @@ type Configuration struct {
 	DefaultTTLAfterOpsFailed  int32
 	DefaultTTLAfterNoOps      int32
 
+	// prom
+	PromEndpoint string
+	PromToken    string
+
 	// diagnosis
 	EnableDiagnosis        bool
 	DiagnosisLanguage      string
@@ -96,11 +101,11 @@ type AegisController struct {
 	alertInterface controller.AlertControllerInterface
 
 	// informer
-	alertInformer    alertInformers.SharedInformerFactory
-	workflowInformer wfInformers.SharedInformerFactory
-	templateInformer templateinformers.SharedInformerFactory
-	ruleInformer     ruleInformers.SharedInformerFactory
-	diagnosisInfomer diagnosisInformers.SharedInformerFactory
+	alertInformer        alertInformers.SharedInformerFactory
+	workflowInformer     wfInformers.SharedInformerFactory
+	templateInformer     templateinformers.SharedInformerFactory
+	ruleInformer         ruleInformers.SharedInformerFactory
+	diagnosisInfomer     diagnosisInformers.SharedInformerFactory
 	nodecheckInformer    nodecheckInformers.SharedInformerFactory
 	clustercheckInformer clustercheckInformers.SharedInformerFactory
 
@@ -182,10 +187,13 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 
 	lifecycle.register("metrics", metricsController)
 
+	// promethues api client
+	prometheus := prom.CreatePromClient(cfg.PromEndpoint, cfg.PromToken)
+
 	// create template controller
 	templateController := template.NewController(cfg.Client, templateclientset, templateInformer.Aegis().V1alpha1().AegisOpsTemplates())
 	ruleController := rule.NewController(cfg.Client, ruleclientInterface, templateclientset, ruleInformer.Aegis().V1alpha1().AegisAlertOpsRules(), templateInformer.Aegis().V1alpha1().AegisOpsTemplates())
-	diagnosisController, err := diagnosis.NewController(cfg.Client, diagnosisclientset, diagnosisInformer.Aegis().V1alpha1().AegisDiagnosises(), 60*time.Second, cfg.AiBackend, cfg.DiagnosisLanguage, cfg.CollectorImage, cfg.EnableProm, cfg.DiagnosisEnableExplain, !cfg.DiagnosisEnableCache)
+	diagnosisController, err := diagnosis.NewController(cfg.Client, diagnosisclientset, diagnosisInformer.Aegis().V1alpha1().AegisDiagnosises(), 300*time.Second, cfg.AiBackend, cfg.DiagnosisLanguage, cfg.CollectorImage, cfg.EnableProm, prometheus, cfg.DiagnosisEnableExplain, !cfg.DiagnosisEnableCache)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create diagnosis controller: %v", err)
 	}
@@ -194,7 +202,7 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 	nodecheckController := nodecheck.NewController(cfg.Client, nodecheckclientset, nodecheckInformer.Aegis().V1alpha1().AegisNodeHealthChecks(), podInformer, cmInformer, nodeInformer, lifecycle, cfg.EnableFireNodeEvent)
 	clustercheckController := clustercheck.NewController(cfg.Client, clustercheckclientset, clustercheckInformer.Aegis().V1alpha1().AegisClusterHealthChecks(), nodecheckclientset, nodecheckInformer.Aegis().V1alpha1().AegisNodeHealthChecks())
 
-	deviceawareController, err := deviceaware.NewController(cfg.Client, nodeInformer)
+	deviceawareController, err := deviceaware.NewController(cfg.Client, nodeInformer, prometheus)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create device aware controller: %v", err)
 	}
@@ -205,18 +213,18 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 			AlertClient: alertclientInterface,
 			AlertLister: aInformer.Lister(),
 		},
-		sharedInformer:   sharedInformers,
-		alertInformer:    alertInformer,
-		workflowInformer: workflowInformer,
-		ruleInformer:     ruleInformer,
-		templateInformer: templateInformer,
-		diagnosisInfomer: diagnosisInformer,
-		nodecheckInformer:    nodecheckInformer,
-		clustercheckInformer: clustercheckInformer,
-		alertController:      alertController,
-		ruleController:       ruleController,
-		templateController:   templateController,
-		diagnosisController:  diagnosisController,
+		sharedInformer:         sharedInformers,
+		alertInformer:          alertInformer,
+		workflowInformer:       workflowInformer,
+		ruleInformer:           ruleInformer,
+		templateInformer:       templateInformer,
+		diagnosisInfomer:       diagnosisInformer,
+		nodecheckInformer:      nodecheckInformer,
+		clustercheckInformer:   clustercheckInformer,
+		alertController:        alertController,
+		ruleController:         ruleController,
+		templateController:     templateController,
+		diagnosisController:    diagnosisController,
 		nodecheckController:    nodecheckController,
 		clustercheckController: clustercheckController,
 		deviceawareController:  deviceawareController,

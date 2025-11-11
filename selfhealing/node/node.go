@@ -90,6 +90,8 @@ func NewCommand(config *config.SelfHealingConfig, use string) *cobra.Command {
 	c.PersistentFlags().IntVar(&o.level, "level", 0, "node issue selfhealing level")
 	c.PersistentFlags().BoolVar(&o.onlyTicket, "ticket.only", false, "only create ticket record for issue, no operation actions")
 	c.PersistentFlags().StringVar(&o.ticketSystem, "ticket.system", "Node", "ticket system for record issue")
+	c.PersistentFlags().StringVar(&o.promEndpoint, "prometheus.endpoint", "", "Prometheus server endpoint, e.g. http://localhost:9090")
+	c.PersistentFlags().StringVar(&o.promToken, "prometheus.token", "", "Prometheus API access token")
 	c.PersistentFlags().StringVar(&o.opsImage, "ops.image", "", "selfhealing ops image")
 	return c
 }
@@ -115,6 +117,9 @@ type nodeOptions struct {
 
 	onlyTicket   bool
 	ticketSystem string
+
+	promEndpoint string
+	promToken    string
 
 	opsImage string
 
@@ -159,7 +164,7 @@ func (o *nodeOptions) complete(cmd *cobra.Command, args []string) (err error) {
 		o.ip = o.node.Status.Addresses[0].Address
 	}
 
-	o.promApi = prom.GetPromAPI()
+	o.promApi = prom.CreatePromClient(o.promEndpoint, o.promToken)
 
 	system := selfticket.TicketSystem(o.ticketSystem)
 

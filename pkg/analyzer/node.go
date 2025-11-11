@@ -26,15 +26,9 @@ type NodeAnalyzer struct {
 	prometheus *prom.PromAPI
 }
 
-func NewNodeAnalyzer(enableProm bool) NodeAnalyzer {
-	var promAPI *prom.PromAPI
-	if enableProm {
-		promAPI = prom.GetPromAPI()
-	} else {
-		promAPI = nil
-	}
+func NewNodeAnalyzer(prometheus *prom.PromAPI) NodeAnalyzer {
 	return NodeAnalyzer{
-		prometheus: promAPI,
+		prometheus: prometheus,
 	}
 }
 
