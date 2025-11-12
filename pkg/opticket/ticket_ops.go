@@ -147,15 +147,15 @@ func (t *OpTicketManager) GetActionCount(ctx context.Context, action ticketmodel
 }
 
 func (t *OpTicketManager) AddConclusion(ctx context.Context, conclusion string) (err error) {
+	if t.ticket == nil {
+		return ticketmodel.TicketNotFoundErr
+	}
+
 	defer func() {
 		if err != nil {
 			klog.Errorf("error add conclusion: %s", err)
 		}
 	}()
-
-	if t.ticket == nil {
-		return ticketmodel.TicketNotFoundErr
-	}
 
 	var description ticketmodel.TicketDescription
 	err = description.Unmarshal([]byte(t.ticket.Description))

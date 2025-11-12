@@ -104,6 +104,7 @@ func shutdownNode(ctx context.Context, bridge *sop.ApiBridge, node string) (bool
 		return false, err
 	}
 	job := obj.(*batchv1.Job)
+	job.OwnerReferences = []metav1.OwnerReference{*bridge.Owner}
 
 	_, err = bridge.KubeClient.BatchV1().Jobs(job_namespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {

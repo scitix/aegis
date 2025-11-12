@@ -69,7 +69,7 @@ func (n *nodeinhibit) Execute(ctx context.Context, node string, status *prom.Aeg
 
 	success, _, _, logs, err := basic.HealthCheckNode(timeOutCtx, n.bridge, node)
 	if logs != nil {
-		klog.Infof("HealthCheck Logs: %s", logs)
+		klog.Infof("HealthCheck Logs: %s", *logs)
 	}
 
 	if err != nil {

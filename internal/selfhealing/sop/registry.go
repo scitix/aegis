@@ -3,6 +3,7 @@ package sop
 import (
 	"github.com/scitix/aegis/pkg/prom"
 	"github.com/scitix/aegis/pkg/ticketmodel"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 )
@@ -23,6 +24,8 @@ type ApiBridge struct {
 	Registry   string
 	Repository string
 	OpsImage   string
+
+	Owner *metav1.OwnerReference
 
 	KubeClient kubernetes.Interface
 	PromClient *prom.PromAPI

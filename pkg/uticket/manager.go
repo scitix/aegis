@@ -124,15 +124,15 @@ func (t *TicketManager) CreateComponentTicket(ctx context.Context, title, model,
 }
 
 func (t *TicketManager) AdoptTicket(ctx context.Context) (err error) {
+	if t.ticket == nil {
+		return ticketmodel.TicketNotFoundErr
+	}
+
 	defer func() {
 		if err != nil {
 			klog.Errorf("error adopt ticket: %s", err)
 		}
 	}()
-
-	if t.ticket == nil {
-		return ticketmodel.TicketNotFoundErr
-	}
 
 	err = t.u.DispatchTicket(ctx, t.ticket.TicketId, TicketSupervisorAegis)
 	if err != nil {

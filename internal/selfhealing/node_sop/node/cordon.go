@@ -62,9 +62,9 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 	var result string
 	success, hardwareType, conditionType, logs, err := basic.HealthCheckNode(timeOutCtx, n.bridge, node)
 	if logs != nil {
-		klog.Infof("HealthCheck Logs: %s", logs)
+		klog.Infof("HealthCheck Logs: %s", *logs)
 	}
-	
+
 	if err != nil {
 		return fmt.Errorf("fail to execute healthcheck: %s", err.Error())
 	}

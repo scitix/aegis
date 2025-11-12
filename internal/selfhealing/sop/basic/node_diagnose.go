@@ -61,6 +61,7 @@ func DiagnoseNode(ctx context.Context, bridge *sop.ApiBridge, node string, tpe s
 		return false, nil, fmt.Errorf("Error decode diagnose pod content: %v", err)
 	}
 	pod := obj.(*corev1.Pod)
+	pod.OwnerReferences = []metav1.OwnerReference{*bridge.Owner}
 
 	_, err = bridge.KubeClient.CoreV1().Pods(job_namespace).Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {
