@@ -204,6 +204,13 @@ func StartCollector(
 	namespace string,
 	owner metav1.Object,
 ) ([]common.Info, error) {
+	// not ready check
+	for _, cond := range node.Status.Conditions {
+		if cond.Type == "Ready" && (cond.Status == "False" || cond.Status == "Unknown") {
+			return nil, fmt.Errorf("node not ready")
+		}
+	}
+
 	collector_pod_yaml := "/collector/collector_node.yaml"
 	tplContent, err := os.ReadFile(collector_pod_yaml)
 	if err != nil {

@@ -20,8 +20,6 @@ var perf_job_file string = filepath.Join(job_dir, "perf_node.yaml")
 var SleepWaitDuration = time.Minute * time.Duration(10)
 
 const (
-	SystemNamespace = "kube-system"
-
 	GPU_RESOURCE_TYPE = "nvidia.com/gpu"
 
 	NodeGpfsUnavailableLabelKey   = "aegis.io/gpfs-unavailable"

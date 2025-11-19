@@ -17,7 +17,7 @@ const nodePromptTemplate = `
 - 数据来源：PrometheusRule 再加工
 
 ## 2. 指标简介
-- 简要描述：scitix_node_status_condition 是通过 PrometheusRule 二次加工各种原始 Kubernetes 集群事件、Prometheus IPMI Exporter 指标、Prometheus Node Exporter 指标、Prometheus GPFS Exporter 指标、DCGM Exporter 指标、Kubelet 指标等得到的 Prometheus 指标，用于 Kubernetes 集群节点异常诊断。它是一个数值类型，值代表出现异常及异常的具体数值。
+- 简要描述：aegis_node_status_condition 是通过 PrometheusRule 二次加工各种原始 Kubernetes 集群事件、Prometheus IPMI Exporter 指标、Prometheus Node Exporter 指标、Prometheus GPFS Exporter 指标、DCGM Exporter 指标、Kubelet 指标等得到的 Prometheus 指标，用于 Kubernetes 集群节点异常诊断。它是一个数值类型，值代表出现异常及异常的具体数值。
 
 ## 3. 指标详细说明
 - 指标类型：该指标是一个数值类型，但存在两种含义：
@@ -127,7 +127,7 @@ const nodePromptTemplate = `
 Healthy: {Yes 或者 No，代表有无故障}
 Error: {在这里描述故障}
 Analysis: {在这里给出分析过程}
-Solution: {给出按步的解决方案}
+Solution: {给出最关键的一句总结，不超过 100 字}
 `
 
 const podPromptTemplate = `
@@ -137,8 +137,8 @@ const podPromptTemplate = `
 一些 Pod 日志信息（如果认为有帮助，可以使用，或者忽略）： --- {{.LogInfo}} ---
 请按以下格式给出回答，不超过 1000 字:
 Healthy: {Yes 或者 No，代表是否有异常}
-Error: {在这里解释错误}
-Solution: {在这里给出分步骤的解决方案}
+Error: {在这里解释错误，如果日志有帮助，分析结果尽可能展示原始日志}
+Solution: {给出最关键的一句总结，不超过 100 字}
 `
 
 const alertToModelPromptTemplate = `
@@ -181,10 +181,6 @@ Job 状态: {{ index .Metadata "JobStatus" }}
 异常摘要（来自 PyTorchJob 的 conditions 或状态字段）: --- {{.ErrorInfo}} ---
 Job历史告警事件： --- {{.EventInfo}} ---
 
-【副本角色信息】
-- Master 需求数量: {{ index .Metadata "MasterExpected" }}, 创建数量: {{ index .Metadata "MasterCreatedCount" }}
-- Worker 需求数量: {{ index .Metadata "WorkerExpected" }}, 创建数量: {{ index .Metadata "WorkerCreatedCount" }}
-
 【关键组件诊断（基于 Pod 层分析）】
 - Master Pod 分析摘要:
 {{ index .Metadata "MasterDiagnosis" }}
@@ -195,6 +191,6 @@ Job历史告警事件： --- {{.EventInfo}} ---
 请按以下结构化格式返回诊断结论，不超过 1000 字：
 Healthy: {Yes / No，表示是否存在故障，请优先判断job 状态，如果成功直接说明即可，无需后续解释}
 Error: {一句话简洁总结该任务最可能的失败原因}
-Analysis: {结合任务状态、Pod 状态、事件、日志等，简要分析故障根因，注意需要指明Master、Worker的需求数和实际创建数。如果日志中出现了明确的报错信息（如 Traceback、OOM、断言失败、类型错误、环境变量缺失等），请摘录 1~3 行最关键的日志片段展示出来，使用 **markdown 代码块** 包裹（即用三个反引号包裹日志片段）
-Solution: {给出清晰、可执行的分步骤修复建议,如果提供命令，尽可能的具体一些}
+Analysis: {结合任务状态、Pod 状态、事件、日志等，简要分析故障根因。请尽可能摘录较关键的日志片段展示出来，使用 **markdown 代码块** 包裹（即用三个反引号包裹日志片段）
+Solution: {给出最关键的一句总结，不超过 100 字}
 `

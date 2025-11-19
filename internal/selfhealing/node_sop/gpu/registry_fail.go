@@ -53,8 +53,8 @@ func (g *gpuregisterfail) Execute(ctx context.Context, node string, status *prom
 	reason := fmt.Sprintf("aegis detect node %s, try to restart nvidia-device-plugin pod and waiting new pod ready for 20m", status.Condition)
 
 	device := "nvidia-device-plugin-ds"
-	if !basic.IsDaemonSetExists(ctx, g.bridge, basic.SystemNamespace, "nvidia-device-plugin-daemonset") &&
-		basic.IsDaemonSetExists(ctx, g.bridge, basic.SystemNamespace, "uni-device-plugin-daemonset") {
+	if !basic.IsDaemonSetExists(ctx, g.bridge, "nvidia-device-plugin-daemonset") &&
+		basic.IsDaemonSetExists(ctx, g.bridge, "uni-device-plugin-daemonset") {
 		device = "uni-device-plugin-ds"
 	}
 

@@ -20,6 +20,18 @@ func TestCreateTicket(t *testing.T) {
 	}
 }
 
+func TestCreateTicketWithoutSN(t *testing.T) {
+	client, err := CreateOpTicketClient(os.Getenv("OP_ENDPOINT"))
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	err = client.CreateTicketWithoutSN(context.Background(), "zhangliang", "[aries-scratch-017] aegis gpfs ib network mlx_5 issue", "this is just a test, diagnosis: dsadsad", true)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+}
+
 func TestGetTicket(t *testing.T) {
 	client, err := CreateOpTicketClient(os.Getenv("OP_ENDPOINT"))
 	if err != nil {
@@ -32,6 +44,20 @@ func TestGetTicket(t *testing.T) {
 	}
 
 	t.Logf("ticket: %v", ticket)
+}
+
+func TestGetFirstUnResolvedTicketWithTitle(t *testing.T) {
+	client, err := CreateOpTicketClient(os.Getenv("OP_ENDPOINT"))
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	ticket, err := client.GetFirstUnResovledTicketWithTitle(context.Background(), "[aries-scratch-017]")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	t.Logf("%v", ticket)
 }
 
 func TestDispatchTicket(t *testing.T) {

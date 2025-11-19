@@ -256,7 +256,7 @@ func (t *OpTicketManager) IsFrequentIssue(ctx context.Context, size, frequency i
 		var description ticketmodel.TicketDescription
 		err := description.Unmarshal([]byte(ticket.Description))
 		if err != nil {
-			klog.Info("error unmarshal ticket %s: %s", ticket.TicketId, err)
+			klog.Infof("error unmarshal ticket %s: %v", ticket.TicketId, err)
 			continue
 		}
 

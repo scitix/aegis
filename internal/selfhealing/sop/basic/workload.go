@@ -9,10 +9,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func IsDaemonSetExists(ctx context.Context, bridge *sop.ApiBridge, namespace, name string) bool {
-	_, err := bridge.KubeClient.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
+func IsDaemonSetExists(ctx context.Context, bridge *sop.ApiBridge, name string) bool {
+	_, err := bridge.KubeClient.AppsV1().DaemonSets(metav1.NamespaceAll).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		klog.Infof("failed to get dasemonset %s/%s: %s", namespace, name, err)
+		klog.Infof("failed to get dasemonset %s: %s", name, err)
 		return false
 	}
 
