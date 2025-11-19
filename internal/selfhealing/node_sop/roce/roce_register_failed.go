@@ -3,6 +3,7 @@ package roce
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	nodesop "github.com/scitix/aegis/internal/selfhealing/node_sop"
@@ -56,9 +57,14 @@ func (g *roceregisterfail) Execute(ctx context.Context, node string, status *pro
 
 	g.bridge.TicketManager.AddWorkflow(ctx, ticketmodel.TicketWorkflowActionRestartPod, ticketmodel.TicketWorkflowStatusRunning, nil)
 
-	err = basic.DeletePodInNodeWithTargetLabel(timeOutCtx, g.bridge, node, map[string]string{"app": "sriovdp"}, true)
+	selector := basic.RocePluginPodSelector
+	kv := strings.Split(selector, "=")
+	if len(kv) != 2 {
+		return fmt.Errorf("invalid gpu plugin pod selector: %s", selector)
+	}
+	err = basic.DeletePodInNodeWithTargetLabel(timeOutCtx, g.bridge, node, map[string]string{kv[0]: kv[1]}, true)
 	if err == nil {
-		err = basic.WaitPodInNodeWithTargetLabelReady(timeOutCtx, g.bridge, node, map[string]string{"app": "sriovdp"})
+		err = basic.WaitPodInNodeWithTargetLabelReady(timeOutCtx, g.bridge, node, map[string]string{kv[0]: kv[1]})
 	}
 
 	if err != nil {

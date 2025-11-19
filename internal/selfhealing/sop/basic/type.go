@@ -2,6 +2,7 @@ package basic
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"time"
 )
@@ -18,6 +19,10 @@ var remedy_job_file string = filepath.Join(job_dir, "remedy_node.yaml")
 var perf_job_file string = filepath.Join(job_dir, "perf_node.yaml")
 
 var SleepWaitDuration = time.Minute * time.Duration(10)
+
+var GPUPluginPodSelector = os.Getenv("GPU_DEVICE_PLUGIN_SELECTOR")
+var InfinibandPluginPodSelector = os.Getenv("INFINIBAND_DEVICE_PLUGIN_SELECTOR")
+var RocePluginPodSelector = os.Getenv("ROCE_DEVICE_PLUGIN_SELECTOR")
 
 const (
 	GPU_RESOURCE_TYPE = "nvidia.com/gpu"

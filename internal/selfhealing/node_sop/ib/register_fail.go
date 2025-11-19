@@ -3,6 +3,7 @@ package ib
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	nodesop "github.com/scitix/aegis/internal/selfhealing/node_sop"
@@ -59,9 +60,14 @@ func (g *ibregisterfail) Execute(ctx context.Context, node string, status *prom.
 
 	g.bridge.TicketManager.AddWorkflow(ctx, ticketmodel.TicketWorkflowActionRestartPod, ticketmodel.TicketWorkflowStatusRunning, nil)
 
-	err = basic.DeletePodInNodeWithTargetLabel(timeOutCtx, g.bridge, node, map[string]string{"name": "rdma-devices-ds-all"}, true)
+	selector := basic.InfinibandPluginPodSelector
+	kv := strings.Split(selector, "=")
+	if len(kv) != 2 {
+		return fmt.Errorf("invalid gpu plugin pod selector: %s", selector)
+	}
+	err = basic.DeletePodInNodeWithTargetLabel(timeOutCtx, g.bridge, node, map[string]string{kv[0]: kv[1]}, true)
 	if err == nil {
-		err = basic.WaitPodInNodeWithTargetLabelReady(timeOutCtx, g.bridge, node, map[string]string{"name": "rdma-devices-ds-all"})
+		err = basic.WaitPodInNodeWithTargetLabelReady(timeOutCtx, g.bridge, node, map[string]string{kv[0]: kv[1]})
 	}
 
 	if err != nil {
