@@ -273,7 +273,27 @@ fi
 
 if [[ "$type" == "GpuNvlinkError" ]]; then
     echo "hint: 执行 sichek nccl 测试"
-    echo "cmd: sichek nccltest"
-    result=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "sichek nccltest")
+    echo "cmd: sichek nccltest -b2g -e2g"
+    result=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "sichek nccltest -b2g -e2g")
     echo "result:" $result
+fi
+
+if [[ "$type" == "GpuP2PNotSupported" ]]; then
+    echo "hint: 检查 GPU P2P 支持状态"
+    echo "cmd: nvidia-smi topo -p2p r"
+    result=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "nvidia-smi topo -p2p r")
+    echo "result:" $result
+    ExitWithTimeout 0
+fi
+
+if [[ "$type" == "GPUIbgdaNotEnabled" ]]; then
+    echo "hint: 检查 GPU IBGDA 启用状态"
+    echo "cmd: nvidia-smi -q | grep -A 5 'IBGDA'"
+    result=$(nsenter --mount=/proc/1/ns/mnt -- /bin/bash -c "nvidia-smi -q | grep -A 5 'IBGDA'")
+    if [ "$result" == "" ]; then
+        echo "result: IBGDA information not found"
+    else
+        echo "result:" $result
+    fi
+    ExitWithTimeout 0
 fi

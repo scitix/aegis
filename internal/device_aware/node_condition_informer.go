@@ -371,6 +371,10 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 
 	for _, status := range statuses {
 		switch status.Condition {
+		case string(basic.ConditionTypeGpuP2PNotSupported):
+			fallthrough
+		case string(basic.ConditionTypeGPUIbgdaNotEnabled):
+			fallthrough
 		case string(basic.ConditionTypeGpuHung):
 			for i, _ := range disabled {
 				disabled[i] = true
@@ -521,6 +525,48 @@ func parseRoceDeviceStatus(statuses []prom.AegisNodeStatus) string {
 				disabledMap[status.ID] = true
 			}
 		case string(basic.ConditionTypeRoceDeviceBroken):
+			disabledMap[defaultDeviceId] = true
+		case string(basic.ConditionTypeRoceHostOffline):
+			disabledMap[defaultDeviceId] = true
+		case string(basic.ConditionTypeRoceHostGatewayNotMatch):
+			disabledMap[defaultDeviceId] = true
+		case string(basic.ConditionTypeRoceHostRouteMiss):
+			disabledMap[defaultDeviceId] = true
+		case string(basic.ConditionTypeRocePodOffline):
+			disabledMap[defaultDeviceId] = true
+		case string(basic.ConditionTypeRocePodGatewayNotMatch):
+			disabledMap[defaultDeviceId] = true
+		case string(basic.ConditionTypeRocePodRouteMiss):
+			disabledMap[defaultDeviceId] = true
+		case string(basic.ConditionTypeRoceNodeLabelMiss):
+			disabledMap[defaultDeviceId] = true
+		case string(basic.ConditionTypeRocePodDeviceMiss):
+			disabledMap[defaultDeviceId] = true
+		case string(basic.ConditionTypeRoceVfDeviceMiss):
+			if status.ID != "" {
+				disabledMap[status.ID] = true
+			} else {
+				disabledMap[defaultDeviceId] = true
+			}
+		case string(basic.ConditionTypeRoceNodeResourceMiss):
+			if status.ID != "" {
+				disabledMap[status.ID] = true
+			} else {
+				disabledMap[defaultDeviceId] = true
+			}
+		case string(basic.ConditionTypeRoceSriovInitError):
+			if status.ID != "" {
+				disabledMap[status.ID] = true
+			} else {
+				disabledMap[defaultDeviceId] = true
+			}
+		case string(basic.ConditionTypeRoceNodeUnitLabelMiss):
+			disabledMap[defaultDeviceId] = true
+		case string(basic.ConditionTypeRoceNodePfNamesLabelMiss):
+			disabledMap[defaultDeviceId] = true
+		case string(basic.ConditionTypeRoceNodeResourceLabelMiss):
+			disabledMap[defaultDeviceId] = true
+		case string(basic.ConditionTypeRoceNodeNetworkLabelMiss):
 			disabledMap[defaultDeviceId] = true
 		default:
 			continue

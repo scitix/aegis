@@ -14,6 +14,7 @@ import (
 )
 
 const roceregisterfailed_registry_name = string(basic.ConditionTypeRoceRegisterFailed)
+const rocenoderesourcemiss_registry_name = string(basic.ConditionTypeRoceNodeResourceMiss)
 
 type roceregisterfail struct {
 	bridge *sop.ApiBridge
@@ -23,6 +24,7 @@ var roceregisterfailInstance *roceregisterfail = &roceregisterfail{}
 
 func init() {
 	nodesop.RegisterSOP(roceregisterfailed_registry_name, roceregisterfailInstance)
+	nodesop.RegisterSOP(rocenoderesourcemiss_registry_name, roceregisterfailInstance)
 }
 
 func (g *roceregisterfail) CreateInstance(ctx context.Context, bridge *sop.ApiBridge) error {

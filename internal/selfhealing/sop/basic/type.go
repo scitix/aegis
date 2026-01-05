@@ -115,8 +115,23 @@ const (
 	ConditionTypeIBProtoclAbnormal     ConditionType = "IBProtoclAbnormal"
 
 	// roce
-	ConditionTypeRoceRegisterFailed ConditionType = "RoceRegisterFailed"
-	ConditionTypeRoceDeviceBroken   ConditionType = "RoceDeviceBroken"
+	ConditionTypeRoceRegisterFailed        ConditionType = "RoceRegisterFailed"
+	ConditionTypeRoceDeviceBroken          ConditionType = "RoceDeviceBroken"
+	ConditionTypeRoceHostOffline           ConditionType = "RoceHostOffline"
+	ConditionTypeRoceHostGatewayNotMatch   ConditionType = "RoceHostGatewayNotMatch"
+	ConditionTypeRoceHostRouteMiss         ConditionType = "RoceHostRouteMiss"
+	ConditionTypeRocePodOffline            ConditionType = "RocePodOffline"
+	ConditionTypeRocePodGatewayNotMatch    ConditionType = "RocePodGatewayNotMatch"
+	ConditionTypeRocePodRouteMiss          ConditionType = "RocePodRouteMiss"
+	ConditionTypeRoceNodeLabelMiss         ConditionType = "RoceNodeLabelMiss"
+	ConditionTypeRocePodDeviceMiss         ConditionType = "RocePodDeviceMiss"
+	ConditionTypeRoceNodeResourceMiss      ConditionType = "RoceNodeResourceMiss"
+	ConditionTypeRoceVfDeviceMiss          ConditionType = "RoceVfDeviceMiss"
+	ConditionTypeRoceSriovInitError        ConditionType = "RoceSriovInitError"
+	ConditionTypeRoceNodeUnitLabelMiss     ConditionType = "RoceNodeUnitLabelMiss"
+	ConditionTypeRoceNodePfNamesLabelMiss  ConditionType = "RoceNodePfNamesLabelMiss"
+	ConditionTypeRoceNodeResourceLabelMiss ConditionType = "RoceNodeResourceLabelMiss"
+	ConditionTypeRoceNodeNetworkLabelMiss  ConditionType = "RoceNodeNetworkLabelMiss"
 
 	// gpfs
 	ConditionTypeGpfsDown           ConditionType = "GpfsDown"
@@ -158,6 +173,8 @@ const (
 	ConditionTypeGpuNvlinkError                 ConditionType = "GpuNvlinkError"
 	ConditionTypeGPUPersistenceModeNotEnabled   ConditionType = "GpuPersistenceModeNotEnabled"
 	ConditionTypeGpuMetricsHang                 ConditionType = "GpuMetricsHang"
+	ConditionTypeGpuP2PNotSupported             ConditionType = "GpuP2PNotSupported"
+	ConditionTypeGPUIbgdaNotEnabled             ConditionType = "GPUIbgdaNotEnabled"
 
 	// default
 	ConditionTypeNodeCordon                      ConditionType = "NodeCordon"

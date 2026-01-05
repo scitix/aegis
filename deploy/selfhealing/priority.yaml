@@ -13,8 +13,6 @@ data:
     NodeHasTerminatingPod:50
     NodeFrequentDown:8
     NodeHasRestarted:100
-    InodePressure:100
-    HighZombieProcessesCount:199
     CPUPressure:50
     CpuUnhealthy:99
     MemoryPressure:99
@@ -25,6 +23,19 @@ data:
     NetworkLinkDown:50
     RoceRegisterFailed:50
     RoceDeviceBroken:4
+    RoceHostOffline:51
+    RoceHostGatewayNotMatch:51
+    RoceHostRouteMiss:51
+    RocePodOffline:51
+    RocePodGatewayNotMatch:51
+    RoceNodeLabelMiss:51
+    RoceVfDeviceMiss:51
+    RoceNodeResourceMiss:51
+    RoceSriovInitError:51
+    RoceNodeUnitLabelMiss:51
+    RoceNodePfNamesLabelMiss:51
+    RoceNodeResourceLabelMiss:51
+    RoceNodeNetworkLabelMiss:51
     IBLinkFrequentDown:50
     IBLost:3
     IBModuleLost:10
@@ -39,12 +50,11 @@ data:
     GpuCheckFailed:3
     GpuHung:3
     GpuRegisterFailed:50
-    HighGpuTemp:99
-    HighGpuMemoryTemp:99
+    HighGpuTemp:100
+    HighGpuMemoryTemp:100
     Xid48GPUMemoryDBE:9
     Xid63ECCRowremapperPending:9
     Xid64ECCRowremapperFailure:9
-    Xid92HighSingleBitECCErrorRate:100
     Xid95UncontainedECCError:9
     Xid74NVLinkError:2
     Xid79GPULost:2
@@ -65,7 +75,7 @@ data:
     GpfsDown:2
     GpfsInactive:9
     GpfsMountLost:10
-    GpfsThreadDeadlock:11
+    GpfsThreadDeadlock:100
     GpfsTestFailed:50
     GpfsIBNotConfig:51
     GpfsRdmaError:49
