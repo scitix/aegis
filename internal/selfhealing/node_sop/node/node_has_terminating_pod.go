@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	nodesop "github.com/scitix/aegis/internal/selfhealing/node_sop"
 	"github.com/scitix/aegis/internal/selfhealing/sop"
@@ -48,7 +49,15 @@ func (n *terminatingpod) Execute(ctx context.Context, node string, status *prom.
 	n.bridge.TicketManager.CreateComponentTicket(ctx, reason, basic.ModelTypeKubelet, basic.ComponentTypeKebelet)
 	n.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
 	n.bridge.TicketManager.AdoptTicket(ctx)
-	n.bridge.TicketManager.DispatchTicketToSRE(ctx, basic.ModelTypeKubelet, basic.ComponentTypeKebelet)
+
+	description, err := n.bridge.TicketManager.GetRootCauseDescription(ctx)
+	if err != nil {
+		return err
+	}
+	startAt := description.Timestamps
+	if time.Since(startAt) > 24*time.Hour {
+		n.bridge.TicketManager.DispatchTicketToSRE(ctx)
+	}
 
 	return nil
 }
