@@ -13,6 +13,7 @@ import (
 	"github.com/scitix/aegis/pkg/analyzer"
 	"github.com/scitix/aegis/pkg/analyzer/common"
 	diagnosisv1alpha1 "github.com/scitix/aegis/pkg/apis/diagnosis/v1alpha1"
+	"github.com/scitix/aegis/pkg/prom"
 	"k8s.io/klog/v2"
 
 	kfclientset "github.com/kubeflow/training-operator/pkg/client/clientset/versioned"
@@ -24,6 +25,7 @@ type Diagnosis struct {
 	Language         string
 	CollectorImage   string
 	EnableProm       bool
+	Prometheus       *prom.PromAPI
 	AIClient         kai.IAI
 	AIFactory        ai.AIProviderFactory
 	Cache            *cache.Cache
@@ -40,6 +42,7 @@ func NewDiagnosis(
 	language string,
 	collectorImage string,
 	enableProm bool,
+	prometheus *prom.PromAPI,
 	noCache bool,
 	explain bool,
 	httpHeaders []string,
@@ -51,6 +54,7 @@ func NewDiagnosis(
 		Language:         language,
 		CollectorImage:   collectorImage,
 		EnableProm:       enableProm,
+		Prometheus:       prometheus,
 		Explain:          explain,
 		Cache:            c,
 		NoCache:          noCache,
@@ -59,13 +63,13 @@ func NewDiagnosis(
 
 	d.AnalyzerFactory = map[string]func(*diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer{
 		"Pod": func(_ *diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer {
-			return analyzer.NewPodAnalyzer(d.EnableProm)
+			return analyzer.NewPodAnalyzer(d.Prometheus)
 		},
 		"Node": func(diag *diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer {
-			return analyzer.NewNodeAnalyzer(d.EnableProm)
+			return analyzer.NewNodeAnalyzer(d.Prometheus)
 		},
 		"PytorchJob": func(_ *diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer {
-			return analyzer.NewPytorchJobAnalyzer(d.EnableProm, d.PytorchJobClient)
+			return analyzer.NewPytorchJobAnalyzer(d.Prometheus, d.PytorchJobClient)
 		},
 	}
 

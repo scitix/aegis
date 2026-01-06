@@ -60,7 +60,11 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 	n.bridge.TicketManager.AddWorkflow(ctx, ticketmodel.TicketWorkflowActionHealthCheck, ticketmodel.TicketWorkflowStatusRunning, nil)
 
 	var result string
-	success, hardwareType, conditionType, err := basic.HealthCheckNode(timeOutCtx, n.bridge, node)
+	success, hardwareType, conditionType, logs, err := basic.HealthCheckNode(timeOutCtx, n.bridge, node)
+	if logs != nil {
+		klog.Infof("HealthCheck Logs: %s", *logs)
+	}
+
 	if err != nil {
 		return fmt.Errorf("fail to execute healthcheck: %s", err.Error())
 	}
@@ -112,6 +116,7 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 	if hardwareType == basic.HardwareTypeGpu && conditionType == basic.ConditionTypeGpuRowRemappingFailure {
 		if !n.bridge.TicketManager.CheckTicketExists(ctx) {
 			n.bridge.TicketManager.CreateTicket(ctx, status, string(hardwareType), fmt.Sprintf("node %s healthcheck find gpu remapping failure", node))
+			n.bridge.TicketManager.AdoptTicket(ctx)
 			n.bridge.TicketManager.AddRootCauseDescription(ctx, fmt.Sprintf("%s broken", string(hardwareType)), status)
 		}
 		n.bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionHealthCheck, ticketmodel.TicketWorkflowStatusFailed, &result)
@@ -139,6 +144,7 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 		if !n.bridge.TicketManager.CheckTicketExists(ctx) {
 			customTitle := fmt.Sprintf("node %s healthcheck find gpu too many sram uncorrectable error", node)
 			n.bridge.TicketManager.CreateTicket(ctx, status, string(hardwareType), customTitle)
+			n.bridge.TicketManager.AdoptTicket(ctx)
 			n.bridge.TicketManager.AddRootCauseDescription(ctx, fmt.Sprintf("%s broken", string(hardwareType)), status)
 		}
 
@@ -161,8 +167,29 @@ func (n *nodecordon) Execute(ctx context.Context, node string, status *prom.Aegi
 		return nil
 	}
 
+	// gpu broken && nvlink
+	if hardwareType == basic.HardwareTypeGpu && (conditionType == basic.ConditionTypeGpuCheckFailed || conditionType == basic.ConditionTypeGpuNvlinkError) {
+		if !n.bridge.TicketManager.CheckTicketExists(ctx) {
+			customTitle := fmt.Sprintf("node %s healthcheck find %s %s", node, hardwareType, conditionType)
+			n.bridge.TicketManager.CreateTicket(ctx, status, string(hardwareType), customTitle)
+			n.bridge.TicketManager.AdoptTicket(ctx)
+			n.bridge.TicketManager.AddRootCauseDescription(ctx, fmt.Sprintf("%s broken", string(hardwareType)), status)
+		}
+
+		n.bridge.TicketManager.UpdateWorkflow(ctx, ticketmodel.TicketWorkflowActionHealthCheck, ticketmodel.TicketWorkflowStatusFailed, &result)
+		
+		if n.bridge.Aggressive {
+			return op.RestartNode(ctx, n.bridge, node, string(conditionType), func(ctx context.Context) bool {
+				return false
+			})
+		}
+		
+		n.bridge.TicketManager.DispatchTicketToSRE(ctx)
+		return nil
+	}
+
 	if !n.bridge.TicketManager.CheckTicketExists(ctx) {
-		customTitle := fmt.Sprintf("node %s healthcheck find %s broken", node, hardwareType)
+		customTitle := fmt.Sprintf("node %s healthcheck find %s %s", node, hardwareType, conditionType)
 		n.bridge.TicketManager.CreateTicket(ctx, status, string(hardwareType), customTitle)
 		n.bridge.TicketManager.AddRootCauseDescription(ctx, fmt.Sprintf("%s broken", string(hardwareType)), status)
 		n.bridge.TicketManager.AdoptTicket(ctx)

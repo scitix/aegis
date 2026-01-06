@@ -143,6 +143,9 @@ func parse() (bool, *controller.Configuration, error) {
 	ttlAfterFailed := flags.Int32("alert.ttl-after-failed", 4*24*60*60, "clean ttl after alert ops failed")
 	ttlAfterNoOps := flags.Int32("alert.ttl-after-noops", 1*24*60*60, "clean ttl after alert ops failed")
 
+	promEndpoint := flag.String("prometheus.endpoint", "", "Prometheus server endpoint, e.g. http://localhost:9090")
+	promToken := flag.String("prometheus.token", "", "Prometheus API access token")
+
 	enableHealthcheck := flags.Bool("healthcheck.enable", true, "enable cluster/node healthcheck")
 	enableFireNodeEvent := flags.Bool("nodecheck.fireevent", false, "enable fire node event if check status true")
 
@@ -196,6 +199,8 @@ func parse() (bool, *controller.Configuration, error) {
 		DefaultTTLAfterOpsSucceed: *ttlAfterSucceed,
 		DefaultTTLAfterOpsFailed:  *ttlAfterFailed,
 		DefaultTTLAfterNoOps:      *ttlAfterNoOps,
+		PromEndpoint:              *promEndpoint,
+		PromToken:                 *promToken,
 		EnableHealthcheck:         *enableHealthcheck,
 		EnableFireNodeEvent:       *enableFireNodeEvent,
 		EnableDiagnosis:           *enableDiagnosis,

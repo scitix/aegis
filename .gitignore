@@ -1,3 +1,6 @@
 vendor/
 deploy/online
 deploy/prometheusrule/
+deploy/prometheusrule-gpfs/
+deploy/prometheusrule-internal/
+ticketing/

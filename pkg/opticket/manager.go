@@ -91,7 +91,13 @@ func (t *OpTicketManager) CheckTicketSupervisor(ctx context.Context, user string
 	return t.ticket.Supervisor == user
 }
 
-func (t *OpTicketManager) CreateTicket(ctx context.Context, status *prom.AegisNodeStatus, hardwareType string, customTitle ...string) error {
+func (t *OpTicketManager) CreateTicket(ctx context.Context, status *prom.AegisNodeStatus, hardwareType string, customTitle ...string) (err error) {
+	defer func() {
+		if err != nil {
+			klog.Errorf("error create ticket: %s", err)
+		}
+	}()
+
 	if t.ticket != nil {
 		return ticketmodel.TicketAlreadyExistErr
 	}
@@ -110,7 +116,7 @@ func (t *OpTicketManager) CreateTicket(ctx context.Context, status *prom.AegisNo
 		title = customTitle[0]
 	}
 
-	err := t.u.CreateTicket(ctx, t.region, t.orgname, t.nodename, t.sn, title, "", hardwareType)
+	err = t.u.CreateTicket(ctx, t.region, t.orgname, t.nodename, t.sn, title, "", hardwareType)
 	if err != nil {
 		return fmt.Errorf("error create ticket: %s", err)
 	}
@@ -142,15 +148,15 @@ func (t *OpTicketManager) CreateComponentTicket(ctx context.Context, title, mode
 }
 
 func (t *OpTicketManager) AdoptTicket(ctx context.Context) (err error) {
+	if t.ticket == nil {
+		return ticketmodel.TicketNotFoundErr
+	}
+
 	defer func() {
 		if err != nil {
 			klog.Errorf("error adopt ticket: %s", err)
 		}
 	}()
-
-	if t.ticket == nil {
-		return ticketmodel.TicketNotFoundErr
-	}
 
 	err = t.u.DispatchTicket(ctx, t.ticket.TicketId, TicketSupervisorAegis)
 	if err != nil {
@@ -250,7 +256,7 @@ func (t *OpTicketManager) IsFrequentIssue(ctx context.Context, size, frequency i
 		var description ticketmodel.TicketDescription
 		err := description.Unmarshal([]byte(ticket.Description))
 		if err != nil {
-			klog.Info("error unmarshal ticket %s: %s", ticket.TicketId, err)
+			klog.Infof("error unmarshal ticket %s: %v", ticket.TicketId, err)
 			continue
 		}
 

@@ -123,7 +123,8 @@ func InitDeviceStatusCache(kubeclient clientset.Interface) (map[string]*NodeStat
 }
 
 func NewController(kubeclient clientset.Interface,
-	nodeInformer coreinformers.NodeInformer) (*DeviceAwareController, error) {
+	nodeInformer coreinformers.NodeInformer,
+	prometheus *prom.PromAPI) (*DeviceAwareController, error) {
 
 	cache, err := InitDeviceStatusCache(kubeclient)
 	if err != nil {
@@ -141,7 +142,7 @@ func NewController(kubeclient clientset.Interface,
 	}
 
 	informer := NewNodeStatusInformer(
-		prom.GetPromAPI(),
+		prometheus,
 		handler,
 		cache,
 		[]DeviceType{

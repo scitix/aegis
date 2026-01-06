@@ -19,10 +19,6 @@ import (
 	"k8s.io/klog/v2"
 )
 
-var (
-	defaultPrometheusEndpoint = "http://prometheus-k8s.monitoring:9090"
-)
-
 func init() {
 	timeLocal := time.FixedZone("CST", 3600*8)
 	time.Local = timeLocal
@@ -94,18 +90,6 @@ func RenderWorkflowTemplate(tmp string, parameters map[string]interface{}) (stri
 func LoadFromFile(file string) (string, error) {
 	bytes, err := ioutil.ReadFile(file)
 	return string(bytes), err
-}
-
-func GetPrometheusEndpoint() string {
-	if endpoint := os.Getenv("PROMETHEUS_ENDPOINT"); endpoint != "" {
-		return endpoint
-	}
-
-	return defaultPrometheusEndpoint
-}
-
-func GetElasticSearchConfig() (string, string, string) {
-	return os.Getenv("ELASTICSEARCH_ENDPOINT"), os.Getenv("ELASTICSEARCH_USERNAME"), os.Getenv("ELASTICSEARCH_PASSWORD")
 }
 
 func GetCurrentTimestamp() string {

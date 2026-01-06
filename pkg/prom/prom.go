@@ -3,12 +3,12 @@ package prom
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
-	"github.com/scitix/aegis/tools"
 	"k8s.io/klog/v2"
 )
 
@@ -16,23 +16,35 @@ type PromAPI struct {
 	API v1.API
 }
 
-var promAPI *PromAPI
+// 自定义 RoundTripper：为每个请求注入 Authorization 头
+func roundTripperWithToken(rt http.RoundTripper, token string) http.RoundTripper {
+	return &tokenRoundTripper{rt: rt, token: token}
+}
 
-func GetPromAPI() *PromAPI {
-	if promAPI != nil {
-		return promAPI
+type tokenRoundTripper struct {
+	rt    http.RoundTripper
+	token string
+}
+
+func (t *tokenRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	if t.token != "" {
+		req.Header.Set("Authorization", "Bearer "+t.token)
 	}
 
-	endpoint := tools.GetPrometheusEndpoint()
+	return t.rt.RoundTrip(req)
+}
+
+func CreatePromClient(endpoint, token string) *PromAPI {
 	client, err := api.NewClient(api.Config{
 		Address: endpoint,
+		RoundTripper: roundTripperWithToken(http.DefaultTransport, token),
 	})
 
 	if err != nil {
 		klog.Warningf("Failed to create client: %v", err)
 	}
 
-	promAPI = &PromAPI{
+	promAPI := &PromAPI{
 		API: v1.NewAPI(client),
 	}
 

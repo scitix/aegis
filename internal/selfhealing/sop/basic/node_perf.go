@@ -61,6 +61,7 @@ func PerfGPU(ctx context.Context, bridge *sop.ApiBridge, node string, id string)
 		return false, err
 	}
 	pod := obj.(*corev1.Pod)
+	pod.OwnerReferences = []metav1.OwnerReference{*bridge.Owner}
 
 	_, err = bridge.KubeClient.CoreV1().Pods(job_namespace).Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {

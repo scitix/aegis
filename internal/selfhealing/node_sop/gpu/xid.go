@@ -48,7 +48,7 @@ func (g *gpu) Evaluate(ctx context.Context, node string, status *prom.AegisNodeS
 
 func (g *gpu) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	klog.Infof("aegis detect node %s, go on analysis issues", status.Condition)
-	reason := fmt.Sprintf("aegis detect node %s, gpu id: %s", status.Condition, status.ID)
+	reason := fmt.Sprintf("aegis detect node %s %s, gpu id: %s", status.Name , status.Condition, status.ID)
 
 	err := basic.CordonNode(ctx, g.bridge, node, reason, "aegis")
 	if err != nil {

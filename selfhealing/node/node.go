@@ -20,6 +20,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -90,6 +91,9 @@ func NewCommand(config *config.SelfHealingConfig, use string) *cobra.Command {
 	c.PersistentFlags().IntVar(&o.level, "level", 0, "node issue selfhealing level")
 	c.PersistentFlags().BoolVar(&o.onlyTicket, "ticket.only", false, "only create ticket record for issue, no operation actions")
 	c.PersistentFlags().StringVar(&o.ticketSystem, "ticket.system", "Node", "ticket system for record issue")
+	c.PersistentFlags().BoolVar(&o.claimTicket, "ticket.claim", false, "allow to claim ticket for handling the issue")
+	c.PersistentFlags().StringVar(&o.promEndpoint, "prometheus.endpoint", "", "Prometheus server endpoint, e.g. http://localhost:9090")
+	c.PersistentFlags().StringVar(&o.promToken, "prometheus.token", "", "Prometheus API access token")
 	c.PersistentFlags().StringVar(&o.opsImage, "ops.image", "", "selfhealing ops image")
 	return c
 }
@@ -115,10 +119,15 @@ type nodeOptions struct {
 
 	onlyTicket   bool
 	ticketSystem string
+	claimTicket  bool
+
+	promEndpoint string
+	promToken    string
 
 	opsImage string
 
 	node   *v1.Node
+	pod    *v1.Pod
 	bridge *sop.ApiBridge
 
 	gatekeeper *gatekeeper.GateKeeper
@@ -128,13 +137,15 @@ type nodeOptions struct {
 }
 
 func (o *nodeOptions) complete(cmd *cobra.Command, args []string) (err error) {
-	if o.config.EnableLeaderElection {
-		o.podName = os.Getenv("POD_NAME")
-		o.namespace = os.Getenv("POD_NAMESPACE")
+	o.podName = os.Getenv("POD_NAME")
+	o.namespace = os.Getenv("POD_NAMESPACE")
+	if len(o.namespace) == 0 || len(o.podName) == 0 {
+		return fmt.Errorf("unable to get Pod information (missing POD_NAME or POD_NAMESPACE environment variable)")
+	}
 
-		if len(o.namespace) == 0 || len(o.podName) == 0 {
-			return fmt.Errorf("unable to get Pod information (missing POD_NAME or POD_NAMESPACE environment variable)")
-		}
+	o.pod, err = o.config.KubeClient.CoreV1().Pods(o.namespace).Get(context.Background(), o.podName, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("fail to get pod object: %s", err)
 	}
 
 	argsLen := cmd.ArgsLenAtDash()
@@ -159,7 +170,7 @@ func (o *nodeOptions) complete(cmd *cobra.Command, args []string) (err error) {
 		o.ip = o.node.Status.Addresses[0].Address
 	}
 
-	o.promApi = prom.GetPromAPI()
+	o.promApi = prom.CreatePromClient(o.promEndpoint, o.promToken)
 
 	system := selfticket.TicketSystem(o.ticketSystem)
 
@@ -205,10 +216,15 @@ func (o *nodeOptions) complete(cmd *cobra.Command, args []string) (err error) {
 		Registry:        o.config.Registry,
 		Repository:      o.config.Repository,
 		OpsImage:        o.opsImage,
-		KubeClient:      o.config.KubeClient,
-		PromClient:      o.promApi,
-		TicketManager:   ticketManager,
-		EventRecorder:   recorder,
+		Owner: metav1.NewControllerRef(o.pod, schema.GroupVersionKind{
+			Group:   "",
+			Version: "v1",
+			Kind:    "Pod",
+		}),
+		KubeClient:    o.config.KubeClient,
+		PromClient:    o.promApi,
+		TicketManager: ticketManager,
+		EventRecorder: recorder,
 	}
 
 	gatekeeper, err := gatekeeper.CreateGateKeeper(context.Background(), o.bridge)
@@ -329,13 +345,23 @@ func (o *nodeOptions) catchLockAndRun(ctx context.Context) error {
 func (o *nodeOptions) run(ctx context.Context) error {
 	o.bridge.TicketManager.Reset(ctx)
 
-	if !o.bridge.TicketManager.CanDealWithTicket(ctx) {
-		klog.Warning("aegis cannot deal with ticket")
+	if !o.bridge.TicketManager.CanDealWithTicket(ctx) && !o.claimTicket {
+		klog.Warning("aegis cannot deal with ticket and not allowed to claim ticket, give up.")
 		return nil
+	}
+
+	if !o.bridge.TicketManager.CanDealWithTicket(ctx) && o.claimTicket {
+		klog.Warning("aegis try to claim ticket.")
+		err := o.bridge.TicketManager.AdoptTicket(ctx)
+		if err != nil {
+			return fmt.Errorf("aegis failed to clain ticket: %s", err)
+		}
+		klog.Infof("aegis succeed claim ticket.")
 	}
 
 	// if disable selfhealing, dispatch ticket to sre.
 	if o.isDiableSelfHealing(ctx) {
+		klog.Infof("node has disabled selfhealing, will give up")
 		err := o.bridge.TicketManager.DispatchTicketToSRE(ctx)
 		if err == ticketmodel.TicketNotFoundErr {
 			return nil

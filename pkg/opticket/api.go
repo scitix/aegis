@@ -71,7 +71,7 @@ func (u *OpTicketClient) CreateTicket(ctx context.Context, region, orgName, node
 		"creator":         "aegis",
 		"title":           title,
 		"priority":        "high",
-		"node":            node,
+		"nodeName":        node,
 		"nodeSN":          nodeSN,
 		"isHardwareIssue": true,
 		"model":           "hardware",
@@ -102,6 +102,24 @@ func (u *OpTicketClient) CreateComponentTicket(ctx context.Context, region, orgN
 		"startTime":       time.Now().Format("2006-01-02T15:04:05Z07:00"),
 		"description":     description,
 		"isFromCustomer":  false,
+	}
+
+	headers := getHeader()
+	address := u.endpoint + createTicketPath
+
+	return post(ctx, address, data, headers)
+}
+
+func (u *OpTicketClient) CreateTicketWithoutSN(ctx context.Context, supervisor string, title, description string, isHardwareIssue bool) error {
+	data := map[string]interface{}{
+		"creator":         "aegis",
+		"title":           title,
+		"priority":        "high",
+		"isHardwareIssue": isHardwareIssue,
+		"startTime":       time.Now().Format("2006-01-02T15:04:05Z07:00"),
+		"description":     description,
+		"isFromCustomer":  false,
+		"supervisor":      supervisor,
 	}
 
 	headers := getHeader()
@@ -284,6 +302,44 @@ func (u *OpTicketClient) GetNodeFirstUnResovledTicket(ctx context.Context, regio
 	return info, nil
 }
 
+func (u *OpTicketClient) GetFirstUnResovledTicketWithTitle(ctx context.Context, title string) (*OpTicket, error) {
+	data := map[string]string{
+		"title":    title,
+		"page":     "1",
+		"pageSize": "15",
+	}
+
+	headers := getHeader()
+	address := u.endpoint + listTicketsPath
+
+	result, err := get(ctx, address, data, headers)
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, nil
+	}
+
+	res := result.(map[string]interface{})
+
+	info := &OpTicket{
+		TicketId:        res["ticketId"].(string),
+		Status:          ticketmodel.TicketStatus(res["status"].(string)),
+		IsHardwareIssue: res["isHardwareIssue"].(bool),
+		Creator:         res["creator"].(string),
+		Description:     res["description"].(string),
+		Supervisor:      res["supervisor"].(string),
+		Title:           res["title"].(string),
+	}
+
+	if info.Status == "resolved" || info.Status == "closed" {
+		return nil, nil
+	}
+
+	return info, nil
+}
+
 func (u *OpTicketClient) ListNodeTickets(ctx context.Context, region, nodeSN string, size int) ([]*OpTicket, error) {
 	data := map[string]string{
 		"region":   region,
@@ -420,7 +476,7 @@ func getAll(ctx context.Context, address string, params map[string]string, heade
 		return nil, errors.New(rMap["error"].(string))
 	}
 
-	if len(rMap["rows"].([]interface{})) == 0 {
+	if rMap["rows"] == nil || len(rMap["rows"].([]interface{})) == 0 {
 		return nil, nil
 	}
 

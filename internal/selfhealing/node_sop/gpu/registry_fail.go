@@ -3,6 +3,7 @@ package gpu
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	nodesop "github.com/scitix/aegis/internal/selfhealing/node_sop"
@@ -52,13 +53,14 @@ func (g *gpuregisterfail) Execute(ctx context.Context, node string, status *prom
 
 	reason := fmt.Sprintf("aegis detect node %s, try to restart nvidia-device-plugin pod and waiting new pod ready for 20m", status.Condition)
 
-	device := "nvidia-device-plugin-ds"
-	if !basic.IsDaemonSetExists(ctx, g.bridge, basic.SystemNamespace, "nvidia-device-plugin-daemonset") &&
-		basic.IsDaemonSetExists(ctx, g.bridge, basic.SystemNamespace, "uni-device-plugin-daemonset") {
-		device = "uni-device-plugin-ds"
+
+	selector := basic.GPUPluginPodSelector
+	kv := strings.Split(selector, "=")
+	if len(kv) != 2 {
+		return fmt.Errorf("invalid gpu plugin pod selector: %s", selector)
 	}
 
-	pluginPodReady := basic.IsPodInNodeWithTargetLabelReady(ctx, g.bridge, node, map[string]string{"name": device})
+	pluginPodReady := basic.IsPodInNodeWithTargetLabelReady(ctx, g.bridge, node, map[string]string{kv[0]: kv[1]})
 
 	if pluginPodReady {
 		g.bridge.TicketManager.CreateComponentTicket(ctx,
@@ -81,9 +83,9 @@ func (g *gpuregisterfail) Execute(ctx context.Context, node string, status *prom
 		defer cancel()
 
 		g.bridge.TicketManager.AddWorkflow(ctx, ticketmodel.TicketWorkflowActionRestartPod, ticketmodel.TicketWorkflowStatusRunning, nil)
-		err := basic.DeletePodInNodeWithTargetLabel(timeOutCtx, g.bridge, node, map[string]string{"name": device}, true)
+		err := basic.DeletePodInNodeWithTargetLabel(timeOutCtx, g.bridge, node, map[string]string{kv[0]: kv[1]}, true)
 		if err == nil {
-			err = basic.WaitPodInNodeWithTargetLabelReady(timeOutCtx, g.bridge, node, map[string]string{"name": device})
+			err = basic.WaitPodInNodeWithTargetLabelReady(timeOutCtx, g.bridge, node, map[string]string{kv[0]: kv[1]})
 		}
 
 		if err != nil {
