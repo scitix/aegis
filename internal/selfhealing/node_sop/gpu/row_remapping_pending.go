@@ -54,7 +54,7 @@ func (g *gpurowremappingpending) Execute(ctx context.Context, node string, statu
 	}
 
 	// check frequency
-	if is, _ := g.bridge.TicketManager.IsFrequentIssue(ctx, 5, 3); is {
+	if is, _ := g.bridge.TicketManager.IsFrequentIssue(ctx, 3, 2); is {
 		g.bridge.TicketManager.AddWhySRE(ctx, "over 3 same issue for lastest 5 tickets, perhaps a gpu hardware issue.")
 		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 
