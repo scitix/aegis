@@ -5,6 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"k8s.io/klog/v2"
 
 	alertv1alpha1 "github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
 	"github.com/scitix/aegis/tools"
@@ -37,13 +38,6 @@ var (
 		Subsystem: "",
 		Name:      "created",
 		Help:      "Creation timestamp of aegis alert",
-	}, []string{"name", "type", "sub_type", "namespace"})
-
-	alertDeleted = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "aegis_alert",
-		Subsystem: "",
-		Name:      "deleted",
-		Help:      "Deletion timestamp of aegis alert",
 	}, []string{"name", "type", "sub_type", "namespace"})
 
 	alertOpsNotTriggerReason = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -172,60 +166,59 @@ func (m *MetricsController) OnUpdate(alert *alertv1alpha1.AegisAlert) error {
 }
 
 func (m *MetricsController) OnDelete(alert *alertv1alpha1.AegisAlert) error {
-	// ret := alertInfo.Delete(prometheus.Labels{
-	// 	"name":             alert.Name,
-	// 	"namespace":        alert.Namespace,
-	// 	"type":             alert.Spec.Type,
-	// 	"source":           alert.Spec.Source,
-	// 	"object_kind":      string(alert.Spec.InvolvedObject.Kind),
-	// 	"object_namespace": alert.Spec.InvolvedObject.Namespace,
-	// 	"object_name":      alert.Spec.InvolvedObject.Name,
-	// })
-
-	// if !ret {
-	// 	klog.Errorf("fail to delete alert info metrics: %s/%s", alert.Namespace, alert.Name)
-	// }
-
-	// ret = alertCreated.Delete(prometheus.Labels{
-	// 	"name":      alert.Name,
-	// 	"type":      alert.Spec.Type,
-	// 	"namespace": alert.Namespace,
-	// })
-
-	// if !ret {
-	// 	klog.Errorf("fail to delete alert created metrics: %s/%s", alert.Namespace, alert.Name)
-	// }
 	subType := getSubType(alert)
-	alertDeleted.With(prometheus.Labels{
+
+	// Delete alert info metrics
+	ret := alertInfo.Delete(prometheus.Labels{
+		"name":             alert.Name,
+		"namespace":        alert.Namespace,
+		"type":             alert.Spec.Type,
+		"sub_type":         subType,
+		"source":           alert.Spec.Source,
+		"status":           string(alert.Spec.Status),
+		"object_kind":      string(alert.Spec.InvolvedObject.Kind),
+		"object_namespace": alert.Spec.InvolvedObject.Namespace,
+		"object_name":      alert.Spec.InvolvedObject.Name,
+	})
+
+	if !ret {
+		klog.Warningf("failed to delete alert info metrics: %s/%s", alert.Namespace, alert.Name)
+	}
+
+	// Delete ops-related metrics using partial match
+	alertOpsNotTriggerReason.DeletePartialMatch(prometheus.Labels{
+		"name":      alert.Name,
+		"namespace": alert.Namespace,
+		"type":      alert.Spec.Type,
+	})
+
+	alertOpsStatusRunning.DeletePartialMatch(prometheus.Labels{
 		"name":      alert.Name,
 		"type":      alert.Spec.Type,
 		"sub_type":  subType,
 		"namespace": alert.Namespace,
-	}).SetToCurrentTime()
+	})
 
-	// alertOpsNotTriggerReason.DeletePartialMatch(prometheus.Labels{
-	// 	"name":      alert.Name,
-	// 	"namespace": alert.Namespace,
-	// 	"type":      alert.Spec.Type,
-	// })
+	alertOpsStatusFailed.DeletePartialMatch(prometheus.Labels{
+		"name":      alert.Name,
+		"type":      alert.Spec.Type,
+		"sub_type":  subType,
+		"namespace": alert.Namespace,
+	})
 
-	// alertOpsStatusRunning.Delete(prometheus.Labels{
-	// 	"name":      alert.Name,
-	// 	"namespace": alert.Namespace,
-	// 	"type":      alert.Spec.Type,
-	// })
+	alertOpsStatuSucceed.DeletePartialMatch(prometheus.Labels{
+		"name":      alert.Name,
+		"type":      alert.Spec.Type,
+		"sub_type":  subType,
+		"namespace": alert.Namespace,
+	})
 
-	// alertOpsStatusFailed.Delete(prometheus.Labels{
-	// 	"name":      alert.Name,
-	// 	"namespace": alert.Namespace,
-	// 	"type":      alert.Spec.Type,
-	// })
-
-	// alertOpsStatuSucceed.Delete(prometheus.Labels{
-	// 	"name":      alert.Name,
-	// 	"namespace": alert.Namespace,
-	// 	"type":      alert.Spec.Type,
-	// })
+	alertOpsExecuteSeconds.DeletePartialMatch(prometheus.Labels{
+		"name":      alert.Name,
+		"type":      alert.Spec.Type,
+		"sub_type":  subType,
+		"namespace": alert.Namespace,
+	})
 
 	return nil
 }
