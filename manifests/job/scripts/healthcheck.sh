@@ -62,12 +62,28 @@ if [ $? -eq 0 ];then
         ExitWithTimeout 23
     fi
 
-    sichek nccltest
-    if [ $? -eq 0 ]; then
-        echo "===================`date +"%Y-%m-%d %H:%M:%S"` checking nccl test success..."
-    else
-        echo "===================`date +"%Y-%m-%d %H:%M:%S"` checking nccl test failed..."
-        ExitWithTimeout 24
+    # if no gpu task, run nccl test
+    if [ -f /var/sichek/scripts/nccl_perf ]; then
+        GPU_PROCESS_COUNTS=$(nvidia-smi --query-compute-apps=gpu_uuid --format=csv,noheader)
+        ACTIVE_GPU_COUNT=$(echo "$GPU_PROCESS_COUNTS" | wc -l)
+
+        if [[ "$ACTIVE_GPU_COUNT" -lt 2 ]]; then
+            if [[ "$node" == shmaas* ]]; then
+                echo "skip shmaas gpu"
+            elif [[ "$node" == draco* ]]; then
+                export NCCL_IB_HCA=mlx5_0
+                timeout 300 /var/sichek/scripts/nccl_perf -b2g -e2g
+            else
+                OMPI_MCA_pml=^ucx UCX_TLS= /var/sichek/scripts/nccl_perf -b2g -e2g
+            fi
+            
+            if [ $? -eq 0 ]; then
+                echo "===================`date +"%Y-%m-%d %H:%M:%S"` checking nccl test success..."
+            else
+                echo "===================`date +"%Y-%m-%d %H:%M:%S"` checking nccl test failed..."
+                ExitWithTimeout 24
+            fi
+        fi
     fi
 else
     echo "===================`date +"%Y-%m-%d %H:%M:%S"` this is not GPU node..."
