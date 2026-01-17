@@ -479,6 +479,16 @@ func (o *nodeOptions) findProperOne(result *analysis.NodeStatusAnalysisResult) *
 }
 
 func (o *nodeOptions) precheck(ctx context.Context) bool {
+	// 检查是否有指定的污点，如果有则移除并将节点置为 cordon 状态
+	if o.hasSpecifiedTaint(ctx) {
+		klog.Infof("Node %s has specified taint, removing taint and cordoning node", o.name)
+		if err := o.removeTaintAndCordon(ctx); err != nil {
+			klog.Errorf("Failed to remove taint and cordon node %s: %v", o.name, err)
+			return false
+		}
+		klog.Infof("Successfully removed taint and cordoned node %s", o.name)
+		return false // 不继续执行后续的自愈逻辑
+	}
 	return true
 }
 
@@ -492,3 +502,106 @@ func (o *nodeOptions) isDiableSelfHealing(ctx context.Context) bool {
 
 	return false
 }
+
+// hasSpecifiedTaint 检查节点是否有指定的污点
+func (o *nodeOptions) hasSpecifiedTaint(ctx context.Context) bool {
+	// 从环境变量获取需要检查的污点 key，格式：key1,key2,key3
+	taintEnv := os.Getenv("AEGIS_PRECHECK_TAINTS")
+	if taintEnv == "" {
+		// 如果没有设置环境变量，直接返回 false，不进行检查
+		return false
+	}
+
+	// 解析污点 key 配置
+	taintKeysToCheck := parseTaintKeys(taintEnv)
+
+	for _, taint := range o.node.Spec.Taints {
+		for _, key := range taintKeysToCheck {
+			if taint.Key == key {
+				klog.V(4).Infof("Node %s has specified taint: %s=%s:%s", o.name, taint.Key, taint.Value, taint.Effect)
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// parseTaintKeys 解析污点 key 配置字符串，格式：key1,key2,key3
+func parseTaintKeys(config string) []string {
+	var keys []string
+	parts := strings.Split(config, ",")
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			keys = append(keys, part)
+		}
+	}
+
+	return keys
+}
+
+// parseTaintConfig 解析污点配置字符串，格式：key1=effect1,key2=effect2（保留兼容性）
+func parseTaintConfig(config string) []v1.Taint {
+	var taints []v1.Taint
+	parts := strings.Split(config, ",")
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		kv := strings.Split(part, "=")
+		if len(kv) != 2 {
+			klog.Warningf("Invalid taint config format: %s, expected key=effect", part)
+			continue
+		}
+
+		key := strings.TrimSpace(kv[0])
+		effect := strings.TrimSpace(kv[1])
+
+		var taintEffect v1.TaintEffect
+		switch effect {
+		case "NoSchedule":
+			taintEffect = v1.TaintEffectNoSchedule
+		case "PreferNoSchedule":
+			taintEffect = v1.TaintEffectPreferNoSchedule
+		case "NoExecute":
+			taintEffect = v1.TaintEffectNoExecute
+		default:
+			klog.Warningf("Unknown taint effect: %s, skipping", effect)
+			continue
+		}
+
+		taints = append(taints, v1.Taint{
+			Key:    key,
+			Effect: taintEffect,
+		})
+	}
+
+	return taints
+}
+
+// removeTaintAndCordon 移除指定的污点并将节点置为 cordon 状态
+func (o *nodeOptions) removeTaintAndCordon(ctx context.Context) error {
+	// 从环境变量获取需要移除的污点 key
+	taintEnv := os.Getenv("AEGIS_PRECHECK_TAINTS")
+	if taintEnv == "" {
+		// 如果没有设置环境变量，不应该到达这里，因为 hasSpecifiedTaint 已经返回 false 了
+		return fmt.Errorf("no taints configured for removal")
+	}
+	taintKeysToRemove := parseTaintKeys(taintEnv)
+
+	// 移除指定的污点
+	for _, key := range taintKeysToRemove {
+		if err := basic.RemoveNodeTaint(ctx, o.bridge, o.name, key, "Precheck: remove specified taints"); err != nil {
+			return fmt.Errorf("failed to remove taint with key %s: %v", key, err)
+		}
+	}
+
+	// 将节点置为 cordon 状态
+	return basic.CordonNode(ctx, o.bridge, o.name, "Precheck: removed specified taints", "aegis")
+}
+
