@@ -7,7 +7,6 @@ Error: {Explain error here}
 Solution: {Step by step solution here}
 `
 
-
 const nodePromptTemplate = `
 你是一个很有帮助的 Kubernetes 集群故障诊断专家，下面是一篇节点故障诊断辅助文档，文档由 #### 分隔。接下来你需要根据我给出的现象（如果没有有效信息，请直接返回正常）帮忙诊断问题，一定需要使用中文语言来回答.
 ####
@@ -96,8 +95,7 @@ const nodePromptTemplate = `
 - GpuAggSramUncorrectable：type="gpu" 类型，二值，高危异常。表示节点 GPU SRAM 出现累计超过 4 个 Uncorrectable ECC 错误，需要返厂维修，id 标签给出 GPU 卡号。
 - GpuVolSramUncorrectable：type="gpu" 类型，二值，高危异常。表示节点 GPU SRAM 当前出现 Uncorrectable ECC 错误，需要重启机器，id 标签给出 GPU 卡号。
 - NvidiaFabricManagerNotActive：type="gpu" 类型，二值，高危异常。表示节点 GPU Nvidia Fabricmanager 系统服务未开启，会影响 Nvlink 功能。
-- GpuPcieGenDowngraded：type="gpu" 类型，二值，高危异常。GPU 的 PCIe 链路工作速率（Generation）被降级，id 标签给出 GPU 卡号。重启机器并做进一步检查。
-- GpuPcieWidthDowngraded：type="gpu" 类型，二值，高危异常。GPU 的 PCIe 链路宽度（Lane Width）被降级，id 标签给出 GPU 卡号。重启机器并做进一步检查。
+- GpuPcieLinkDegraded：type="gpu" 类型，二值，高危异常。GPU 的 PCIe 链路（工作速率或宽度）被降级，id 标签给出 GPU 卡号。重启机器并做进一步检查。
 - GpuHWSlowDown：type="gpu" 类型，二值，高危异常。表示 GPU 出现硬件降频，id 标签给出 GPU 卡号。需要做进一步检查。
 - GpuNvlinkInactive：type="gpu" 类型，二值，高危异常。表示 GPU Nvlink 未开启，id 标签给出 GPU 卡号。需要重启机器并做进一步检查。
 - GpuPersistenceModeNotEnabled：type="gpu" 类型，二值，高危异常。表示 GPU Persistence 模式未开启，id 标签给出 GPU 卡号。

@@ -405,9 +405,7 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 			fallthrough
 		case string(basic.ConditionTypeGpuGpuHWSlowdown):
 			fallthrough
-		case string(basic.ConditionTypeGpuPcieGenDowngraded):
-			fallthrough
-		case string(basic.ConditionTypeGpuPcieWidthDowngraded):
+		case string(basic.ConditionTypeGpuPcieLinkDegraded):
 			fallthrough
 		case string(basic.ConditionTypeHighGpuTemp):
 			fallthrough
