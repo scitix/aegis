@@ -65,8 +65,7 @@ data:
     GpuVolSramUncorrectable:9
     GpuSmClkSlowDown:51
     NvidiaFabricManagerNotActive:2
-    GpuPcieGenDowngraded:51
-    GpuPcieWidthDowngraded:51
+    GpuPcieLinkDegraded:51
     GpuHWSlowdown:99
     GpuNvlinkInactive:3
     GpuNvlinkError:3

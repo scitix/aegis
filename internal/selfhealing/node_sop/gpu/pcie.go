@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	gpupciegen_registry_name   = string(basic.ConditionTypeGpuPcieGenDowngraded)
-	gpupciewidth_registry_name = string(basic.ConditionTypeGpuPcieWidthDowngraded)
+	gpupcielink_registry_name = string(basic.ConditionTypeGpuPcieLinkDegraded)
 )
 
 type gpupcie struct {
@@ -25,8 +24,7 @@ type gpupcie struct {
 var gpupcieInstance *gpupcie = &gpupcie{}
 
 func init() {
-	nodesop.RegisterSOP(gpupciegen_registry_name, gpupcieInstance)
-	nodesop.RegisterSOP(gpupciewidth_registry_name, gpupcieInstance)
+	nodesop.RegisterSOP(gpupcielink_registry_name, gpupcieInstance)
 }
 
 func (g *gpupcie) CreateInstance(ctx context.Context, bridge *sop.ApiBridge) error {
