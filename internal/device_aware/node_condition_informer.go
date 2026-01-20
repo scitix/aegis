@@ -376,6 +376,8 @@ func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
 		case string(basic.ConditionTypeGPUIbgdaNotEnabled):
 			fallthrough
 		case string(basic.ConditionTypeGpuHung):
+			fallthrough
+		case string(basic.ConditionTypeGpuErrResetRequired):
 			for i, _ := range disabled {
 				disabled[i] = true
 			}

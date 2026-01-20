@@ -148,6 +148,7 @@ const (
 
 	// gpu
 	ConditionTypeGpuHung                        ConditionType = "GpuHung"
+	ConditionTypeGpuErrResetRequired            ConditionType = "GpuErrResetRequired"
 	ConditionTypeGpuCheckFailed                 ConditionType = "GpuCheckFailed"
 	ConditionTypeGpuRegisterFailed              ConditionType = "GpuRegisterFailed"
 	ConditionTypeHighGpuMemoryTemp              ConditionType = "HighGpuMemoryTemp"

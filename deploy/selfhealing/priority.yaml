@@ -49,6 +49,7 @@ data:
     IBRegisterFailed:50
     GpuCheckFailed:3
     GpuHung:3
+    GpuErrResetRequired:50
     GpuRegisterFailed:50
     HighGpuTemp:100
     HighGpuMemoryTemp:100
