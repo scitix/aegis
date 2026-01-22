@@ -37,6 +37,10 @@ func (n *notready) Execute(ctx context.Context, node string, status *prom.AegisN
 	klog.Infof("aegis detect node %s", status.Condition)
 	basic.CordonNode(ctx, n.bridge, node, status.Condition, "aegis")
 
+	n.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeUnknown)
+	n.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
+	n.bridge.TicketManager.AdoptTicket(ctx)
+
 	nodes, err := n.bridge.PromClient.ListNodesWithQuery(ctx, fmt.Sprintf("aegis_node_status_condition{condition=\"NodeNotReady\", node=\"%s\"} offset 1h", node))
 	if err != nil {
 		return err
@@ -64,10 +68,6 @@ func (n *notready) Execute(ctx context.Context, node string, status *prom.AegisN
 	if n.bridge.TicketManager.CheckTicketExists(ctx) {
 		n.bridge.TicketManager.AddConclusion(ctx, "node not ready over 1h")
 		n.bridge.TicketManager.DispatchTicketToSRE(ctx)
-	} else {
-		n.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeUnknown)
-		n.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
-		n.bridge.TicketManager.AdoptTicket(ctx)
 	}
 
 	return nil
