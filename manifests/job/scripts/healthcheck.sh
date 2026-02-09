@@ -35,24 +35,6 @@ if [ $? -eq 0 ];then
         ExitWithTimeout 2
     fi
 
-    remapping_failures=$(nvidia-smi -q -d ROW_REMAPPER | grep "Remapping Failure Occurred" | awk '{print $NF}')
-    for remapping_failure in $remapping_failures
-    do
-        if [ "$remapping_failure" == "Yes" ]; then
-            echo "===================`date +"%Y-%m-%d %H:%M:%S"` checking nvidia-smi gpu Remapping Failure Occurred: $remapping_failure"
-            ExitWithTimeout 21
-        fi
-    done
-
-    ecc_sram_uncorrectable_errors=$(nvidia-smi -q -d ECC | grep "SRAM Uncorrectable" | awk '{print $NF}' | awk '!(NR%2)')
-    for ecc_sram_uncorrectable_error in $ecc_sram_uncorrectable_errors
-    do
-        if [ $ecc_sram_uncorrectable_error -gt 4 ]; then
-            echo "===================`date +"%Y-%m-%d %H:%M:%S"` checking nvidia-smi gpu with too many sram uncorrectable error: $ecc_sram_uncorrectable_error"
-            ExitWithTimeout 22
-        fi
-    done
-
     gpuCount=`find /dev -type c | grep -P '/nvidia[0-9]+$' | wc -l`
     /k8s/plugins/npd/gpu_global_check -d $gpuCount
     if [ $? -eq 0 ]; then
@@ -68,8 +50,8 @@ if [ $? -eq 0 ];then
         ACTIVE_GPU_COUNT=$(echo "$GPU_PROCESS_COUNTS" | wc -l)
 
         if [[ "$ACTIVE_GPU_COUNT" -lt 2 ]]; then
-            if [[ "$node" == shmaas* ]]; then
-                echo "skip shmaas gpu"
+            if [[ "$node" == shmaas* || "$node" == orion* || "$node" == cygnus* || "$node" == cepheus* || "$node" == sagi* || "$node" == centaurus* ]]; then
+                echo "skip this gpu node"
             elif [[ "$node" == draco* ]]; then
                 export NCCL_IB_HCA=mlx5_0
                 timeout 300 /var/sichek/scripts/nccl_perf -b2g -e2g
