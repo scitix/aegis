@@ -27,6 +27,19 @@ func GetSOP(name string) (SOP, error) {
 	return nil, errors.New("Not Found")
 }
 
+// CordonSOP is implemented by SOPs that need to control cordon behavior.
+// SOPs that do not implement this interface are assumed to require cordon.
+type CordonSOP interface {
+	NeedCordon(ctx context.Context, node string, status *prom.AegisNodeStatus) bool
+}
+
+// PreemptableSOP is implemented by SOPs whose active SRE-owned ticket may be
+// deleted and superseded when a new SOP needs to run on the same node.
+// SOPs that do not implement this interface are not preemptable.
+type PreemptableSOP interface {
+	IsPreemptable() bool
+}
+
 type SOP interface {
 	CreateInstance(ctx context.Context, bridge *sop.ApiBridge) error
 

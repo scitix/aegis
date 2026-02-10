@@ -345,20 +345,6 @@ func (o *nodeOptions) catchLockAndRun(ctx context.Context) error {
 func (o *nodeOptions) run(ctx context.Context) error {
 	o.bridge.TicketManager.Reset(ctx)
 
-	if !o.bridge.TicketManager.CanDealWithTicket(ctx) && !o.claimTicket {
-		klog.Warning("aegis cannot deal with ticket and not allowed to claim ticket, give up.")
-		return nil
-	}
-
-	if !o.bridge.TicketManager.CanDealWithTicket(ctx) && o.claimTicket {
-		klog.Warning("aegis try to claim ticket.")
-		err := o.bridge.TicketManager.AdoptTicket(ctx)
-		if err != nil {
-			return fmt.Errorf("aegis failed to clain ticket: %s", err)
-		}
-		klog.Infof("aegis succeed claim ticket.")
-	}
-
 	// if disable selfhealing, dispatch ticket to sre.
 	if o.isDiableSelfHealing(ctx) {
 		klog.Infof("node has disabled selfhealing, will give up")
@@ -393,12 +379,44 @@ func (o *nodeOptions) run(ctx context.Context) error {
 		return nil
 	}
 
-	// gatekeeper
-	if status.Condition != selfhealing.NodeCordonCondition {
-		pass, reason := o.gatekeeper.Pass(ctx)
-		if !pass {
-			klog.Warningf("GateKeeper refuse workflow, reason: %s", reason)
+	if !o.bridge.TicketManager.CanDealWithTicket(ctx) {
+		existingCondition := o.bridge.TicketManager.GetTicketCondition(ctx)
+		existingSOP, err := nodesop.GetSOP(existingCondition)
+		canPreempt := err == nil
+		if canPreempt {
+			if ps, ok := existingSOP.(nodesop.PreemptableSOP); ok {
+				canPreempt = ps.IsPreemptable()
+			} else {
+				canPreempt = false
+			}
+		}
+
+		// Do not preempt if the incoming condition is also preemptable (same tier).
+		// Preemption is only allowed when the new condition is non-preemptable (i.e. higher severity).
+		if canPreempt {
+			newSOP, err := nodesop.GetSOP(status.Condition)
+			if err == nil {
+				if ps, ok := newSOP.(nodesop.PreemptableSOP); ok && ps.IsPreemptable() {
+					canPreempt = false
+					klog.Infof("both existing condition %q and new condition %q are preemptable (same tier), skip preemption", existingCondition, status.Condition)
+				}
+			}
+		}
+
+		if canPreempt {
+			klog.Infof("existing ticket condition %q is preemptable, deleting ticket and proceeding", existingCondition)
+			if err := o.bridge.TicketManager.DeleteTicket(ctx); err != nil {
+				klog.Warningf("failed to delete preemptable ticket: %s", err)
+			}
+		} else if !o.claimTicket {
+			klog.Warningf("cannot deal with ticket (condition: %q), give up", existingCondition)
 			return nil
+		} else {
+			klog.Warning("aegis try to claim ticket.")
+			if err := o.bridge.TicketManager.AdoptTicket(ctx); err != nil {
+				return fmt.Errorf("aegis failed to claim ticket: %s", err)
+			}
+			klog.Infof("aegis succeed claim ticket.")
 		}
 	}
 
@@ -416,6 +434,19 @@ func (o *nodeOptions) run(ctx context.Context) error {
 	if !sop.Evaluate(ctx, o.name, status) {
 		klog.Warningf("Evaluate sop failed, give up.")
 		return nil
+	}
+
+	// gatekeeper: skip if SOP does not need to cordon the node
+	needCordon := true
+	if cs, ok := sop.(nodesop.CordonSOP); ok {
+		needCordon = cs.NeedCordon(ctx, o.name, status)
+	}
+	if needCordon && status.Condition != selfhealing.NodeCordonCondition {
+		pass, reason := o.gatekeeper.Pass(ctx)
+		if !pass {
+			klog.Warningf("GateKeeper refuse workflow, reason: %s", reason)
+			return nil
+		}
 	}
 
 	if basic.CheckNodeIsMaster(ctx, o.bridge, o.name) {

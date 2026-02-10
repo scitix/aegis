@@ -80,6 +80,22 @@ func (t *OpTicketManager) CanDealWithTicket(ctx context.Context) bool {
 	return t.ticket == nil || t.ticket.Supervisor == t.user
 }
 
+func (t *OpTicketManager) GetTicketCondition(ctx context.Context) string {
+	if t.ticket == nil {
+		return ""
+	}
+	var description ticketmodel.TicketDescription
+	if err := description.Unmarshal([]byte(t.ticket.Description)); err != nil {
+		return ""
+	}
+	if m, ok := description.Cause.Condition.(map[interface{}]interface{}); ok {
+		if cond, ok := m["condition"].(string); ok {
+			return cond
+		}
+	}
+	return ""
+}
+
 func (t *OpTicketManager) CheckTicketExists(ctx context.Context) bool {
 	return t.ticket != nil
 }

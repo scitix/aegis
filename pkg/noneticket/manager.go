@@ -29,6 +29,10 @@ func (m *NoneTicketManager) CanDealWithTicket(ctx context.Context) bool {
 	return true
 }
 
+func (m *NoneTicketManager) GetTicketCondition(ctx context.Context) string {
+	return ""
+}
+
 func (m *NoneTicketManager) CheckTicketExists(ctx context.Context) bool {
 	return false
 }

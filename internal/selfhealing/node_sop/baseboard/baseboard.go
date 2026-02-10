@@ -31,6 +31,14 @@ func (g *baseboard) CreateInstance(ctx context.Context, bridge *sop.ApiBridge) e
 	return nil
 }
 
+func (g *baseboard) NeedCordon(ctx context.Context, node string, status *prom.AegisNodeStatus) bool {
+	return status.ID != "power"
+}
+
+func (g *baseboard) IsPreemptable() bool {
+	return true
+}
+
 func (g *baseboard) Evaluate(ctx context.Context, node string, status *prom.AegisNodeStatus) bool {
 	statuses, err := g.bridge.PromClient.GetNodeStatuses(ctx, node, status.Type)
 	if err != nil {
@@ -52,13 +60,19 @@ func (g *baseboard) Evaluate(ctx context.Context, node string, status *prom.Aegi
 func (g *baseboard) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	klog.Infof("aegis detect node %s %s type: %s %s", node, status.Condition, status.Type, status.ID)
 
-	customTitle := fmt.Sprintf("aegis detect node %s %s type: %s %s from bmc", node, status.Condition, status.Type, status.ID)
+	titleSuffix := ""
+	if status.ID == "power" {
+		titleSuffix = " [node not cordoned]"
+	}
+	customTitle := fmt.Sprintf("aegis detect node %s %s type: %s %s from bmc%s", node, status.Condition, status.Type, status.ID, titleSuffix)
 	g.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeBaseBoard, customTitle)
 	g.bridge.TicketManager.AdoptTicket(ctx)
 	g.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
 	g.bridge.TicketManager.AddWhySRE(ctx, "baseboard broken")
 
-	basic.CordonNode(ctx, g.bridge, node, status.Condition, "aegis")
+	if status.ID != "power" {
+		basic.CordonNode(ctx, g.bridge, node, status.Condition, "aegis")
+	}
 
 	// diagnose
 	subtype := ""
@@ -86,7 +100,7 @@ func (g *baseboard) Execute(ctx context.Context, node string, status *prom.Aegis
 		}
 	}
 
-	if !g.bridge.Aggressive {
+	if !g.bridge.Aggressive || status.ID == "power" {
 		g.bridge.TicketManager.DispatchTicketToSRE(ctx)
 		return nil
 	}

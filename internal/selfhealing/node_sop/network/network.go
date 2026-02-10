@@ -36,12 +36,19 @@ func (n *network) Evaluate(ctx context.Context, node string, status *prom.AegisN
 	return true
 }
 
-// try to cordon node and create a ticket
+func (n *network) NeedCordon(ctx context.Context, node string, status *prom.AegisNodeStatus) bool {
+	return false
+}
+
+func (n *network) IsPreemptable() bool {
+	return true
+}
+
+// create a ticket and dispatch to SRE without cordoning the node
 func (n *network) Execute(ctx context.Context, node string, status *prom.AegisNodeStatus) error {
 	switch status.Condition {
 	case networklinkdown_registry_name:
-		reason := fmt.Sprintf("aegis detect node %s %s device: %s slave device down count: %d", node, status.Condition, status.ID, status.Value)
-		basic.CordonNode(ctx, n.bridge, node, status.Condition, "aegis")
+		reason := fmt.Sprintf("aegis detect node %s %s device: %s slave device down count: %d [node not cordoned]", node, status.Condition, status.ID, status.Value)
 
 		n.bridge.TicketManager.CreateTicket(ctx, status, basic.HardwareTypeNetwork, reason)
 		n.bridge.TicketManager.AddRootCauseDescription(ctx, status.Condition, status)
