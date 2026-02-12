@@ -11,6 +11,7 @@ import (
 
 	"github.com/scitix/aegis/api/models"
 	deviceaware "github.com/scitix/aegis/internal/device_aware"
+	"github.com/scitix/aegis/internal/controller/nodepoller"
 	"github.com/scitix/aegis/internal/k8s"
 	"github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
 	"github.com/scitix/aegis/pkg/controller"
@@ -92,6 +93,10 @@ type Configuration struct {
 
 	// enable device aware
 	EnableDeviceAware bool
+
+	// enable node active polling
+	EnableNodePoller bool
+	NodePoller       nodepoller.PollerConfig
 }
 
 type AegisController struct {
@@ -130,6 +135,9 @@ type AegisController struct {
 
 	// device ware
 	deviceawareController *deviceaware.DeviceAwareController
+
+	// node active polling
+	nodeStatusPoller *nodepoller.NodeStatusPoller
 }
 
 func NewAegisController(cfg *Configuration) (*AegisController, error) {
@@ -207,12 +215,29 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 		return nil, fmt.Errorf("fail to create device aware controller: %v", err)
 	}
 
+	alertInterface := &controller.RealAlertController{
+		AlertClient: alertclientInterface,
+		AlertLister: aInformer.Lister(),
+	}
+
+	pollerCfg := cfg.NodePoller
+	pollerCfg.PublishNamespace = cfg.PublishNamespace
+	pollerCfg.SystemParas = cfg.SystemParas
+	pollerCfg.DefaultTTLAfterOpsSucceed = cfg.DefaultTTLAfterOpsSucceed
+	pollerCfg.DefaultTTLAfterOpsFailed = cfg.DefaultTTLAfterOpsFailed
+	pollerCfg.DefaultTTLAfterNoOps = cfg.DefaultTTLAfterNoOps
+	pollerCfg.Enabled = cfg.EnableNodePoller
+
+	nodePoller := nodepoller.NewNodeStatusPoller(
+		prometheus,
+		alertInterface,
+		nodeInformer.Lister(),
+		pollerCfg,
+	)
+
 	n := &AegisController{
-		cfg: cfg,
-		alertInterface: &controller.RealAlertController{
-			AlertClient: alertclientInterface,
-			AlertLister: aInformer.Lister(),
-		},
+		cfg:                    cfg,
+		alertInterface:         alertInterface,
 		sharedInformer:         sharedInformers,
 		alertInformer:          alertInformer,
 		workflowInformer:       workflowInformer,
@@ -228,6 +253,7 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 		nodecheckController:    nodecheckController,
 		clustercheckController: clustercheckController,
 		deviceawareController:  deviceawareController,
+		nodeStatusPoller:       nodePoller,
 	}
 	return n, nil
 }
@@ -284,9 +310,9 @@ func (c *AegisController) run(ctx context.Context) error {
 	c.sharedInformer.Start(ctx.Done())
 
 	var wg sync.WaitGroup
-	wg.Add(7)
+	wg.Add(8)
 
-	errChan := make(chan error, 7)
+	errChan := make(chan error, 8)
 
 	go func() {
 		defer wg.Done()
@@ -376,6 +402,18 @@ func (c *AegisController) run(ctx context.Context) error {
 
 		if err := c.deviceawareController.Run(ctx); err != nil {
 			errChan <- fmt.Errorf("error running device aware controller: %s", err.Error())
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		if !c.cfg.EnableNodePoller {
+			return
+		}
+
+		if err := c.nodeStatusPoller.Run(ctx, c.cfg.Client); err != nil {
+			errChan <- fmt.Errorf("error running node status poller: %s", err.Error())
 		}
 	}()
 
