@@ -52,6 +52,13 @@ func (m *NodeTicketManager) CanDealWithTicket(ctx context.Context) bool {
 	return m.ticket == nil || m.ticket.Supervisor == m.user
 }
 
+func (m *NodeTicketManager) GetTicketCondition(ctx context.Context) string {
+	if m.ticket == nil {
+		return ""
+	}
+	return m.ticket.Condition
+}
+
 func (m *NodeTicketManager) CheckTicketExists(ctx context.Context) bool {
 	return m.ticket != nil
 }

@@ -62,6 +62,22 @@ func (t *TicketManager) CanDealWithTicket(ctx context.Context) bool {
 	return t.ticket == nil || t.ticket.Supervisor == t.user
 }
 
+func (t *TicketManager) GetTicketCondition(ctx context.Context) string {
+	if t.ticket == nil {
+		return ""
+	}
+	var description ticketmodel.TicketDescription
+	if err := description.Unmarshal([]byte(t.ticket.Description)); err != nil {
+		return ""
+	}
+	if m, ok := description.Cause.Condition.(map[interface{}]interface{}); ok {
+		if cond, ok := m["condition"].(string); ok {
+			return cond
+		}
+	}
+	return ""
+}
+
 func (t *TicketManager) CheckTicketExists(ctx context.Context) bool {
 	return t.ticket != nil
 }

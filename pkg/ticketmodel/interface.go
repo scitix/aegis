@@ -10,6 +10,9 @@ type TicketManagerInterface interface {
 	// Core Ticket Manage
 	Reset(ctx context.Context) error
 	CanDealWithTicket(ctx context.Context) bool
+	// GetTicketCondition returns the condition string of the current active ticket,
+	// or an empty string if no ticket exists.
+	GetTicketCondition(ctx context.Context) string
 	CheckTicketExists(ctx context.Context) bool
 	CheckTicketSupervisor(ctx context.Context, user string) bool
 	CreateTicket(ctx context.Context, status *prom.AegisNodeStatus, hardwareType string, customTitle ...string) error
