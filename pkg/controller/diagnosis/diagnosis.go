@@ -32,6 +32,7 @@ type Diagnosis struct {
 	NoCache          bool
 	Explain          bool
 	AIProvider       string
+	PodLogConfig     *common.PodLogConfig
 	AnalyzerFactory  map[string]func(*diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer
 }
 
@@ -46,6 +47,7 @@ func NewDiagnosis(
 	noCache bool,
 	explain bool,
 	httpHeaders []string,
+	podLogConfig *common.PodLogConfig,
 ) (*Diagnosis, error) {
 	c := cache.New(10*time.Minute, 20*time.Minute)
 	d := &Diagnosis{
@@ -59,6 +61,7 @@ func NewDiagnosis(
 		Cache:            c,
 		NoCache:          noCache,
 		AIFactory:        &ai.DefaultFactory{},
+		PodLogConfig:     podLogConfig,
 	}
 
 	d.AnalyzerFactory = map[string]func(*diagnosisv1alpha1.AegisDiagnosis) common.IAnalyzer{
@@ -101,6 +104,7 @@ func (d *Diagnosis) RunDiagnosis(ctx context.Context, diagnosis *diagnosisv1alph
 		Name:           name,
 		CollectorImage: d.CollectorImage,
 		EnableProm:     d.EnableProm,
+		PodLogConfig:   d.PodLogConfig,
 		Owner:          diagnosis,
 	}
 

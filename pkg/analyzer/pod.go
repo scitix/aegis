@@ -95,7 +95,7 @@ func (p PodAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 	}
 
 	if enablePodLog && shouldFetchLog(pod) {
-		infos = append(infos, fetchContainerLogs(a.Context, a.Client, pod)...)
+		infos = append(infos, fetchContainerLogs(a.Context, a.Client, pod, a.PodLogConfig)...)
 	}
 
 	result := &common.Result{
@@ -129,7 +129,7 @@ func shouldFetchLog(pod *v1.Pod) bool {
 	return false
 }
 
-func fetchContainerLogs(ctx context.Context, client *kubernetes.Client, pod *v1.Pod) []common.Info {
+func fetchContainerLogs(ctx context.Context, client *kubernetes.Client, pod *v1.Pod, cfg *common.PodLogConfig) []common.Info {
 	var infos []common.Info
 
 	findStatus := func(name string, list []v1.ContainerStatus) *v1.ContainerStatus {
@@ -146,7 +146,7 @@ func fetchContainerLogs(ctx context.Context, client *kubernetes.Client, pod *v1.
 		if status == nil {
 			continue
 		}
-		if logs, err := getContainerLogs(ctx, client, pod, &c, status); err == nil && len(logs) > 0 {
+		if logs, err := getContainerLogs(ctx, client, pod, &c, status, cfg); err == nil && len(logs) > 0 {
 			infos = append(infos, common.Info{
 				Text: fmt.Sprintf("pod %s container %s logs:\n%s", pod.Name, c.Name, strings.Join(logs, "\n")),
 			})
@@ -271,7 +271,12 @@ func podEventWarningLegacy(podName string, event v1.Event) common.Warning {
 	}
 }
 
-func getContainerLogs(ctx context.Context, client *kubernetes.Client, pod *v1.Pod, container *v1.Container, containerStatus *v1.ContainerStatus) ([]string, error) {
+const (
+	defaultFetchLines     = 1000
+	defaultMaxOutputLines = 60
+)
+
+func getContainerLogs(ctx context.Context, client *kubernetes.Client, pod *v1.Pod, container *v1.Container, containerStatus *v1.ContainerStatus, cfg *common.PodLogConfig) ([]string, error) {
 	containerId := strings.TrimPrefix(strings.TrimPrefix(containerStatus.ContainerID, "docker://"), "containerd://")
 	reason := ""
 	if containerStatus.State.Waiting != nil {
@@ -280,28 +285,148 @@ func getContainerLogs(ctx context.Context, client *kubernetes.Client, pod *v1.Po
 		reason = containerStatus.State.Terminated.Reason
 	}
 
-	logs := make([]string, 0)
-	if reason != "Completed" && containerId != "" {
-		podLogOpts := v1.PodLogOptions{}
-		podLogOpts.Follow = true
-		podLogOpts.TailLines = &[]int64{int64(60)}[0]
-		podLogOpts.Container = container.Name
-		req := client.GetClient().CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
-		stream, err := req.Stream(ctx)
-		if err != nil {
-			klog.Errorf("Error list pod(%s/%s -c %s) log, err: %v, ignore", pod.Namespace, pod.Name, container.Name, err)
-		} else {
-			defer stream.Close()
+	if reason == "Completed" || containerId == "" {
+		return nil, nil
+	}
 
-			reader := bufio.NewScanner(stream)
-			for reader.Scan() {
-				line := reader.Text()
-				logs = append(logs, line)
-			}
+	fetchLines := int64(defaultFetchLines)
+	if cfg == nil {
+		// Legacy behaviour: fetch only 60 lines, no filtering.
+		fetchLines = int64(defaultMaxOutputLines)
+	} else if cfg.FetchLines > 0 {
+		fetchLines = int64(cfg.FetchLines)
+	}
+
+	podLogOpts := v1.PodLogOptions{
+		Follow:    true,
+		TailLines: &fetchLines,
+		Container: container.Name,
+	}
+	req := client.GetClient().CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
+	stream, err := req.Stream(ctx)
+	if err != nil {
+		klog.Errorf("Error list pod(%s/%s -c %s) log, err: %v, ignore", pod.Namespace, pod.Name, container.Name, err)
+		return nil, nil
+	}
+	defer stream.Close()
+
+	raw := make([]string, 0, int(fetchLines))
+	scanner := bufio.NewScanner(stream)
+	for scanner.Scan() {
+		raw = append(raw, scanner.Text())
+	}
+
+	if cfg == nil {
+		// Legacy path: return raw as-is (already capped at 60 by TailLines).
+		return raw, nil
+	}
+
+	return filterLogs(raw, cfg), nil
+}
+
+// filterLogs applies keyword filtering and fills up to MaxOutputLines.
+//
+// Algorithm:
+//  1. Collect indices of lines that contain any keyword (case-insensitive).
+//  2. Take the last MaxOutputLines of those (most recent keyword hits).
+//  3. If count < MaxOutputLines, supplement with the most recent non-keyword
+//     lines to fill up to MaxOutputLines; merge and sort by original position
+//     so the output preserves log chronological order.
+func filterLogs(raw []string, cfg *common.PodLogConfig) []string {
+	maxOut := defaultMaxOutputLines
+	if cfg.MaxOutputLines > 0 {
+		maxOut = cfg.MaxOutputLines
+	}
+
+	if len(raw) == 0 {
+		return raw
+	}
+
+	// No keywords → tail only.
+	if len(cfg.Keywords) == 0 {
+		return tailStrings(raw, maxOut)
+	}
+
+	// Step 1: find keyword-matched indices.
+	matchedIdx := make([]int, 0)
+	for i, line := range raw {
+		if lineMatchesAny(line, cfg.Keywords) {
+			matchedIdx = append(matchedIdx, i)
 		}
 	}
 
-	return logs, nil
+	// Step 2: take last maxOut keyword indices.
+	keywordIdx := tailInts(matchedIdx, maxOut)
+
+	// Step 3: supplement if needed.
+	deficit := maxOut - len(keywordIdx)
+	if deficit > 0 {
+		keywordSet := make(map[int]struct{}, len(keywordIdx))
+		for _, i := range keywordIdx {
+			keywordSet[i] = struct{}{}
+		}
+
+		nonKeywordIdx := make([]int, 0, len(raw)-len(keywordIdx))
+		for i := range raw {
+			if _, hit := keywordSet[i]; !hit {
+				nonKeywordIdx = append(nonKeywordIdx, i)
+			}
+		}
+		recentIdx := tailInts(nonKeywordIdx, deficit)
+
+		// Merge and sort by original position.
+		merged := make([]int, 0, len(keywordIdx)+len(recentIdx))
+		merged = append(merged, keywordIdx...)
+		merged = append(merged, recentIdx...)
+		sortInts(merged)
+		keywordIdx = merged
+	}
+
+	result := make([]string, 0, len(keywordIdx))
+	for _, i := range keywordIdx {
+		result = append(result, raw[i])
+	}
+	return result
+}
+
+func lineMatchesAny(line string, keywords []string) bool {
+	lower := strings.ToLower(line)
+	for _, kw := range keywords {
+		if strings.Contains(lower, strings.ToLower(kw)) {
+			return true
+		}
+	}
+	return false
+}
+
+// tailStrings returns the last n elements of s (or all if len(s) <= n).
+func tailStrings(s []string, n int) []string {
+	if len(s) <= n {
+		return s
+	}
+	return s[len(s)-n:]
+}
+
+// tailInts returns the last n elements of s (or all if len(s) <= n).
+func tailInts(s []int, n int) []int {
+	if len(s) <= n {
+		return s
+	}
+	return s[len(s)-n:]
+}
+
+// sortInts sorts a slice of ints in ascending order without importing sort.
+func sortInts(s []int) {
+	// insertion sort — slices here are ≤60 elements, so O(n²) is fine.
+	for i := 1; i < len(s); i++ {
+		key := s[i]
+		j := i - 1
+		for j >= 0 && s[j] > key {
+			s[j+1] = s[j]
+			j--
+		}
+		s[j+1] = key
+	}
 }
 
 func (p PodAnalyzer) Prompt(result *common.Result) (prompt string) {

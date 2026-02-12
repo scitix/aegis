@@ -13,6 +13,7 @@ import (
 	deviceaware "github.com/scitix/aegis/internal/device_aware"
 	"github.com/scitix/aegis/internal/controller/nodepoller"
 	"github.com/scitix/aegis/internal/k8s"
+	analyzercommon "github.com/scitix/aegis/pkg/analyzer/common"
 	"github.com/scitix/aegis/pkg/apis/alert/v1alpha1"
 	"github.com/scitix/aegis/pkg/controller"
 	"github.com/scitix/aegis/pkg/controller/alert"
@@ -93,6 +94,9 @@ type Configuration struct {
 
 	// enable device aware
 	EnableDeviceAware bool
+
+	// pod log keyword filtering for diagnosis; nil → legacy 60-line behaviour
+	PodLogConfig *analyzercommon.PodLogConfig
 
 	// enable node active polling
 	EnableNodePoller bool
@@ -201,7 +205,7 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 	// create template controller
 	templateController := template.NewController(cfg.Client, templateclientset, templateInformer.Aegis().V1alpha1().AegisOpsTemplates())
 	ruleController := rule.NewController(cfg.Client, ruleclientInterface, templateclientset, ruleInformer.Aegis().V1alpha1().AegisAlertOpsRules(), templateInformer.Aegis().V1alpha1().AegisOpsTemplates())
-	diagnosisController, err := diagnosis.NewController(cfg.Client, diagnosisclientset, diagnosisInformer.Aegis().V1alpha1().AegisDiagnosises(), 300*time.Second, cfg.AiBackend, cfg.DiagnosisLanguage, cfg.CollectorImage, cfg.EnableProm, prometheus, cfg.DiagnosisEnableExplain, !cfg.DiagnosisEnableCache)
+	diagnosisController, err := diagnosis.NewController(cfg.Client, diagnosisclientset, diagnosisInformer.Aegis().V1alpha1().AegisDiagnosises(), 300*time.Second, cfg.AiBackend, cfg.DiagnosisLanguage, cfg.CollectorImage, cfg.EnableProm, prometheus, cfg.DiagnosisEnableExplain, !cfg.DiagnosisEnableCache, cfg.PodLogConfig)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create diagnosis controller: %v", err)
 	}

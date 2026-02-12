@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
+	analyzercommon "github.com/scitix/aegis/pkg/analyzer/common"
 	"github.com/scitix/aegis/pkg/controller"
 	"github.com/scitix/aegis/pkg/prom"
 
@@ -118,6 +119,7 @@ func NewController(kubeclient kubernetes.Interface,
 	prometheus *prom.PromAPI,
 	explain bool,
 	noCache bool,
+	podLogConfig *analyzercommon.PodLogConfig,
 ) (*DiagnosisController, error) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartStructuredLogging(0)
@@ -149,7 +151,7 @@ func NewController(kubeclient kubernetes.Interface,
 		return nil, fmt.Errorf("failed to create PyTorchJob client: %w", err)
 	}
 
-	dignosis, err := NewDiagnosis(client, ptClient, backend, language, collectorImage, enableProm, prometheus, noCache, explain, nil)
+	dignosis, err := NewDiagnosis(client, ptClient, backend, language, collectorImage, enableProm, prometheus, noCache, explain, nil, podLogConfig)
 	if err != nil {
 		return nil, err
 	}
