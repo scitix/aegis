@@ -227,7 +227,6 @@ func (p PytorchJobAnalyzer) analyzePodWithExplain(
 
 func (p PytorchJobAnalyzer) analyzePytorchJobPods(a common.Analyzer, job *kubeflowv1.PyTorchJob, result *common.Result) error {
 	const maxDetailedAbnormalWorkers = 5
-	const maxRunningSummaryWorkers = 3
 
 	labelPrefix := "training.kubeflow.org/"
 	labelSelector := fmt.Sprintf("%sjob-name=%s", labelPrefix, job.Name)
@@ -302,17 +301,10 @@ func (p PytorchJobAnalyzer) analyzePytorchJobPods(a common.Analyzer, job *kubefl
 		idx++
 	}
 
-	// Normal workers: brief text only, no LLM needed.
-	normalLimit := maxRunningSummaryWorkers
-	if len(abnormal) == 0 {
-		normalLimit = len(normal)
-	}
-	for i, wp := range normal {
-		if i >= normalLimit {
-			break
-		}
+	// Normal workers: single summary line.
+	if len(normal) > 0 {
 		workerLines = append(workerLines,
-			fmt.Sprintf("Worker Pod %s: Running and Ready.", wp.Name))
+			fmt.Sprintf("Other %d worker pod(s) are Running and Ready.", len(normal)))
 	}
 
 	if len(workerLines) > 0 {
