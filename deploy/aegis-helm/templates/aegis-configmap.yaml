@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aegis
+  namespace: {{ .Release.Namespace }}
+data:
+  config.yaml: |
+    alert:
+      enable: true
+      publish-namespace: {{ .Values.aegis.alert.publishNamespace }}
+      ttl-after-succeed: {{ .Values.aegis.alert.ttlAfterSucceed }}
+      ttl-after-failed: {{ .Values.aegis.alert.ttlAfterFailed }}
+      ttl-after-noops: {{ .Values.aegis.alert.ttlAfterNoOps }}
+      system-parameters:
+        cluster: {{ .Values.cluster }}
+
+    healthcheck:
+      enable: {{ .Values.aegis.healthcheck.enable }}
+
+    diagnosis:
+      enable: {{ .Values.aegis.diagnosis.enable }}
+      explain: {{ .Values.aegis.diagnosis.explain }}
+      cache: {{ .Values.aegis.diagnosis.cache }}
+      language: {{ .Values.aegis.diagnosis.language }}
+      collector-image: {{ .Values.registry }}/{{ .Values.aegis.diagnosis.collector.repository }}:{{ .Values.aegis.diagnosis.collector.tag }}
+
+    device-aware:
+      enable: {{ .Values.aegis.deviceAware.enable }}
+
+    node-poller:
+      enable: {{ .Values.aegis.nodePoller.enable }}
+      priority-configmap: {{ .Values.aegis.nodePoller.priorityConfigmap }}
+      priority-namespace: {{ .Values.aegis.nodePoller.priorityNamespace }}
+
+    {{- if .Values.ai.enabled }}
+    ai:
+      providers:
+      - name: "{{ .Values.ai.provider }}"
+        model: "{{ .Values.ai.model }}"
+        password: "{{ .Values.ai.password }}"
+        baseUrl: "{{ .Values.ai.baseUrl }}"
+        temperature: {{ .Values.ai.temperature }}
+        topp: {{ .Values.ai.topp }}
+        topk: {{ .Values.ai.topk }}
+        maxtokens: {{ .Values.ai.maxtokens }}
+    {{- end }}

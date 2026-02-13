@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    component: aegis
+  name: aegis
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+  - interval: 30s
+    path: /metrics
+    port: http
+    scheme: http
+    tlsConfig:
+      insecureSkipVerify: true
+  selector:
+    matchLabels:
+      component: aegis

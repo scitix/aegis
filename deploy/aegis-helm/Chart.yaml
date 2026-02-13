@@ -1,0 +1,17 @@
+apiVersion: v2
+name: aegis
+description: AIOps framework for Kubernetes self-healing and diagnostics.
+type: application
+version: 3.0.0
+appVersion: v3.0.0-6c7698e
+kubeVersion: ">=1.19.0-0"
+keywords:
+- aiops
+- kubernetes
+- self-healing
+- observability
+home: https://github.com/scitix/aegis
+sources:
+- https://github.com/scitix/aegis
+maintainers:
+- name: scitix

@@ -1,0 +1,21 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: alert-rules
+  name: todo-nodecheck-rulers
+  namespace: {{ .Release.Namespace }}
+spec:
+  groups:
+  - name: todo-nodecheck-rulers
+    rules:
+    - alert: WaitingNodeCheck
+      expr: kube_node_spec_taint{key="scitix.ai/nodecheck"} > 0
+      for: 1m
+      annotations:
+        summary: WaitingNodeCheck
+        description: "Node {{`{{ $labels.node }}`}} is in waiting aegis node check status."
+      labels:
+        severity: critical
+        kind: Node

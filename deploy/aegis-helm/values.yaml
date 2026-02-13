@@ -1,0 +1,88 @@
+registry: registry-ap-southeast.scitix.ai
+
+cluster: arise
+
+ingress:
+  enabled: true
+  host: console.scitix.ai
+  path: /scitix/arise/aegis
+
+aegis:
+  image:
+    repository: k8s/aegis
+    tag: v3.0.0-6c7698e
+
+  replicas: 2
+
+  alert:
+    publishNamespace: monitoring
+    ttlAfterSucceed: 86400
+    ttlAfterFailed: 259200
+    ttlAfterNoOps: 86400
+
+  healthcheck:
+    enable: true
+
+  diagnosis:
+    enable: true
+    explain: true
+    cache: true
+    language: chinese
+    collector:
+      repository: k8s/aegis-collector
+      tag: v1.0.1
+
+  deviceAware:
+    enable: false
+
+  nodePoller:
+    enable: false
+    priorityConfigmap: aegis-priority
+    priorityNamespace: monitoring
+
+  # Tolerations for the aegis pod.
+  # Example:
+  # tolerations:
+  # - key: node-role.kubernetes.io/control-plane
+  #   effect: NoSchedule
+  #   operator: Exists
+  tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    effect: NoSchedule
+    operator: Exists
+
+  # Node selector for the aegis pod.
+  # Example:
+  # nodeSelector:
+  #   node-role.kubernetes.io/control-plane: ""
+  nodeSelector: {}
+
+  # Affinity rules for the aegis pod.
+  # The podAntiAffinity below prevents two aegis pods from landing on the
+  # same topology key and is kept as the default.
+  # Override the entire block to customise scheduling.
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: component
+            operator: In
+            values:
+            - aegis
+        topologyKey: kubernetes.io/hostname
+
+prometheus:
+  endpoint:
+  token:
+
+ai:
+  enabled: true
+  provider: openai
+  model:
+  password:
+  baseUrl:
+  temperature: 0.7
+  topp: 0.5
+  topk: 50
+  maxtokens: 32768

@@ -1,0 +1,80 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.2
+  creationTimestamp: null
+  name: aegisopstemplates.aegis.io
+spec:
+  group: aegis.io
+  names:
+    kind: AegisOpsTemplate
+    listKind: AegisOpsTemplateList
+    plural: aegisopstemplates
+    singular: aegisopstemplate
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: AegisOpsTemplate describe a ops template for alert
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AegisOpsTemplateSpec defines the ops template content.
+            properties:
+              generateName:
+                type: string
+              manifest:
+                type: string
+              namespace:
+                type: string
+            type: object
+          status:
+            description: AegisOpsTemplateStatus defines the template status.
+            properties:
+              executeStatus:
+                properties:
+                  failed:
+                    format: int32
+                    type: integer
+                  succeeded:
+                    format: int32
+                    type: integer
+                type: object
+              status:
+                description: Status is the template status.
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    additionalPrinterColumns:
+    - name: Status
+      type: string
+      jsonPath: .status.status
+    - name: ExecuteSucceed
+      type: integer
+      jsonPath: .status.executeStatus.succeeded
+    - name: ExecuteFailed
+      type: integer
+      jsonPath: .status.executeStatus.failed
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
