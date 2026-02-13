@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: aegis
+  name: aegis
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.aegis.replicas }}
+  selector:
+    matchLabels:
+      component: aegis
+  template:
+    metadata:
+      labels:
+        component: aegis
+    spec:
+      {{- with .Values.aegis.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.aegis.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.aegis.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - args:
+        - --config=/aegis/config/config.yaml
+        - --http-port=8080
+        - --enable-leader-election=true
+        - --election-id=aegis
+        - --prometheus.endpoint={{ .Values.prometheus.endpoint }}
+        - --prometheus.token={{ .Values.prometheus.token }}
+        {{- if .Values.ingress.enabled }}
+        - --web.route-prefix={{ .Values.ingress.path }}
+        {{- else }}
+        - --web.route-prefix=/
+        {{- end }}
+        - --v=4
+        command:
+        - /aegis/aegis
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: {{ .Values.registry }}/{{ .Values.aegis.image.repository }}:{{ .Values.aegis.image.tag }}
+        imagePullPolicy: Always
+        name: aegis
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        securityContext:
+          privileged: false
+        volumeMounts:
+        - mountPath: /aegis/config/
+          name: config
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      serviceAccount: aegis
+      serviceAccountName: aegis
+      volumes:
+      - configMap:
+          defaultMode: 511
+          name: aegis
+        name: config

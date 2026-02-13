@@ -3,6 +3,7 @@ package analysis
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"sort"
 	"strconv"
@@ -31,6 +32,35 @@ type NodeStatusAnalysisResult struct {
 
 var nodeOperateConfig map[string]Priority = make(map[string]Priority)
 
+// ParsePriorityConfig parses priority config content (one "condition:priority" per line)
+// and returns the resulting map. Lines starting with # are ignored.
+func ParsePriorityConfig(content string) (map[string]Priority, error) {
+	result := make(map[string]Priority)
+	scanner := bufio.NewScanner(strings.NewReader(content))
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		strs := strings.Split(line, ":")
+		if len(strs) != 2 {
+			return nil, fmt.Errorf("Invalid config format: %s", line)
+		}
+
+		pri, err := strconv.Atoi(strings.TrimSpace(strs[1]))
+		if err != nil {
+			return nil, fmt.Errorf("Error conv string %s to int: %s", strs[1], err)
+		}
+		result[strings.TrimSpace(strs[0])] = Priority(pri)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func InitAnalysisConfig(config string) error {
 	file, err := os.Open(config)
 	if err != nil {
@@ -38,28 +68,17 @@ func InitAnalysisConfig(config string) error {
 	}
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		strs := strings.Split(line, ":")
-		if len(strs) != 2 {
-			return fmt.Errorf("Invalid config format: %s", line)
-		}
-
-		pri, err := strconv.Atoi(strs[1])
-		if err != nil {
-			return fmt.Errorf("Error conv string %s to int: %s", strs[1], err)
-		}
-		nodeOperateConfig[strs[0]] = Priority(pri)
+	content, err := io.ReadAll(file)
+	if err != nil {
+		return err
 	}
 
-	if err := scanner.Err(); err != nil {
+	parsed, err := ParsePriorityConfig(string(content))
+	if err != nil {
 		return err
+	}
+	for k, v := range parsed {
+		nodeOperateConfig[k] = v
 	}
 	return nil
 }

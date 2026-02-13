@@ -1,0 +1,49 @@
+apiVersion: aegis.io/v1alpha1
+kind: AegisAlertOpsRule
+metadata:
+  name: todo-nodecheck
+  namespace: {{ .Release.Namespace }}
+spec:
+  alertConditions:
+  - status: Firing
+    type: WaitingNodeCheck
+  opsTemplate:
+    apiVersion: aegis.io/v1alpha1
+    kind: AegisOpsTemplate
+    name: todo-nodecheck
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisOpsTemplate
+metadata:
+  name: todo-nodecheck
+  namespace: {{ .Release.Namespace }}
+spec:
+  manifest: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: Workflow
+    spec:
+      ttlStrategy:
+        secondsAfterCompletion: 259200
+        secondsAfterSuccess: 259200
+        secondsAfterFailure: 259200
+      serviceAccountName: aegis-workflow
+      entrypoint: todo-nodecheck-ops
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      templates:
+      - name: todo-nodecheck-ops
+        container:
+          image: {{ .Values.registry }}/k8s/aegis:nodecheck-ops
+          imagePullPolicy: Always
+          command:
+          - /bin/sh
+          - -c
+          - |
+            set -x
+
+            export node={{ "{{ .InvolvedObjectNode }}" }}
+            kubectl taint nodes $node scitix.ai/nodecheck-
+            kubectl cordon $node

@@ -1,0 +1,228 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.2
+  creationTimestamp: null
+  name: aegisalerts.aegis.io
+spec:
+  group: aegis.io
+  names:
+    kind: AegisAlert
+    listKind: AegisAlertList
+    plural: aegisalerts
+    singular: aegisalert
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: AegisAlert describe a alert event
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AegisAlertSpec defines the alert details.
+            properties:
+              detials:
+                additionalProperties:
+                  type: string
+                type: object
+              involvedObject:
+                properties:
+                  kind:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  node:
+                    type: string
+                type: object
+              selector:
+                description: A label selector is a label query over a set of resources.
+                  The result of matchLabels and matchExpressions are ANDed. An empty
+                  label selector matches all objects. A null label selector matches
+                  no objects.
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that
+                        contains values, a key, and an operator that relates the key
+                        and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to
+                            a set of values. Valid operators are In, NotIn, Exists
+                            and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the
+                            operator is In or NotIn, the values array must be non-empty.
+                            If the operator is Exists or DoesNotExist, the values
+                            array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single
+                      {key,value} in the matchLabels map is equivalent to an element
+                      of matchExpressions, whose key field is "key", the operator
+                      is "In", and the values array contains only "value". The requirements
+                      are ANDed.
+                    type: object
+                type: object
+              severity:
+                type: string
+              source:
+                description: Type is the category of alert
+                type: string
+              status:
+                type: string
+              ttlStrategy:
+                description: TTLStrategy limits the lifetime of a alert
+                properties:
+                  secondsAfterCompletion:
+                    description: SecondsAfterCompletion is the number of seconds to
+                      live after completion
+                    format: int32
+                    type: integer
+                  secondsAfterFailure:
+                    description: SecondsAfterFailure is the number of seconds to live
+                      after failure
+                    format: int32
+                    type: integer
+                  secondsAfterNoOps:
+                    description: SecondsAfterNoOps is the number of seconds to live
+                      with no ops
+                    format: int32
+                    type: integer
+                  secondsAfterSuccess:
+                    description: SecondsAfterSuccess is the number of seconds to live
+                      after success
+                    format: int32
+                    type: integer
+                type: object
+              type:
+                type: string
+            type: object
+          status:
+            description: AegisAlertStatus defines the alert status.
+            properties:
+              conditions:
+                description: The latest available observations of an object's current
+                  state
+                items:
+                  properties:
+                    lastProbeTime:
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
+              count:
+                format: int32
+                type: integer
+              opsStatus:
+                description: OpsStatus is the alert ops status.
+                properties:
+                  active:
+                    format: int32
+                    type: integer
+                  alertOpsStatus:
+                    type: string
+                  completionTime:
+                    format: date-time
+                    type: string
+                  failed:
+                    format: int32
+                    type: integer
+                  startTime:
+                    format: date-time
+                    type: string
+                  succeeded:
+                    format: int32
+                    type: integer
+                  total:
+                    format: int32
+                    type: integer
+                  triggerStatus:
+                    type: string
+                type: object
+              startTime:
+                format: date-time
+                type: string
+              status:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    additionalPrinterColumns:
+    - name: Type
+      type: string
+      jsonPath: .spec.type
+    - name: ObjectKind
+      type: string
+      jsonPath: .spec.involvedObject.kind
+    - name: ObjectName
+      type: string
+      jsonPath: .spec.involvedObject.name
+    - name: Status
+      type: string
+      jsonPath: .status.status
+    - name: Count
+      type: integer
+      jsonPath: .status.count
+    - name: TriggerStatus
+      type: string
+      jsonPath: .status.opsStatus.triggerStatus
+    - name: OpsStatus
+      type: string
+      jsonPath: .status.opsStatus.alertOpsStatus
+    - name: Age
+      type: date
+      jsonPath: .status.startTime
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
