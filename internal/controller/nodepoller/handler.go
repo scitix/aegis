@@ -2,6 +2,7 @@ package nodepoller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -19,7 +20,6 @@ const (
 
 	alertTypeNodeCriticalIssue            = "NodeCriticalIssue"
 	alertTypeNodeCriticalIssueDisappeared = "NodeCriticalIssueDisappeared"
-	alertTypeNodeCheck                    = "NodeCheck"
 )
 
 // onCriticalRisingEdge creates a NodeCriticalIssue AegisAlert for the given node.
@@ -45,19 +45,18 @@ func (p *NodeStatusPoller) onCordonOnlyRisingEdge(ctx context.Context, node stri
 	return id, nil
 }
 
-// onNodeCheckTaintAppear creates a NodeCheck AegisAlert triggered by nodecheck taint.
-func (p *NodeStatusPoller) onNodeCheckTaintAppear(ctx context.Context, node string) error {
-	details := map[string]string{"node": node}
-	id, err := p.createAlert(ctx, node, alertTypeNodeCheck, details)
-	if err != nil {
-		return err
-	}
-	klog.Infof("nodepoller: created NodeCheck alert (id=%s) for node %s (nodecheck taint)", id, node)
-	return nil
-}
-
-// createAlert builds and creates an AegisAlert CRD. Returns the uuid used as alert identifier.
+// createAlert creates a new AegisAlert, or increments the count of an existing
+// in-progress alert of the same node+type. Returns the uuid of the alert.
 func (p *NodeStatusPoller) createAlert(ctx context.Context, node, alertType string, details map[string]string) (string, error) {
+	if active, err := p.findActiveAlert(ctx, node, alertType); err == nil && active != nil {
+		if err := p.incurAlertCount(ctx, active); err != nil {
+			klog.Errorf("nodepoller: failed to increment count for active alert %s (node=%s type=%s): %v", active.Name, node, alertType, err)
+			return "", err
+		}
+		klog.Infof("nodepoller: active alert %s found for node %s type %s, incremented count to %d", active.Name, node, alertType, active.Status.Count+1)
+		return active.Labels["uuid"], nil
+	}
+
 	id := uuid.New().String()
 	lbls := map[string]string{
 		"alert-source-type": alertSourcePoller,
@@ -118,6 +117,54 @@ func (p *NodeStatusPoller) alertExists(ctx context.Context, alertUUID string) bo
 		return false
 	}
 	return len(existing) > 0
+}
+
+// findActiveAlert returns the first in-progress AegisAlert for the given
+// node+alertType, or nil if none exists. An alert is considered in-progress
+// when its OpsStatus is neither Succeeded nor Failed.
+func (p *NodeStatusPoller) findActiveAlert(ctx context.Context, node, alertType string) (*alertv1alpha1.AegisAlert, error) {
+	nodeReq, err := labels.NewRequirement("node", selection.Equals, []string{node})
+	if err != nil {
+		return nil, err
+	}
+	typeReq, err := labels.NewRequirement("alert-type", selection.Equals, []string{alertType})
+	if err != nil {
+		return nil, err
+	}
+	sel := labels.NewSelector().Add(*nodeReq, *typeReq)
+
+	existing, err := p.alertInterface.ListAlertWithLabelSelector(ctx, p.cfg.PublishNamespace, sel)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, a := range existing {
+		ops := a.Status.OpsStatus.Status
+		if ops != alertv1alpha1.OpsStatusSucceeded && ops != alertv1alpha1.OpsStatusFailed {
+			return a, nil
+		}
+	}
+	return nil, nil
+}
+
+type patchCountValue struct {
+	Op    string `json:"op"`
+	Path  string `json:"path"`
+	Value int32  `json:"value"`
+}
+
+// incurAlertCount increments the status.count of an existing AegisAlert.
+func (p *NodeStatusPoller) incurAlertCount(ctx context.Context, alert *alertv1alpha1.AegisAlert) error {
+	patches := []patchCountValue{{
+		Op:    "replace",
+		Path:  "/status/count",
+		Value: alert.Status.Count + 1,
+	}}
+	patchBytes, err := json.Marshal(patches)
+	if err != nil {
+		return err
+	}
+	return p.alertInterface.PatchAlert(ctx, p.cfg.PublishNamespace, alert.Name, patchBytes)
 }
 
 func buildDetails(node string, statuses []prom.AegisNodeStatus) map[string]string {

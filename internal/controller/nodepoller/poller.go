@@ -77,7 +77,8 @@ type NodeStatusPoller struct {
 	alertInterface pkgcontroller.AlertControllerInterface
 
 	criticalCache   map[string]*criticalEntry // node → entry
-	cordonOnlyCache map[string]struct{}        // node → present
+	cordonOnlyCache map[string]struct{}        // node → present (Prometheus-driven)
+	nodecheckCache  map[string]struct{}        // node → present (nodecheck-taint-driven)
 	cacheLock       sync.RWMutex
 
 	nodeLister corelisters.NodeLister
@@ -99,6 +100,7 @@ func NewNodeStatusPoller(
 		alertInterface:  alertInterface,
 		criticalCache:   make(map[string]*criticalEntry),
 		cordonOnlyCache: make(map[string]struct{}),
+		nodecheckCache:  make(map[string]struct{}),
 		nodeLister:      nodeLister,
 	}
 }
@@ -228,12 +230,18 @@ func (p *NodeStatusPoller) criticalResync(ctx context.Context) {
 	}
 }
 
-// cordonResync re-triggers NodeCriticalIssueDisappeared for all cordon-only nodes.
+// cordonResync re-triggers NodeCriticalIssueDisappeared for all cordon-only
+// nodes (both Prometheus-driven and nodecheck-taint-driven).
 func (p *NodeStatusPoller) cordonResync(ctx context.Context) {
 	p.cacheLock.RLock()
-	nodes := make([]string, 0, len(p.cordonOnlyCache))
+	nodes := make([]string, 0, len(p.cordonOnlyCache)+len(p.nodecheckCache))
 	for node := range p.cordonOnlyCache {
 		nodes = append(nodes, node)
+	}
+	for node := range p.nodecheckCache {
+		if _, alreadyAdded := p.cordonOnlyCache[node]; !alreadyAdded {
+			nodes = append(nodes, node)
+		}
 	}
 	p.cacheLock.RUnlock()
 
@@ -293,10 +301,24 @@ func (p *NodeStatusPoller) checkNodecheckTaint(ctx context.Context, node *corev1
 	wasPresent := seenTaints[node.Name]
 	if hasTaint && !wasPresent {
 		seenTaints[node.Name] = true
-		if err := p.onNodeCheckTaintAppear(ctx, node.Name); err != nil {
-			klog.Errorf("nodepoller: failed to create NodeCheck alert for node %s: %v", node.Name, err)
+
+		// Only act when aegis.io/disable label is absent.
+		if node.Labels["aegis.io/disable"] == "true" {
+			return
+		}
+
+		p.cacheLock.Lock()
+		p.nodecheckCache[node.Name] = struct{}{}
+		p.cacheLock.Unlock()
+
+		if _, err := p.onCordonOnlyRisingEdge(ctx, node.Name); err != nil {
+			klog.Errorf("nodepoller: failed to create NodeCriticalIssueDisappeared alert for node %s: %v", node.Name, err)
 		}
 	} else if !hasTaint {
 		seenTaints[node.Name] = false
+
+		p.cacheLock.Lock()
+		delete(p.nodecheckCache, node.Name)
+		p.cacheLock.Unlock()
 	}
 }
