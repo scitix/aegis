@@ -19,6 +19,10 @@ type PromptData struct {
 	LogInfo   string
 	Metadata  map[string]string // 扩展
 
+	// Keywords is a human-readable list of log filter keywords, e.g. "NCCL, CUDA, OOM".
+	// Empty string means no keyword filtering was applied.
+	Keywords string
+
 	Language string
 	RawAlert string
 }
