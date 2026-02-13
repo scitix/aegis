@@ -157,7 +157,7 @@ func parse() (bool, *controller.Configuration, error) {
 	flags.String("diagnosis.collector-image", "registry-ap-southeast.scitix.ai/k8s/aegis-collector:v1.0.0", "Container image of the Collector Pod")
 	flags.Bool("diagnosis.enablePrometheus", true, "Whether use the prometheus to get events")
 
-	flags.String("ai", "openai", "backend AI Provider")
+	flags.String("ai.provider", "openai", "backend AI provider name")
 
 	flags.Bool("device-aware.enable", false, "enable device aware")
 
@@ -211,7 +211,7 @@ func parse() (bool, *controller.Configuration, error) {
 		DiagnosisLanguage:         viper.GetString("diagnosis.language"),
 		CollectorImage:            viper.GetString("diagnosis.collector-image"),
 		EnableProm:                viper.GetBool("diagnosis.enablePrometheus"),
-		AiBackend:                 viper.GetString("ai"),
+		AiBackend:                 viper.GetString("ai.provider"),
 		EnableDeviceAware:         viper.GetBool("device-aware.enable"),
 		EnableNodePoller:          viper.GetBool("node-poller.enable"),
 		NodePoller: nodepoller.PollerConfig{
