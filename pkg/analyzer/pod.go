@@ -98,14 +98,20 @@ func (p PodAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 		infos = append(infos, fetchContainerLogs(a.Context, a.Client, pod, a.PodLogConfig)...)
 	}
 
+	metadata := map[string]string{}
+	if a.PodLogConfig != nil && len(a.PodLogConfig.Keywords) > 0 {
+		metadata["pod_log_keywords"] = strings.Join(a.PodLogConfig.Keywords, ",")
+	}
+
 	result := &common.Result{
 		Result: kcommon.Result{
 			Kind:  kind,
 			Name:  pod.Name,
 			Error: failures,
 		},
-		Warning: warnings,
-		Info:    infos,
+		Warning:  warnings,
+		Info:     infos,
+		Metadata: metadata,
 	}
 
 	parent, found := util.GetParent(a.Client, pod.ObjectMeta)
@@ -449,10 +455,16 @@ func (p PodAnalyzer) Prompt(result *common.Result) (prompt string) {
 		logInfo += e.Text + "\n"
 	}
 
+	keywords := ""
+	if kw, ok := result.Metadata["pod_log_keywords"]; ok {
+		keywords = kw
+	}
+
 	data := ai.PromptData{
 		ErrorInfo: errorInfo,
 		EventInfo: eventInfo,
 		LogInfo:   logInfo,
+		Keywords:  keywords,
 	}
 
 	prompt, err := ai.GetRenderedPrompt("Pod", data)
