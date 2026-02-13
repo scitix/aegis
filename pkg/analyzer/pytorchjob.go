@@ -2,8 +2,8 @@ package analyzer
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/k8sgpt-ai/k8sgpt/pkg/analyzer"
@@ -19,9 +19,33 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// condPriority defines the order in which job conditions are evaluated.
+// The first condition with Status=True in this list wins.
+var condPriority = []kubeflowv1.JobConditionType{
+	kubeflowv1.JobFailed,
+	kubeflowv1.JobRestarting,
+	kubeflowv1.JobSucceeded,
+	kubeflowv1.JobSuspended,
+	kubeflowv1.JobRunning,
+	kubeflowv1.JobCreated,
+}
+
+// findActiveCondition returns the highest-priority condition whose Status is True,
+// or nil if none is active.
+func findActiveCondition(conds []kubeflowv1.JobCondition) *kubeflowv1.JobCondition {
+	for _, pt := range condPriority {
+		for i := range conds {
+			if conds[i].Type == pt && conds[i].Status == v1.ConditionTrue {
+				return &conds[i]
+			}
+		}
+	}
+	return nil
+}
+
 type PytorchJobAnalyzer struct {
-	prometheus   *prom.PromAPI
-	client       kfclientset.Interface
+	prometheus *prom.PromAPI
+	client     kfclientset.Interface
 }
 
 func NewPytorchJobAnalyzer(prometheus *prom.PromAPI, client kfclientset.Interface) PytorchJobAnalyzer {
@@ -54,34 +78,43 @@ func (p PytorchJobAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 		},
 	}
 
-	// === Job Condition(failures result.Error) 分析 ===
-	conds := job.Status.Conditions
+	// === Job Condition 分析 ===
 	skipPodAnalysis := false
-
-	if len(conds) > 0 {
-		last := conds[len(conds)-1]
-		result.Metadata["JobStatus"] = string(last.Type)
-		switch {
-		case last.Type == "Succeeded" && last.Status == "True":
+	active := findActiveCondition(job.Status.Conditions)
+	if active == nil {
+		result.Metadata["JobStatus"] = "Unknown"
+		result.Warning = append(result.Warning, common.Warning{
+			Text: "Job has no active condition",
+		})
+	} else {
+		result.Metadata["JobStatus"] = string(active.Type)
+		switch active.Type {
+		case kubeflowv1.JobSucceeded:
 			result.Info = append(result.Info, common.Info{
-				Text: "Job completed successfully. No diagnosis needed.",
+				Text: "Job completed successfully.",
 			})
 			skipPodAnalysis = true
-		case last.Type == "Failed" && last.Status == "True":
-			msg := fmt.Sprintf("Job failed: %s - %s", last.Reason, last.Message)
-			result.Error = append(result.Error, kcommon.Failure{Text: msg})
-		case (last.Type == "Running" || last.Type == "Created") && last.Status == "True":
-			// Running / Created → Info
-			msg := fmt.Sprintf("Job is %s. Pods are still running or initializing.", last.Type)
-			result.Info = append(result.Info, common.Info{Text: msg})
-		default:
-			// 其他状态 → Warning
-			msg := fmt.Sprintf("Job is in unexpected state: %s - %s/%s", last.Type, last.Reason, last.Message)
-			result.Warning = append(result.Warning, common.Warning{Text: msg})
+		case kubeflowv1.JobFailed:
+			result.Error = append(result.Error, kcommon.Failure{
+				Text: fmt.Sprintf("Job failed: %s - %s", active.Reason, active.Message),
+			})
+		case kubeflowv1.JobRestarting:
+			result.Warning = append(result.Warning, common.Warning{
+				Text: fmt.Sprintf("Job is restarting: %s - %s", active.Reason, active.Message),
+			})
+		case kubeflowv1.JobSuspended:
+			result.Info = append(result.Info, common.Info{
+				Text: fmt.Sprintf("Job is suspended: %s", active.Reason),
+			})
+			skipPodAnalysis = true
+		case kubeflowv1.JobRunning, kubeflowv1.JobCreated:
+			result.Info = append(result.Info, common.Info{
+				Text: fmt.Sprintf("Job is %s.", active.Type),
+			})
 		}
 	}
 
-	// === Job Events(warnings result.Warnings) 分析 ===
+	// === Job Events 分析 ===
 	rawEvents, err := FetchEvents(a.Context, a.EnableProm, p.prometheus, a.Client, "PyTorchJob", a.Namespace, job.Name, "Warning", "")
 	if err != nil {
 		klog.Warningf("fetch pytorchjob events failed: %v", err)
@@ -97,7 +130,7 @@ func (p PytorchJobAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 		}
 	}
 
-	// === Replica、spec 状态采集 ===
+	// === Replica spec 采集 ===
 	result.Metadata["MasterExpected"] = "0"
 	result.Metadata["WorkerExpected"] = "0"
 	specs := job.Spec.PyTorchReplicaSpecs
@@ -108,10 +141,9 @@ func (p PytorchJobAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 		result.Metadata["WorkerExpected"] = fmt.Sprintf("%d", *workerSpec.Replicas)
 	}
 
-	// === 只有非 Succeeded 才下沉 Pod 分析 ===
+	// === 只有非 Succeeded/Suspended 才下沉 Pod 分析 ===
 	if !skipPodAnalysis {
-		err := p.analyzePytorchJobPods(a, job, result)
-		if err != nil {
+		if err := p.analyzePytorchJobPods(a, job, result); err != nil {
 			klog.Warningf("analyze pods for %s/%s failed: %v", a.Namespace, job.Name, err)
 		}
 	}
@@ -119,7 +151,84 @@ func (p PytorchJobAnalyzer) Analyze(a common.Analyzer) (*common.Result, error) {
 	return result, nil
 }
 
+// categorizeWorkers splits worker pods into abnormal and normal buckets.
+// Abnormal: Failed, Pending, Unknown, or Running but not Ready.
+func categorizeWorkers(workerPods []*v1.Pod) (abnormal, normal []*v1.Pod) {
+	for _, wp := range workerPods {
+		isAbnormal := false
+		switch wp.Status.Phase {
+		case v1.PodFailed, v1.PodPending, v1.PodUnknown:
+			isAbnormal = true
+		case v1.PodRunning:
+			ready := false
+			for _, cond := range wp.Status.Conditions {
+				if cond.Type == v1.PodReady && cond.Status == v1.ConditionTrue {
+					ready = true
+					break
+				}
+			}
+			if !ready {
+				isAbnormal = true
+			}
+		}
+		if isAbnormal {
+			abnormal = append(abnormal, wp)
+		} else {
+			normal = append(normal, wp)
+		}
+	}
+	return
+}
+
+// analyzePodWithExplain diagnoses a single Pod.
+//
+//   - Explain mode (a.AIClient != nil): calls Pod-level LLM and returns a
+//     structured conclusion (~4 lines).
+//   - Non-explain mode: falls back to Summarize() raw text.
+//
+// All relevant fields from the parent Analyzer are forwarded to the sub-analyzer.
+func (p PytorchJobAnalyzer) analyzePodWithExplain(
+	a common.Analyzer,
+	pod *v1.Pod,
+	podAnalyzer PodAnalyzer,
+) string {
+	sub := common.Analyzer{
+		Analyzer: kcommon.Analyzer{
+			Client:    a.Client,
+			Context:   a.Context,
+			Namespace: a.Namespace,
+			AIClient:  a.AIClient,
+		},
+		Name:           pod.Name,
+		CollectorImage: a.CollectorImage,
+		EnableProm:     a.EnableProm,
+		EnablePodLog:   a.EnablePodLog,
+		PodLogConfig:   a.PodLogConfig,
+	}
+
+	r, err := podAnalyzer.Analyze(sub)
+	if err != nil || r == nil {
+		return fmt.Sprintf("Pod %s: analysis failed: %v", pod.Name, err)
+	}
+
+	if a.AIClient != nil {
+		prompt := podAnalyzer.Prompt(r)
+		if prompt != "" {
+			if explain, err := a.AIClient.GetCompletion(a.Context, prompt); err == nil {
+				return explain
+			} else {
+				klog.Warningf("pod LLM for %s failed: %v", pod.Name, err)
+			}
+		}
+	}
+
+	return podAnalyzer.Summarize(r)
+}
+
 func (p PytorchJobAnalyzer) analyzePytorchJobPods(a common.Analyzer, job *kubeflowv1.PyTorchJob, result *common.Result) error {
+	const maxDetailedAbnormalWorkers = 5
+	const maxRunningSummaryWorkers = 3
+
 	labelPrefix := "training.kubeflow.org/"
 	labelSelector := fmt.Sprintf("%sjob-name=%s", labelPrefix, job.Name)
 
@@ -130,10 +239,10 @@ func (p PytorchJobAnalyzer) analyzePytorchJobPods(a common.Analyzer, job *kubefl
 		return fmt.Errorf("list pods failed: %w", err)
 	}
 
-	masterCreatedCount := 0
-	workerCreatedCount := 0
 	var masterPod *v1.Pod
 	var workerPods []*v1.Pod
+	masterCreatedCount := 0
+	workerCreatedCount := 0
 
 	for i := range pods.Items {
 		pod := &pods.Items[i]
@@ -147,114 +256,70 @@ func (p PytorchJobAnalyzer) analyzePytorchJobPods(a common.Analyzer, job *kubefl
 		}
 	}
 
-	result.Metadata["MasterCreatedCount"] = strconv.Itoa(masterCreatedCount)
-	result.Metadata["WorkerCreatedCount"] = strconv.Itoa(workerCreatedCount)
+	result.Metadata["MasterCreatedCount"] = fmt.Sprintf("%d", masterCreatedCount)
+	result.Metadata["WorkerCreatedCount"] = fmt.Sprintf("%d", workerCreatedCount)
 
 	podAnalyzer := NewPodAnalyzer(p.prometheus)
+	abnormal, normal := categorizeWorkers(workerPods)
 
-	// Master 分析
+	// Build the list of pods that need full analysis (master + up to N abnormal workers).
+	type podTask struct {
+		pod      *v1.Pod
+		isMaster bool
+	}
+	var tasks []podTask
 	if masterPod != nil {
-		r, err := podAnalyzer.Analyze(common.Analyzer{
-			Analyzer: kcommon.Analyzer{
-				Client:    a.Client,
-				Context:   a.Context,
-				Namespace: a.Namespace,
-			},
-			Name:           masterPod.Name,
-			CollectorImage: a.CollectorImage,
-		})
-		if err == nil && r != nil {
-			result.Metadata["MasterDiagnosis"] = podAnalyzer.Summarize(r)
-		}
+		tasks = append(tasks, podTask{masterPod, true})
+	}
+	limit := min(len(abnormal), maxDetailedAbnormalWorkers)
+	for _, wp := range abnormal[:limit] {
+		tasks = append(tasks, podTask{wp, false})
 	}
 
-	// Worker 分析
-	workerDiagnosis := p.analyzeWorkerPods(a, workerPods)
-	if workerDiagnosis != "" {
-		result.Metadata["WorkerDiagnosis"] = workerDiagnosis
+	// Concurrent analysis.
+	explains := make([]string, len(tasks))
+	var wg sync.WaitGroup
+	for i, t := range tasks {
+		wg.Add(1)
+		go func(i int, t podTask) {
+			defer wg.Done()
+			explains[i] = p.analyzePodWithExplain(a, t.pod, podAnalyzer)
+		}(i, t)
+	}
+	wg.Wait()
+
+	// Distribute results.
+	idx := 0
+	if masterPod != nil {
+		result.Metadata["MasterDiagnosis"] = explains[0]
+		idx = 1
+	}
+
+	var workerLines []string
+	for _, wp := range abnormal[:limit] {
+		workerLines = append(workerLines,
+			fmt.Sprintf("Worker Pod %s (Abnormal):\n%s", wp.Name, explains[idx]))
+		idx++
+	}
+
+	// Normal workers: brief text only, no LLM needed.
+	normalLimit := maxRunningSummaryWorkers
+	if len(abnormal) == 0 {
+		normalLimit = len(normal)
+	}
+	for i, wp := range normal {
+		if i >= normalLimit {
+			break
+		}
+		workerLines = append(workerLines,
+			fmt.Sprintf("Worker Pod %s: Running and Ready.", wp.Name))
+	}
+
+	if len(workerLines) > 0 {
+		result.Metadata["WorkerDiagnosis"] = strings.Join(workerLines, "\n---\n")
 	}
 
 	return nil
-}
-
-func (p PytorchJobAnalyzer) analyzeWorkerPods(a common.Analyzer, workerPods []*v1.Pod) string {
-	const maxDetailedAbnormalWorkers = 5
-	const maxRunningSummaryWorkers = 3
-
-	podAnalyzer := NewPodAnalyzer(p.prometheus)
-
-	var abnormalWorkers []*v1.Pod
-	var normalWorkers []*v1.Pod
-
-	// categorize
-	for _, wp := range workerPods {
-		isAbnormal := false
-		switch wp.Status.Phase {
-		case v1.PodFailed, v1.PodPending, v1.PodUnknown:
-			isAbnormal = true
-		case v1.PodRunning:
-			ready := false
-			for _, cond := range wp.Status.Conditions {
-				if cond.Type == v1.PodReady && cond.Status == v1.ConditionTrue {
-					ready = true
-				}
-			}
-			if !ready {
-				isAbnormal = true
-			}
-		}
-
-		if isAbnormal {
-			abnormalWorkers = append(abnormalWorkers, wp)
-		} else {
-			normalWorkers = append(normalWorkers, wp)
-		}
-	}
-
-	var workerSummaries []string
-
-	// === abnormal workers ===
-	for i, wp := range abnormalWorkers {
-		if i >= maxDetailedAbnormalWorkers {
-			break
-		}
-		r, err := podAnalyzer.Analyze(common.Analyzer{
-			Analyzer: kcommon.Analyzer{
-				Client:    a.Client,
-				Context:   a.Context,
-				Namespace: a.Namespace,
-			},
-			Name:           wp.Name,
-			CollectorImage: a.CollectorImage,
-		})
-		if err == nil && r != nil {
-			workerSummaries = append(workerSummaries,
-				fmt.Sprintf("Worker Pod %s (Abnormal):\n%s", wp.Name, podAnalyzer.Summarize(r)))
-		}
-	}
-
-	// === normal workers ===
-	if len(abnormalWorkers) == 0 {
-		// No abnormal
-		for _, wp := range normalWorkers {
-			workerSummaries = append(workerSummaries,
-				fmt.Sprintf("Worker Pod %s is Running and Ready.", wp.Name))
-		}
-	} else {
-		// abnormal → normal limit
-		for i, wp := range normalWorkers {
-			if i >= maxRunningSummaryWorkers {
-				break
-			}
-			workerSummaries = append(workerSummaries,
-				fmt.Sprintf("Worker Pod %s is Running and Ready.", wp.Name))
-		}
-	}
-
-	if len(workerSummaries) > 0 {
-		return strings.Join(workerSummaries, "\n---\n")
-	}
-	return ""
 }
 
 func jobEventWarning(jobName string, event prom.Event) common.Warning {
@@ -301,29 +366,24 @@ func (p PytorchJobAnalyzer) Prompt(result *common.Result) string {
 		"WorkerDiagnosis":    result.Metadata["WorkerDiagnosis"],
 	}
 
+	errorInfo := ""
+	for _, e := range result.Error {
+		errorInfo += e.Text + "\n"
+	}
+	eventInfo := ""
+	for _, w := range result.Warning {
+		eventInfo += w.Text + "\n"
+	}
+	logInfo := ""
+	for _, i := range result.Info {
+		logInfo += i.Text + "\n"
+	}
+
 	data := ai.PromptData{
-		ErrorInfo: strings.TrimSpace(func() string {
-			s := ""
-			for _, e := range result.Error {
-				s += e.Text + "\n"
-			}
-			return s
-		}()),
-		EventInfo: strings.TrimSpace(func() string {
-			s := ""
-			for _, w := range result.Warning {
-				s += w.Text + "\n"
-			}
-			return s
-		}()),
-		LogInfo: strings.TrimSpace(func() string {
-			s := ""
-			for _, i := range result.Info {
-				s += i.Text + "\n"
-			}
-			return s
-		}()),
-		Metadata: metadata,
+		ErrorInfo: strings.TrimSpace(errorInfo),
+		EventInfo: strings.TrimSpace(eventInfo),
+		LogInfo:   strings.TrimSpace(logInfo),
+		Metadata:  metadata,
 	}
 
 	prompt, err := ai.GetRenderedPrompt("PytorchJob", data)
