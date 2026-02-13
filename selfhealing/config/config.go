@@ -1,8 +1,6 @@
 package config
 
 import (
-	"time"
-
 	"github.com/scitix/aegis/internal/k8s"
 	alertclientset "github.com/scitix/aegis/pkg/generated/alert/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
@@ -36,17 +34,6 @@ func (c *SelfHealingConfig) Complete() error {
 	}
 
 	return nil
-}
-
-// NodePollerConfig holds the configuration for the active-polling node self-healer.
-type NodePollerConfig struct {
-	Enabled              bool
-	PollInterval         time.Duration // default 10s
-	ResyncInterval       time.Duration // default 1h
-	CordonResyncInterval time.Duration // default 10min
-	MaxAlertsPerRound    int           // default 20
-	PriorityConfigMap    string        // default "aegis-priority"
-	PriorityNamespace    string        // default "monitoring"
 }
 
 const TicketSupervisorAegis = "aegis"

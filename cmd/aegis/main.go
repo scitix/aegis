@@ -12,6 +12,7 @@ import (
 	"github.com/scitix/aegis/api"
 	"github.com/scitix/aegis/api/apis"
 	"github.com/scitix/aegis/internal/controller"
+	"github.com/scitix/aegis/internal/controller/nodepoller"
 	"github.com/scitix/aegis/internal/k8s"
 	"github.com/scitix/aegis/pkg/ai"
 	"github.com/scitix/aegis/pkg/metrics"
@@ -160,6 +161,14 @@ func parse() (bool, *controller.Configuration, error) {
 
 	enableDeviceAware := flags.Bool("device-aware.enable", false, "enable device aware")
 
+	enableNodePoller := flags.Bool("node-poller.enable", false, "enable node active polling")
+	nodePollerInterval := flags.Duration("node-poller.poll-interval", 0, "how often to query Prometheus (default 10s)")
+	nodePollerResync := flags.Duration("node-poller.resync-interval", 0, "how often to resync critical nodes (default 1h)")
+	nodePollerCordonResync := flags.Duration("node-poller.cordon-resync-interval", 0, "how often to resync cordon-only nodes (default 10min)")
+	nodePollerMaxAlerts := flags.Int("node-poller.max-alerts-per-round", 0, "max alerts per poll round (default 20)")
+	nodePollerPriorityConfigMap := flags.String("node-poller.priority-configmap", "", "priority ConfigMap name (default \"aegis-priority\")")
+	nodePollerPriorityNamespace := flags.String("node-poller.priority-namespace", "", "priority ConfigMap namespace (default \"monitoring\")")
+
 	showVersion := flags.Bool("version", false, "Show release info.")
 
 	flags.AddGoFlagSet(flag.CommandLine)
@@ -209,8 +218,17 @@ func parse() (bool, *controller.Configuration, error) {
 		DiagnosisLanguage:         *language,
 		CollectorImage:            *collectorImage,
 		EnableProm:                *enableProm,
-		AiBackend:                 *ai,
-		EnableDeviceAware:         *enableDeviceAware,
+		AiBackend:         *ai,
+		EnableDeviceAware: *enableDeviceAware,
+		EnableNodePoller:  *enableNodePoller,
+		NodePoller: nodepoller.PollerConfig{
+			PollInterval:         *nodePollerInterval,
+			ResyncInterval:       *nodePollerResync,
+			CordonResyncInterval: *nodePollerCordonResync,
+			MaxAlertsPerRound:    *nodePollerMaxAlerts,
+			PriorityConfigMap:    *nodePollerPriorityConfigMap,
+			PriorityNamespace:    *nodePollerPriorityNamespace,
+		},
 	}
 
 	return false, config, nil
