@@ -13,6 +13,7 @@ import (
 	"github.com/scitix/aegis/internal/controller"
 	"github.com/scitix/aegis/internal/controller/nodepoller"
 	"github.com/scitix/aegis/internal/k8s"
+	analyzercommon "github.com/scitix/aegis/pkg/analyzer/common"
 	"github.com/scitix/aegis/pkg/ai"
 	"github.com/scitix/aegis/pkg/metrics"
 	"github.com/scitix/aegis/tools"
@@ -156,6 +157,9 @@ func parse() (bool, *controller.Configuration, error) {
 	flags.String("diagnosis.language", "chinese", "explain language, support chinese/english")
 	flags.String("diagnosis.collector-image", "registry-ap-southeast.scitix.ai/k8s/aegis-collector:v1.0.0", "Container image of the Collector Pod")
 	flags.Bool("diagnosis.enablePrometheus", true, "Whether use the prometheus to get events")
+	flags.Int("diagnosis.pod-log.fetch-lines", 0, "number of log lines to fetch per container (0 = default 1000)")
+	flags.StringSlice("diagnosis.pod-log.keywords", nil, "case-insensitive keywords to filter pod log lines (empty = no filtering)")
+	flags.Int("diagnosis.pod-log.max-output-lines", 0, "max log lines forwarded to LLM (0 = default 60)")
 
 	flags.String("ai.provider", "openai", "backend AI provider name")
 
@@ -213,6 +217,11 @@ func parse() (bool, *controller.Configuration, error) {
 		EnableProm:                viper.GetBool("diagnosis.enablePrometheus"),
 		AiBackend:                 viper.GetString("ai.provider"),
 		EnableDeviceAware:         viper.GetBool("device-aware.enable"),
+		PodLogConfig: &analyzercommon.PodLogConfig{
+			FetchLines:     viper.GetInt("diagnosis.pod-log.fetch-lines"),
+			Keywords:       viper.GetStringSlice("diagnosis.pod-log.keywords"),
+			MaxOutputLines: viper.GetInt("diagnosis.pod-log.max-output-lines"),
+		},
 		EnableNodePoller:          viper.GetBool("node-poller.enable"),
 		NodePoller: nodepoller.PollerConfig{
 			PollInterval:         viper.GetDuration("node-poller.poll-interval"),

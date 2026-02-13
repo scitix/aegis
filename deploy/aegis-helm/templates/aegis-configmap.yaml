@@ -23,6 +23,17 @@ data:
       cache: {{ .Values.aegis.diagnosis.cache }}
       language: {{ .Values.aegis.diagnosis.language }}
       collector-image: {{ .Values.registry }}/{{ .Values.aegis.diagnosis.collector.repository }}:{{ .Values.aegis.diagnosis.collector.tag }}
+      {{- with .Values.aegis.diagnosis.podLog }}
+      pod-log:
+        fetch-lines: {{ .fetchLines }}
+        max-output-lines: {{ .maxOutputLines }}
+        {{- if .keywords }}
+        keywords:
+          {{- range .keywords }}
+          - {{ . | quote }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
 
     device-aware:
       enable: {{ .Values.aegis.deviceAware.enable }}

@@ -23,12 +23,25 @@ type IAnalyzer interface {
 	Prompt(result *Result) string
 }
 
+// PodLogConfig controls how container logs are fetched and filtered for diagnosis.
+// nil → legacy behaviour (fetch 60 lines, no keyword filtering).
+type PodLogConfig struct {
+	// FetchLines is the number of log lines to retrieve from the container. Default: 1000.
+	FetchLines int
+	// Keywords is a list of case-insensitive substrings used to filter log lines.
+	// An empty list disables filtering (all fetched lines are candidates for output).
+	Keywords []string
+	// MaxOutputLines is the maximum number of lines sent to the LLM. Default: 60.
+	MaxOutputLines int
+}
+
 type Analyzer struct {
 	kcommon.Analyzer
 	Name           string
 	CollectorImage string
 	EnableProm     bool
 	EnablePodLog   *bool
+	PodLogConfig   *PodLogConfig
 	Owner          metav1.Object
 }
 

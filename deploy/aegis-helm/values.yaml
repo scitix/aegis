@@ -31,6 +31,13 @@ aegis:
     collector:
       repository: k8s/aegis-collector
       tag: v1.0.1
+    podLog:
+      # fetchLines: number of log lines to retrieve per container (0 = default 1000)
+      fetchLines: 0
+      # keywords: case-insensitive substrings to filter log lines (empty = no filtering)
+      keywords: []
+      # maxOutputLines: max lines forwarded to LLM (0 = default 60)
+      maxOutputLines: 0
 
   deviceAware:
     enable: false
