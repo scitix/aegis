@@ -214,7 +214,11 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 	nodecheckController := nodecheck.NewController(cfg.Client, nodecheckclientset, nodecheckInformer.Aegis().V1alpha1().AegisNodeHealthChecks(), podInformer, cmInformer, nodeInformer, lifecycle, cfg.EnableFireNodeEvent)
 	clustercheckController := clustercheck.NewController(cfg.Client, clustercheckclientset, clustercheckInformer.Aegis().V1alpha1().AegisClusterHealthChecks(), nodecheckclientset, nodecheckInformer.Aegis().V1alpha1().AegisNodeHealthChecks())
 
-	deviceawareController, err := deviceaware.NewController(cfg.Client, nodeInformer, prometheus)
+	// PriorityWatcher is a single shared instance: nodepoller drives its
+	// ConfigMap watch; device_aware consumes it via the ConditionLookup interface.
+	priorityWatcher := nodepoller.NewPriorityWatcher()
+
+	deviceawareController, err := deviceaware.NewController(cfg.Client, nodeInformer, prometheus, priorityWatcher)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create device aware controller: %v", err)
 	}
@@ -237,6 +241,7 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 		alertInterface,
 		nodeInformer.Lister(),
 		pollerCfg,
+		priorityWatcher,
 	)
 
 	n := &AegisController{
@@ -434,7 +439,7 @@ func (c *AegisController) run(ctx context.Context) error {
 	}
 
 	if len(errstrings) > 0 {
-		return fmt.Errorf(strings.Join(errstrings, "\n"))
+		return fmt.Errorf("%s", strings.Join(errstrings, "\n"))
 	}
 
 	return nil

@@ -16,13 +16,16 @@ import (
 
 // PriorityWatcher watches the aegis-priority ConfigMap and hot-reloads priority config.
 type PriorityWatcher struct {
-	config map[string]analysis.Priority
-	mu     sync.RWMutex
+	configs map[string]analysis.ConditionConfig
+	mu      sync.RWMutex
 }
 
-func newPriorityWatcher() *PriorityWatcher {
+// NewPriorityWatcher creates a PriorityWatcher. The instance should be created
+// once in the top-level controller and injected into both NodeStatusPoller and
+// DeviceAwareController so they share a single hot-reloaded config.
+func NewPriorityWatcher() *PriorityWatcher {
 	return &PriorityWatcher{
-		config: make(map[string]analysis.Priority),
+		configs: make(map[string]analysis.ConditionConfig),
 	}
 }
 
@@ -30,19 +33,39 @@ func newPriorityWatcher() *PriorityWatcher {
 func (w *PriorityWatcher) IsCritical(condition string) bool {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
-	p, ok := w.config[condition]
+	c, ok := w.configs[condition]
 	if !ok {
 		return false // unknown condition: conservative, do not trigger
 	}
-	return p <= analysis.Emergency // priority 0~99
+	return c.Priority <= analysis.Emergency
 }
 
 // IsCordon returns true if the condition is exactly NodeCordon priority.
 func (w *PriorityWatcher) IsCordon(condition string) bool {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
-	p, ok := w.config[condition]
-	return ok && p == analysis.NodeCordon
+	c, ok := w.configs[condition]
+	return ok && c.Priority == analysis.NodeCordon
+}
+
+// IsLoadAffecting returns true if the condition is configured to affect node load.
+func (w *PriorityWatcher) IsLoadAffecting(condition string) bool {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	c, ok := w.configs[condition]
+	return ok && c.AffectsLoad
+}
+
+// GetIDMode returns the DeviceIDMode for the condition ("all"/"index"/"mask"/"id"/"-").
+// Returns "-" for unknown conditions (conservative: do not mark any device).
+func (w *PriorityWatcher) GetIDMode(condition string) string {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	c, ok := w.configs[condition]
+	if !ok {
+		return "-"
+	}
+	return c.DeviceIDMode
 }
 
 func (w *PriorityWatcher) reload(data map[string]string) {
@@ -53,14 +76,14 @@ func (w *PriorityWatcher) reload(data map[string]string) {
 		return
 	}
 
-	parsed, err := analysis.ParsePriorityConfig(content)
+	parsed, err := analysis.ParseConditionConfig(content)
 	if err != nil {
 		klog.Errorf("nodepoller: failed to parse priority config: %v", err)
 		return
 	}
 
 	w.mu.Lock()
-	w.config = parsed
+	w.configs = parsed
 	w.mu.Unlock()
 	klog.V(4).Infof("nodepoller: priority config reloaded (%d entries)", len(parsed))
 }

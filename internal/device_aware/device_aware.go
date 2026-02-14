@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	AEGIS_DEVICE_ANNOTATION = "aegis.io/device-errors"
+	AEGIS_DEVICE_ANNOTATION   = "aegis.io/device-errors"
+	AEGIS_LOAD_AFFECTED_LABEL = "aegis.io/load-affected"
 )
 
 type DeviceAwareController struct {
@@ -32,13 +33,16 @@ type NodeStatusHandler struct {
 }
 
 func (h *NodeStatusHandler) OnAdd(new *NodeStatus) {
-	klog.Infof("[NODE ADD/UPDATE] %s status: %v", new.NodeName, new.StatusMap)
+	klog.Infof("[NODE ADD/UPDATE] %s status: %v affectsLoad: %v", new.NodeName, new.StatusMap, new.AffectsLoad)
 
 	node, err := h.nodeLister.Get(new.NodeName)
 	if err != nil {
 		klog.Errorf("failed to get node %s, %v", new.NodeName, err)
 		return
 	}
+
+	// deep copy to avoid mutating the cache
+	node = node.DeepCopy()
 
 	value, err := json.Marshal(new.StatusMap)
 	if err != nil {
@@ -50,6 +54,15 @@ func (h *NodeStatusHandler) OnAdd(new *NodeStatus) {
 		node.Annotations = make(map[string]string)
 	}
 	node.Annotations[AEGIS_DEVICE_ANNOTATION] = string(value)
+
+	if node.Labels == nil {
+		node.Labels = make(map[string]string)
+	}
+	if new.AffectsLoad {
+		node.Labels[AEGIS_LOAD_AFFECTED_LABEL] = "true"
+	} else {
+		delete(node.Labels, AEGIS_LOAD_AFFECTED_LABEL)
+	}
 
 	_, err = h.kubeClient.CoreV1().Nodes().Update(context.Background(), node, metav1.UpdateOptions{})
 	if err != nil {
@@ -70,8 +83,13 @@ func (h *NodeStatusHandler) OnDelete(old *NodeStatus) {
 		return
 	}
 
-	if node.Annotations[AEGIS_DEVICE_ANNOTATION] != "" {
+	node = node.DeepCopy()
+
+	if node.Annotations != nil {
 		delete(node.Annotations, AEGIS_DEVICE_ANNOTATION)
+	}
+	if node.Labels != nil {
+		delete(node.Labels, AEGIS_LOAD_AFFECTED_LABEL)
 	}
 
 	_, err = h.kubeClient.CoreV1().Nodes().Update(context.Background(), node, metav1.UpdateOptions{})
@@ -94,29 +112,38 @@ func InitDeviceStatusCache(kubeclient clientset.Interface) (map[string]*NodeStat
 			continue
 		}
 
-		if status, ok := annotations[AEGIS_DEVICE_ANNOTATION]; ok {
-			s := make(map[DeviceType]string)
-			err := json.Unmarshal([]byte(status), &s)
-			if err != nil {
-				return nil, fmt.Errorf("failed to unmarshal node %s device status: %v", node.Name, err)
-			}
-
-			vm := make(map[DeviceType]int64)
-			vs := make([]int64, 0)
-			for d, ds := range s {
-				hash := hashStringToInt64(ds)
-				vm[d] = hash
-				vs = append(vs, hash)
-			}
-
-			statuses[node.Name] = &NodeStatus{
-				NodeName:   node.Name,
-				StatusMap:  s,
-				Version:    hashInt64SliceToInt64(vs),
-				VersionMap: vm,
-				Timestamp:  time.Now(),
-			}
+		statusJSON, ok := annotations[AEGIS_DEVICE_ANNOTATION]
+		if !ok {
+			continue
 		}
+
+		s := make(map[DeviceType]string)
+		if err := json.Unmarshal([]byte(statusJSON), &s); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal node %s device status: %v", node.Name, err)
+		}
+
+		vm := make(map[DeviceType]int64)
+		vs := make([]int64, 0, len(s))
+		for d, ds := range s {
+			hash := hashStringToInt64(ds)
+			vm[d] = hash
+			vs = append(vs, hash)
+		}
+
+		ns := &NodeStatus{
+			NodeName:   node.Name,
+			StatusMap:  s,
+			Version:    hashInt64SliceToInt64(vs),
+			VersionMap: vm,
+			Timestamp:  time.Now(),
+		}
+
+		// 恢复 AffectsLoad 状态
+		if labelVal, ok := node.Labels[AEGIS_LOAD_AFFECTED_LABEL]; ok {
+			ns.AffectsLoad = labelVal == "true"
+		}
+
+		statuses[node.Name] = ns
 	}
 
 	return statuses, nil
@@ -124,7 +151,9 @@ func InitDeviceStatusCache(kubeclient clientset.Interface) (map[string]*NodeStat
 
 func NewController(kubeclient clientset.Interface,
 	nodeInformer coreinformers.NodeInformer,
-	prometheus *prom.PromAPI) (*DeviceAwareController, error) {
+	prometheus *prom.PromAPI,
+	conditionLookup ConditionLookup,
+) (*DeviceAwareController, error) {
 
 	cache, err := InitDeviceStatusCache(kubeclient)
 	if err != nil {
@@ -157,6 +186,7 @@ func NewController(kubeclient clientset.Interface,
 			DeviceTypeGPFS,
 		},
 		10*time.Second,
+		conditionLookup,
 	)
 
 	controller := &DeviceAwareController{
