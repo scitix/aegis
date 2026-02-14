@@ -32,10 +32,19 @@ type NodeStatusAnalysisResult struct {
 
 var nodeOperateConfig map[string]Priority = make(map[string]Priority)
 
-// ParsePriorityConfig parses priority config content (one "condition:priority" per line)
-// and returns the resulting map. Lines starting with # are ignored.
-func ParsePriorityConfig(content string) (map[string]Priority, error) {
-	result := make(map[string]Priority)
+// ConditionConfig holds the full configuration for a single fault condition.
+type ConditionConfig struct {
+	Priority     Priority
+	AffectsLoad  bool
+	DeviceIDMode string // "all" / "index" / "mask" / "id" / "-"
+}
+
+// ParseConditionConfig parses the four-column format
+// "Condition:Priority:AffectsLoad:DeviceIDMode" (third and fourth columns are
+// optional and default to false and "-" respectively for backward compatibility).
+// Lines starting with # and blank lines are ignored.
+func ParseConditionConfig(content string) (map[string]ConditionConfig, error) {
+	result := make(map[string]ConditionConfig)
 	scanner := bufio.NewScanner(strings.NewReader(content))
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -44,19 +53,51 @@ func ParsePriorityConfig(content string) (map[string]Priority, error) {
 		}
 
 		strs := strings.Split(line, ":")
-		if len(strs) != 2 {
-			return nil, fmt.Errorf("Invalid config format: %s", line)
+		if len(strs) < 2 || len(strs) > 4 {
+			return nil, fmt.Errorf("invalid config format: %s", line)
 		}
 
 		pri, err := strconv.Atoi(strings.TrimSpace(strs[1]))
 		if err != nil {
-			return nil, fmt.Errorf("Error conv string %s to int: %s", strs[1], err)
+			return nil, fmt.Errorf("error conv priority %q: %s", strs[1], err)
 		}
-		result[strings.TrimSpace(strs[0])] = Priority(pri)
+
+		cfg := ConditionConfig{
+			Priority:     Priority(pri),
+			AffectsLoad:  false,
+			DeviceIDMode: "-",
+		}
+
+		if len(strs) >= 3 {
+			cfg.AffectsLoad, err = strconv.ParseBool(strings.TrimSpace(strs[2]))
+			if err != nil {
+				return nil, fmt.Errorf("error conv AffectsLoad %q: %s", strs[2], err)
+			}
+		}
+		if len(strs) == 4 {
+			cfg.DeviceIDMode = strings.TrimSpace(strs[3])
+		}
+
+		result[strings.TrimSpace(strs[0])] = cfg
 	}
 
 	if err := scanner.Err(); err != nil {
 		return nil, err
+	}
+	return result, nil
+}
+
+// ParsePriorityConfig parses priority config content and returns a
+// Condition→Priority map. It accepts both the legacy two-column format and the
+// extended four-column format; the extra columns are silently ignored here.
+func ParsePriorityConfig(content string) (map[string]Priority, error) {
+	full, err := ParseConditionConfig(content)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]Priority, len(full))
+	for k, v := range full {
+		result[k] = v.Priority
 	}
 	return result, nil
 }

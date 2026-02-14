@@ -12,7 +12,6 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 
-	"github.com/scitix/aegis/internal/selfhealing/sop/basic"
 	"github.com/scitix/aegis/pkg/prom"
 	"k8s.io/klog/v2"
 )
@@ -35,13 +34,21 @@ const (
 
 var defaultDeviceId = "all"
 
+// ConditionLookup is the subset of PriorityWatcher used by device-aware.
+// Defining it here keeps device_aware free of a direct nodepoller dependency.
+type ConditionLookup interface {
+	IsLoadAffecting(condition string) bool
+	GetIDMode(condition string) string
+}
+
 // 节点状态集合
 type NodeStatus struct {
-	NodeName   string
-	StatusMap  map[DeviceType]string // 存储各维度状态（例如：gpu、ib、cpu）
-	Version    int64                 // 全局版本号
-	VersionMap map[DeviceType]int64
-	Timestamp  time.Time
+	NodeName    string
+	StatusMap   map[DeviceType]string // 存储各维度状态（例如：gpu、ib、cpu）
+	Version     int64                 // 全局版本号
+	VersionMap  map[DeviceType]int64
+	Timestamp   time.Time
+	AffectsLoad bool // 当前节点是否存在影响负载的故障
 }
 
 // 事件处理器接口
@@ -53,21 +60,23 @@ type NodeStatusEventHandler interface {
 
 // 复合型Informer
 type NodeStatusInformer struct {
-	client       *prom.PromAPI
-	cache        map[string]*NodeStatus // key: node name
-	cacheLock    sync.RWMutex
-	handler      NodeStatusEventHandler
-	resyncPeriod time.Duration
-	types        []DeviceType // 监控的设备类型
+	client          *prom.PromAPI
+	cache           map[string]*NodeStatus // key: node name
+	cacheLock       sync.RWMutex
+	handler         NodeStatusEventHandler
+	resyncPeriod    time.Duration
+	types           []DeviceType // 监控的设备类型
+	conditionLookup ConditionLookup
 }
 
-func NewNodeStatusInformer(client *prom.PromAPI, handler NodeStatusEventHandler, cache map[string]*NodeStatus, types []DeviceType, resyncPeriod time.Duration) *NodeStatusInformer {
+func NewNodeStatusInformer(client *prom.PromAPI, handler NodeStatusEventHandler, cache map[string]*NodeStatus, types []DeviceType, resyncPeriod time.Duration, conditionLookup ConditionLookup) *NodeStatusInformer {
 	return &NodeStatusInformer{
-		client:       client,
-		cache:        cache,
-		handler:      handler,
-		resyncPeriod: resyncPeriod,
-		types:        types,
+		client:          client,
+		cache:           cache,
+		handler:         handler,
+		resyncPeriod:    resyncPeriod,
+		types:           types,
+		conditionLookup: conditionLookup,
 	}
 }
 
@@ -140,7 +149,7 @@ func (i *NodeStatusInformer) fetchAllStatus(ctx context.Context) (map[string]*No
 		go func(t DeviceType) {
 			defer wg.Done()
 
-			data, err := i.queryMetric(ctx, deviceType)
+			data, err := i.queryMetric(ctx, t)
 			if err != nil {
 				errChan <- err
 				return
@@ -153,8 +162,10 @@ func (i *NodeStatusInformer) fetchAllStatus(ctx context.Context) (map[string]*No
 					// 合并状态
 					for k, v := range status.StatusMap {
 						existing.StatusMap[k] = v
-						existing.VersionMap[k] = status.Version
+						existing.VersionMap[k] = status.VersionMap[k]
 					}
+					// AffectsLoad: OR 聚合
+					existing.AffectsLoad = existing.AffectsLoad || status.AffectsLoad
 					// 取最新时间戳
 					if status.Timestamp.After(existing.Timestamp) {
 						existing.Timestamp = status.Timestamp
@@ -216,367 +227,147 @@ func (i *NodeStatusInformer) queryMetric(ctx context.Context, deviceType DeviceT
 	}
 
 	nodeStatuses := make(map[string][]prom.AegisNodeStatus)
-	for i, result := range results {
+	for idx, result := range results {
 		node := result.Name
-		if len(nodeStatuses[node]) > 0 {
-			nodeStatuses[node] = append(nodeStatuses[node], results[i])
-		} else {
-			nodeStatuses[node] = []prom.AegisNodeStatus{results[i]}
-		}
+		nodeStatuses[node] = append(nodeStatuses[node], results[idx])
 	}
 
 	statusMap := make(map[string]*NodeStatus)
 
 	for node, statuses := range nodeStatuses {
-		// 根据指标类型解析值
+		// 计算 AffectsLoad：遍历原始条件做 OR 聚合
+		affectsLoad := false
+		for _, s := range statuses {
+			if i.conditionLookup.IsLoadAffecting(s.Condition) {
+				affectsLoad = true
+				break
+			}
+		}
+
+		// 根据指标类型解析 StatusMap（数据驱动）
 		var s string
 		switch deviceType {
 		case DeviceTypeBaseboard:
-			s = parseBaseboardStatus(statuses)
+			s = parseByIDMode(statuses, i.conditionLookup)
 		case DeviceTypeCPU:
-			s = parseCPUStatus(statuses)
+			s = parseByIDMode(statuses, i.conditionLookup)
 		case DeviceTypeMemory:
-			s = parseMemoryStatus(statuses)
+			s = parseByIDMode(statuses, i.conditionLookup)
 		case DeviceTypeDisk:
-			s = parseDiskStatus(statuses)
-		case DeviceTypeGPU:
-			s = parseGPUStatus(statuses)
-		case DeviceTypeGPFS:
-			s = parseGPFSDeviceStatus(statuses)
-		case DeviceTypeIB:
-			s = parseIBDeviceStatus(statuses)
-		case DeviceTypeRoce:
-			s = parseRoceDeviceStatus(statuses)
+			s = parseByIDMode(statuses, i.conditionLookup)
 		case DeviceTypeNetwork:
-			s = parseNetworkStatus(statuses)
+			s = parseByIDMode(statuses, i.conditionLookup)
+		case DeviceTypeGPU:
+			s = parseGPUStatus(statuses, i.conditionLookup)
+		case DeviceTypeGPFS:
+			s = parseByIDMode(statuses, i.conditionLookup)
+		case DeviceTypeIB:
+			s = parseByIDMode(statuses, i.conditionLookup)
+		case DeviceTypeRoce:
+			s = parseByIDMode(statuses, i.conditionLookup)
 		default:
 			klog.Warningf("unsupported device type: %s", deviceType)
 		}
 
-		if s != "" {
+		if s != "" || affectsLoad {
 			if _, exists := statusMap[node]; !exists {
 				statusMap[node] = &NodeStatus{
-					NodeName:  node,
-					StatusMap: make(map[DeviceType]string),
-					Timestamp: time.Now(),
+					NodeName:   node,
+					StatusMap:  make(map[DeviceType]string),
+					VersionMap: make(map[DeviceType]int64),
+					Timestamp:  time.Now(),
 				}
 			}
-			statusMap[node].StatusMap[deviceType] = s
-
-			// 版本签名
-			statusMap[node].VersionMap = map[DeviceType]int64{
-				deviceType: hashStringToInt64(s),
+			if s != "" {
+				statusMap[node].StatusMap[deviceType] = s
+				statusMap[node].VersionMap[deviceType] = hashStringToInt64(s)
 			}
+			statusMap[node].AffectsLoad = affectsLoad
 		}
 	}
 
 	return statusMap, nil
 }
 
-// baseboard 设备状态解析
-func parseBaseboardStatus(statuses []prom.AegisNodeStatus) string {
-	disabled := make([]string, 0)
+// parseByIDMode handles all device types whose ID logic follows the standard
+// "all" / "id" / "-" modes (Baseboard, CPU, Memory, Disk, Network, GPFS, IB, RoCE).
+// For "id" mode: if status.ID is empty the entry falls back to defaultDeviceId,
+// preserving the behaviour of the original per-device parse functions.
+func parseByIDMode(statuses []prom.AegisNodeStatus, lookup ConditionLookup) string {
+	disabledMap := make(map[string]bool)
 	for _, status := range statuses {
-		switch status.Condition {
-		case string(basic.ConditionTypeBaseBoardCriticalIssue):
+		switch lookup.GetIDMode(status.Condition) {
+		case "all":
+			disabledMap[defaultDeviceId] = true
+		case "id":
 			if status.ID != "" {
-				disabled = append(disabled, status.ID)
+				disabledMap[status.ID] = true
+			} else {
+				disabledMap[defaultDeviceId] = true
 			}
+		case "-", "":
+			// explicitly ignored
 		default:
-			continue
+			klog.Warningf("unexpected DeviceIDMode %q for condition %s in non-GPU device",
+				lookup.GetIDMode(status.Condition), status.Condition)
 		}
 	}
 
+	disabled := make([]string, 0, len(disabledMap))
+	for id := range disabledMap {
+		disabled = append(disabled, id)
+	}
 	sort.Strings(disabled)
 	return strings.Join(disabled, ",")
 }
 
-// cpu 设备状态解析
-func parseCPUStatus(statuses []prom.AegisNodeStatus) string {
-	disabled := make([]string, 0)
-	for _, status := range statuses {
-		switch status.Condition {
-		case string(basic.ConditionTypeCpuUnhealthy):
-			if status.ID != "" {
-				disabled = append(disabled, status.ID)
-			}
-		default:
-			continue
-		}
-	}
-
-	sort.Strings(disabled)
-	return strings.Join(disabled, ",")
-}
-
-// memory 设备状态解析
-func parseMemoryStatus(statuses []prom.AegisNodeStatus) string {
-	disabled := make([]string, 0)
-	for _, status := range statuses {
-		switch status.Condition {
-		case string(basic.ConditionTypeMemoryUnhealthy):
-			if status.ID != "" {
-				disabled = append(disabled, status.ID)
-			}
-		default:
-			continue
-		}
-	}
-
-	sort.Strings(disabled)
-	return strings.Join(disabled, ",")
-}
-
-// disk 设备状态解析
-func parseDiskStatus(statuses []prom.AegisNodeStatus) string {
-	disabled := make([]string, 0)
-	for _, status := range statuses {
-		switch status.Condition {
-		case string(basic.ConditionTypeDiskPressure):
-			fallthrough
-		case string(basic.ConditionTypeDiskUnhealthy):
-			if status.ID != "" {
-				disabled = append(disabled, status.ID)
-			}
-		default:
-			continue
-		}
-	}
-
-	sort.Strings(disabled)
-	return strings.Join(disabled, ",")
-}
-
-// network 设备状态解析
-func parseNetworkStatus(statuses []prom.AegisNodeStatus) string {
-	disabled := make([]string, 0)
-	for _, status := range statuses {
-		switch status.Condition {
-		case string(basic.ConditionTypeNetworkLinkDown):
-			if status.ID != "" {
-				disabled = append(disabled, status.ID)
-			}
-		default:
-			continue
-		}
-	}
-
-	sort.Strings(disabled)
-	return strings.Join(disabled, ",")
-}
-
-// gpu 设备状态解析
-func parseGPUStatus(statuses []prom.AegisNodeStatus) string {
-	disabled := make([]bool, 8)
+// parseGPUStatus handles GPU-specific ID modes: "all", "mask", "index", "-".
+func parseGPUStatus(statuses []prom.AegisNodeStatus, lookup ConditionLookup) string {
+	const gpuCount = 8
+	disabled := make([]bool, gpuCount)
 
 	for _, status := range statuses {
-		switch status.Condition {
-		case string(basic.ConditionTypeGpuP2PNotSupported):
-			fallthrough
-		case string(basic.ConditionTypeGPUIbgdaNotEnabled):
-			fallthrough
-		case string(basic.ConditionTypeGpuHung):
-			fallthrough
-		case string(basic.ConditionTypeGpuErrResetRequired):
-			for i, _ := range disabled {
+		switch lookup.GetIDMode(status.Condition) {
+		case "all":
+			for i := range disabled {
 				disabled[i] = true
 			}
-		case string(basic.ConditionTypeGpuCheckFailed):
-			if status.ID != "" {
-				for i, ch := range status.ID {
-					num, err := strconv.ParseBool(string(ch))
-					if err != nil {
-						klog.Warningf("parse gpu index %d status %c failed: %s", i, ch, err)
-						continue
-					}
-
-					disabled[i] = num
+		case "mask":
+			for i, ch := range status.ID {
+				if i >= gpuCount {
+					break
 				}
+				b, err := strconv.ParseBool(string(ch))
+				if err != nil {
+					klog.Warningf("parse gpu mask index %d char %c for condition %s: %v",
+						i, ch, status.Condition, err)
+					continue
+				}
+				disabled[i] = b
 			}
-		case string(basic.ConditionTypeGpuNvlinkInactive):
-			fallthrough
-		case string(basic.ConditionTypeGpuNvlinkError):
-			fallthrough
-		case string(basic.ConditionTypeGpuTooManyPageRetired):
-			fallthrough
-		case string(basic.ConditionTypeGpuAggSramUncorrectable):
-			fallthrough
-		case string(basic.ConditionTypeGpuVolSramUncorrectable):
-			fallthrough
-		case string(basic.ConditionTypeGpuSmClkSlowDown):
-			fallthrough
-		case string(basic.ConditionTypeGpuGpuHWSlowdown):
-			fallthrough
-		case string(basic.ConditionTypeGpuPcieLinkDegraded):
-			fallthrough
-		case string(basic.ConditionTypeHighGpuTemp):
-			fallthrough
-		case string(basic.ConditionTypeHighGpuMemoryTemp):
-			fallthrough
-		case string(basic.ConditionTypeXid95UncontainedECCError):
-			fallthrough
-		case string(basic.ConditionTypeXid64ECCRowremapperFailure):
-			fallthrough
-		case string(basic.ConditionTypeXid74NVLinkError):
-			fallthrough
-		case string(basic.ConditionTypeXid79GPULost):
+		case "index":
 			if status.ID != "" {
 				id, err := strconv.Atoi(status.ID)
-				if err != nil || id > 7 {
-					klog.Warningf("parse gpu index %s failed or invalid: %s", status.ID, err)
+				if err != nil || id >= gpuCount {
+					klog.Warningf("parse gpu index %q for condition %s failed or out of range: %v",
+						status.ID, status.Condition, err)
 				} else {
 					disabled[id] = true
 				}
 			}
-		case string(basic.ConditionTypeXid48GPUMemoryDBE):
-			fallthrough
-		case string(basic.ConditionTypeXid63ECCRowremapperPending):
-			fallthrough
-		case string(basic.ConditionTypeGpuRegisterFailed):
-			fallthrough
-		case string(basic.ConditionTypeGpuMetricsHang):
-			fallthrough
-		case string(basic.ConditionTypeGpuRowRemappingFailure):
-			continue
+		case "-", "":
+			// explicitly ignored
 		default:
-			klog.Warningf("unsupported condition: %s", status.Condition)
+			klog.Warningf("unexpected DeviceIDMode %q for GPU condition %s",
+				lookup.GetIDMode(status.Condition), status.Condition)
 		}
 	}
 
-	indexs := make([]string, 0)
-	for i, disable := range disabled {
-		if disable {
-			indexs = append(indexs, fmt.Sprintf("%d", i))
+	indexes := make([]string, 0, gpuCount)
+	for i, d := range disabled {
+		if d {
+			indexes = append(indexes, strconv.Itoa(i))
 		}
 	}
-
-	return strings.Join(indexs, ",")
-}
-
-// gpfs 状态解析
-func parseGPFSDeviceStatus(statuses []prom.AegisNodeStatus) string {
-	disabledMap := make(map[string]bool, 0)
-	for _, status := range statuses {
-		switch status.Condition {
-		case string(basic.ConditionTypeGpfsMountLost):
-			if status.ID != "" {
-				disabledMap[status.ID] = true
-			}
-		default:
-			disabledMap[defaultDeviceId] = true
-		}
-	}
-
-	disabled := make([]string, 0)
-	for id, _ := range disabledMap {
-		disabled = append(disabled, id)
-	}
-	sort.Strings(disabled)
-	return strings.Join(disabled, ",")
-}
-
-// ib 设备状态解析
-func parseIBDeviceStatus(statuses []prom.AegisNodeStatus) string {
-	disabledMap := make(map[string]bool, 0)
-	for _, status := range statuses {
-		switch status.Condition {
-		case string(basic.ConditionTypeIBNetDriverFailedLoad):
-			fallthrough
-		case string(basic.ConditionTypeIBPCIeMRRNotAlign):
-			fallthrough
-		case string(basic.ConditionTypeIBPortSpeedAbnormal):
-			fallthrough
-		case string(basic.ConditionTypeIBPCIeSpeedAbnormal):
-			fallthrough
-		case string(basic.ConditionTypeIBPCIeWidthAbnormal):
-			fallthrough
-		case string(basic.ConditionTypeIBProtoclAbnormal):
-			fallthrough
-		case string(basic.ConditionTypeIBLinkAbnormal):
-			fallthrough
-		case string(basic.ConditionTypeIBLinkFrequentDown):
-			if status.ID != "" {
-				disabledMap[status.ID] = true
-			}
-		case string(basic.ConditionTypeIBModuleLost):
-			fallthrough
-		case string(basic.ConditionTypeIBLost):
-			disabledMap[defaultDeviceId] = true
-		default:
-			continue
-		}
-	}
-
-	disabled := make([]string, 0)
-	for id, _ := range disabledMap {
-		disabled = append(disabled, id)
-	}
-	sort.Strings(disabled)
-	return strings.Join(disabled, ",")
-}
-
-// roce 设备状态解析
-func parseRoceDeviceStatus(statuses []prom.AegisNodeStatus) string {
-	disabledMap := make(map[string]bool, 0)
-	for _, status := range statuses {
-		switch status.Condition {
-		case string(basic.ConditionTypeRoceRegisterFailed):
-			if status.ID != "" {
-				disabledMap[status.ID] = true
-			}
-		case string(basic.ConditionTypeRoceDeviceBroken):
-			disabledMap[defaultDeviceId] = true
-		case string(basic.ConditionTypeRoceHostOffline):
-			disabledMap[defaultDeviceId] = true
-		case string(basic.ConditionTypeRoceHostGatewayNotMatch):
-			disabledMap[defaultDeviceId] = true
-		case string(basic.ConditionTypeRoceHostRouteMiss):
-			disabledMap[defaultDeviceId] = true
-		case string(basic.ConditionTypeRocePodOffline):
-			disabledMap[defaultDeviceId] = true
-		case string(basic.ConditionTypeRocePodGatewayNotMatch):
-			disabledMap[defaultDeviceId] = true
-		case string(basic.ConditionTypeRocePodRouteMiss):
-			disabledMap[defaultDeviceId] = true
-		case string(basic.ConditionTypeRoceNodeLabelMiss):
-			disabledMap[defaultDeviceId] = true
-		case string(basic.ConditionTypeRocePodDeviceMiss):
-			disabledMap[defaultDeviceId] = true
-		case string(basic.ConditionTypeRoceVfDeviceMiss):
-			if status.ID != "" {
-				disabledMap[status.ID] = true
-			} else {
-				disabledMap[defaultDeviceId] = true
-			}
-		case string(basic.ConditionTypeRoceNodeResourceMiss):
-			if status.ID != "" {
-				disabledMap[status.ID] = true
-			} else {
-				disabledMap[defaultDeviceId] = true
-			}
-		case string(basic.ConditionTypeRoceSriovInitError):
-			if status.ID != "" {
-				disabledMap[status.ID] = true
-			} else {
-				disabledMap[defaultDeviceId] = true
-			}
-		case string(basic.ConditionTypeRoceNodeUnitLabelMiss):
-			disabledMap[defaultDeviceId] = true
-		case string(basic.ConditionTypeRoceNodePfNamesLabelMiss):
-			disabledMap[defaultDeviceId] = true
-		case string(basic.ConditionTypeRoceNodeResourceLabelMiss):
-			disabledMap[defaultDeviceId] = true
-		case string(basic.ConditionTypeRoceNodeNetworkLabelMiss):
-			disabledMap[defaultDeviceId] = true
-		default:
-			continue
-		}
-	}
-
-	disabled := make([]string, 0)
-	for id, _ := range disabledMap {
-		disabled = append(disabled, id)
-	}
-	sort.Strings(disabled)
-	return strings.Join(disabled, ",")
+	return strings.Join(indexes, ",")
 }

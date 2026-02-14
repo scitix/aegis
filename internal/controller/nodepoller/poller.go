@@ -85,18 +85,21 @@ type NodeStatusPoller struct {
 }
 
 // NewNodeStatusPoller constructs a NodeStatusPoller.
+// priority must be the shared PriorityWatcher instance created by the top-level
+// controller; its ConfigMap watch is started inside Run().
 func NewNodeStatusPoller(
 	promClient *prom.PromAPI,
 	alertInterface pkgcontroller.AlertControllerInterface,
 	nodeLister corelisters.NodeLister,
 	cfg PollerConfig,
+	priority *PriorityWatcher,
 ) *NodeStatusPoller {
 	cfg.applyDefaults()
 
 	return &NodeStatusPoller{
 		promClient:      promClient,
 		cfg:             cfg,
-		priority:        newPriorityWatcher(),
+		priority:        priority,
 		alertInterface:  alertInterface,
 		criticalCache:   make(map[string]*criticalEntry),
 		cordonOnlyCache: make(map[string]struct{}),
