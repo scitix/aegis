@@ -38,14 +38,12 @@ func RemedyNode(ctx context.Context, bridge *sop.ApiBridge, node string, action 
 	}
 
 	parameters := map[string]interface{}{
-		"registry":   bridge.Registry,
-		"repository": bridge.Repository,
-		"image":      bridge.OpsImage,
-		"pod_name":   podName,
-		"node_name":  node,
-		"region":     bridge.Region,
-		"cluster":    bridge.ClusterName,
-		"action":     action,
+		"image":     bridge.OpsImage,
+		"pod_name":  podName,
+		"node_name": node,
+		"region":    bridge.Region,
+		"cluster":   bridge.ClusterName,
+		"action":    action,
 	}
 
 	yamlContent, err := tools.RenderWorkflowTemplate(string(jobContent), parameters)

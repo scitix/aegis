@@ -1,6 +1,8 @@
 registry: registry-ap-southeast.scitix.ai
 
 cluster: arise
+region: ""
+orgname: ""
 
 ingress:
   enabled: true
@@ -82,6 +84,55 @@ aegis:
 prometheus:
   endpoint:
   token:
+
+selfhealing:
+  enable: false
+
+  image:
+    repository: k8s/aegis-selfhealing
+    tag: ""
+
+  opsImage:
+    repository: k8s/aegis
+    tag: ""
+
+  level: 0
+  hostNetwork: false
+  dnsPolicy: ClusterFirst
+
+  # Per-hardware-type feature flags; controls which conditions are written into aegis-priority ConfigMap.
+  baseboard: true
+  node: true
+  system: true
+  cpu: true
+  memory: true
+  disk: true
+  network: true
+  gpu: true
+  ib: true
+  roce: true
+  gpfs: true
+
+  # Comma-separated taint keys to check before self-healing; matching nodes are cordoned and taints removed.
+  precheckTaints: "scitix.ai/nodecheck"
+
+  pluginSelector:
+    gpu: nvidia-device-plugin-ds
+    roce: sriovdp
+    rdma: rdma-shared-dp-ds
+
+  ticket:
+    enabled: true
+    type: ""
+    endpoint: ""
+    appid: ""
+    token: ""
+    ranstr: ""
+
+  sre:
+    default: ""
+    hardware: ""
+    nonhardware: ""
 
 ai:
   enabled: true

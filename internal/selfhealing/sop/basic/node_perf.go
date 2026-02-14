@@ -38,14 +38,12 @@ func PerfGPU(ctx context.Context, bridge *sop.ApiBridge, node string, id string)
 	}
 
 	parameters := map[string]interface{}{
-		"registry":   bridge.Registry,
-		"repository": bridge.Repository,
-		"image":      bridge.OpsImage,
-		"pod_name":   podName,
-		"node_name":  node,
-		"region":     bridge.Region,
-		"cluster":    bridge.ClusterName,
-		"id":         id,
+		"image":     bridge.OpsImage,
+		"pod_name":  podName,
+		"node_name": node,
+		"region":    bridge.Region,
+		"cluster":   bridge.ClusterName,
+		"id":        id,
 	}
 
 	yamlContent, err := tools.RenderWorkflowTemplate(string(jobContent), parameters)

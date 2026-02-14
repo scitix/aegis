@@ -213,8 +213,6 @@ func (o *nodeOptions) complete(cmd *cobra.Command, args []string) (err error) {
 		AlertName:       alertName,
 		Aggressive:      o.level > 0,
 		AggressiveLevel: o.level,
-		Registry:        o.config.Registry,
-		Repository:      o.config.Repository,
 		OpsImage:        o.opsImage,
 		Owner: metav1.NewControllerRef(o.pod, schema.GroupVersionKind{
 			Group:   "",

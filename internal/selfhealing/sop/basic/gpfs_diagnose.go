@@ -42,8 +42,6 @@ func DiagnoseGpfs(ctx context.Context, bridge *sop.ApiBridge, node string, compo
 	}
 
 	parameters := map[string]interface{}{
-		"registry":   bridge.Registry,
-		"repository": bridge.Repository,
 		"image":      bridge.OpsImage,
 		"job_name":   jobName,
 		"node_name":  node,
