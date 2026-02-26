@@ -1,0 +1,140 @@
+{{- if .Values.selfhealing.enable }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aegis-priority
+  namespace: {{ .Release.Namespace }}
+data:
+  priority.conf: |
+    # 格式：Condition:Priority:AffectsLoad:DeviceIDMode
+    #
+    # Priority   : 数值越小优先级越高；0=NodeNotReady, 1=NodeCordon, ≤99=Emergency, ≤999=CanIgnore
+    # AffectsLoad: true=影响节点可用负载（调度器/外部系统可感知），false=仅监控/告警
+    # DeviceIDMode:
+    #   all   — 忽略 ID，将该类型全部设备标记为故障
+    #   index — status.ID 为整数索引（0-7），标记对应编号的设备（GPU 专用）
+    #   mask  — status.ID 为位串（如 "10100000"），按位标记各设备（GpuCheckFailed 专用）
+    #   id    — status.ID 为设备标识符字符串（卡名、挂载路径等）
+    #   -     — 不标记任何设备（节点级条件或明确忽略）
+{{- if .Values.selfhealing.node }}
+
+    # ── Node ──────────────────────────────────────────────────────────────────────
+    NodeNotReady:0:false:-
+    NodeInhibitAll:0:false:-
+    NodeCordon:1:false:-
+    NodeFrequentDown:8:false:-
+    KubeletFailedCreatePodContainer:50:false:-
+    NodeHasTerminatingPod:50:false:-
+    NodeHasRestarted:100:false:-
+{{- end }}
+{{- if .Values.selfhealing.cpu }}
+
+    # ── CPU ───────────────────────────────────────────────────────────────────────
+    CPUPressure:50:false:-
+    CpuUnhealthy:99:false:id
+{{- end }}
+{{- if .Values.selfhealing.memory }}
+
+    # ── Memory ────────────────────────────────────────────────────────────────────
+    KubeletMemoryPressure:90:false:-
+    MemoryPressure:99:false:-
+    MemoryUnhealthy:99:false:id
+{{- end }}
+{{- if .Values.selfhealing.disk }}
+
+    # ── Disk ──────────────────────────────────────────────────────────────────────
+    DiskPressure:99:false:id
+    DiskUnhealthy:99:false:id
+{{- end }}
+{{- if .Values.selfhealing.network }}
+
+    # ── Network ───────────────────────────────────────────────────────────────────
+    NetworkLinkDown:50:false:id
+{{- end }}
+{{- if .Values.selfhealing.baseboard }}
+
+    # ── Baseboard ─────────────────────────────────────────────────────────────────
+    BaseBoardCriticalIssue:99:false:id
+{{- end }}
+{{- if .Values.selfhealing.gpu }}
+
+    # ── GPU ───────────────────────────────────────────────────────────────────────
+    GpuHung:3:false:all
+    GpuCheckFailed:3:false:mask
+    GpuErrResetRequired:50:false:all
+    GpuNvlinkInactive:3:false:index
+    GpuNvlinkError:3:false:index
+    Xid74NVLinkError:2:true:index
+    Xid79GPULost:2:true:index
+    Xid64ECCRowremapperFailure:9:false:index
+    Xid95UncontainedECCError:9:true:index
+    GpuTooManyPageRetired:8:false:index
+    GpuAggSramUncorrectable:8:false:index
+    GpuVolSramUncorrectable:9:false:index
+    NvidiaFabricManagerNotActive:2:true:all
+    GpuPersistenceModeNotEnabled:3:false:-
+    GpuP2PNotSupported:4:false:-
+    GPUIbgdaNotEnabled:50:false:-
+    GpuSmClkSlowDown:51:false:index
+    GpuPcieLinkDegraded:51:false:index
+    GpuHWSlowdown:99:false:index
+    HighGpuTemp:100:false:-
+    HighGpuMemoryTemp:100:false:-
+    Xid48GPUMemoryDBE:9:false:-
+    Xid63ECCRowremapperPending:9:false:-
+    GpuRowRemappingPending:9:false:-
+    GpuRowRemappingFailure:8:true:-
+    GpuRegisterFailed:50:false:-
+    GpuMetricsHang:99:false:-
+{{- end }}
+{{- if .Values.selfhealing.ib }}
+
+    # ── IB ────────────────────────────────────────────────────────────────────────
+    IBLost:3:false:all
+    IBModuleLost:10:false:all
+    IBNetDriverFailedLoad:10:false:id
+    IBPCIeMRRNotAlign:10:false:id
+    IBLinkAbnormal:10:false:id
+    IBProtoclAbnormal:10:false:id
+    IBPortSpeedAbnormal:10:false:id
+    IBPCIeSpeedAbnormal:10:false:id
+    IBPCIeWidthAbnormal:10:false:id
+    IBLinkFrequentDown:50:false:id
+    IBRegisterFailed:50:false:-
+{{- end }}
+{{- if .Values.selfhealing.roce }}
+
+    # ── RoCE ──────────────────────────────────────────────────────────────────────
+    RoceDeviceBroken:4:false:all
+    RoceHostOffline:51:false:all
+    RoceHostGatewayNotMatch:51:false:all
+    RoceHostRouteMiss:51:false:all
+    RocePodOffline:51:false:all
+    RocePodGatewayNotMatch:51:false:all
+    RoceNodeLabelMiss:51:false:all
+    RoceVfDeviceMiss:51:false:id
+    RoceNodeResourceMiss:51:false:id
+    RoceSriovInitError:51:false:id
+    RoceNodeUnitLabelMiss:51:false:all
+    RoceNodePfNamesLabelMiss:51:false:all
+    RoceNodeResourceLabelMiss:51:false:all
+    RoceNodeNetworkLabelMiss:51:false:all
+    RoceRegisterFailed:50:false:id
+{{- end }}
+{{- if .Values.selfhealing.gpfs }}
+
+    # ── GPFS ──────────────────────────────────────────────────────────────────────
+    GpfsDown:2:true:all
+    GpfsInactive:9:true:all
+    GpfsMountLost:10:false:id
+    GpfsThreadDeadlock:100:false:-
+    GpfsTestFailed:50:false:all
+    GpfsIBNotConfig:51:false:all
+    GpfsRdmaError:49:false:all
+    GpfsNodeNotHealthy:49:false:all
+    GpfsNotMounted:49:false:all
+    GpfsNotStarted:49:false:all
+    GpfsNotInCluster:49:false:all
+    GpfsNotInstalled:49:false:all
+{{- end }}
+{{- end }}

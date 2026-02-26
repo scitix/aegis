@@ -21,9 +21,7 @@ type ApiBridge struct {
 	Aggressive      bool
 	AggressiveLevel int
 
-	Registry   string
-	Repository string
-	OpsImage   string
+	OpsImage string
 
 	Owner *metav1.OwnerReference
 

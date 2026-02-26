@@ -1,0 +1,146 @@
+{{- if .Values.selfhealing.enable }}
+apiVersion: aegis.io/v1alpha1
+kind: AegisAlertOpsRule
+metadata:
+  name: selfhealing-node-critical-issue
+  namespace: {{ .Release.Namespace }}
+spec:
+  alertConditions:
+  - status: Firing
+    type: ^NodeCriticalIssue
+  opsTemplate:
+    apiVersion: aegis.io/v1alpha1
+    kind: AegisOpsTemplate
+    name: selfhealing-node
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: aegis.io/v1alpha1
+kind: AegisOpsTemplate
+metadata:
+  name: selfhealing-node
+  namespace: {{ .Release.Namespace }}
+spec:
+  manifest: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: Workflow
+    spec:
+      ttlStrategy:
+        secondsAfterCompletion: 259200
+        secondsAfterSuccess: 259200
+        secondsAfterFailure: 259200
+      serviceAccountName: aegis-workflow
+      entrypoint: workflow-ops
+      templates:
+      - name: workflow-ops
+        steps:
+        - - name: selfhealing-ops
+            template: selfhealing-ops
+      - name: selfhealing-ops
+        resource:
+          action: create
+          setOwnerReference: true
+          successCondition: status.succeeded > 0
+          failureCondition: status.failed > 0
+          manifest: |
+            apiVersion: batch/v1
+            kind: Job
+            metadata:
+              generateName: {{`{{.AlertName}}`}}-
+            spec:
+              ttlSecondsAfterFinished: 259200
+              template:
+                spec:
+                  affinity:
+                    nodeAffinity:
+                      requiredDuringSchedulingIgnoredDuringExecution:
+                        nodeSelectorTerms:
+                        - matchExpressions:
+                          - key: node-role.kubernetes.io/scitix-system
+                            operator: Exists
+                  {{ if .Values.selfhealing.hostNetwork }}
+                  hostNetwork: true
+                  {{ end }}
+                  containers:
+                  - name: selfhealing-ops
+                    image: {{ .Values.registry }}/{{ .Values.selfhealing.image.repository }}:{{ .Values.selfhealing.image.tag }}
+                    imagePullPolicy: Always
+                    command:
+                    - /aegis/aegis-selfhealing
+                    - --clustername={{ .Values.cluster }}
+                    - --region={{ .Values.region }}
+                    - --orgname={{ .Values.orgname }}
+                    - --prometheus.endpoint={{ .Values.prometheus.endpoint }}
+                    - --prometheus.token={{ .Values.prometheus.token }}
+                    - node
+                    - {{`{{.InvolvedObjectNode}}`}}
+                    - --level={{ .Values.selfhealing.level }}
+                    - --ticket.system={{ .Values.selfhealing.ticket.type }}
+                    {{`{{ if .claimTicket }}`}}
+                    - --ticket.claim=true
+                    {{`{{ end }}`}}
+                    - --ops.image={{ .Values.registry }}/{{ .Values.selfhealing.opsImage.repository }}:{{ .Values.selfhealing.opsImage.tag }}
+                    env:
+                    - name: AEGIS_PRECHECK_TAINTS
+                      value: {{ .Values.selfhealing.precheckTaints | quote }}
+                    - name: GPU_DEVICE_PLUGIN_SELECTOR
+                      value: "name={{ .Values.selfhealing.pluginSelector.gpu }}"
+                    - name: INFINIBAND_DEVICE_PLUGIN_SELECTOR
+                      value: "name={{ .Values.selfhealing.pluginSelector.rdma }}"
+                    - name: ROCE_DEVICE_PLUGIN_SELECTOR
+                      value: "app={{ .Values.selfhealing.pluginSelector.roce }}"
+                    - name: SRE
+                      value: {{ .Values.selfhealing.sre.default }}
+                    - name: NonHardwareSRE
+                      value: {{ .Values.selfhealing.sre.nonhardware }}
+                    - name: HardwareSRE
+                      value: {{ .Values.selfhealing.sre.hardware }}
+                    - name: POD_NAME
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.name
+                    - name: POD_NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.namespace
+                    - name: AlertType
+                      value: {{`{{.alertname}}`}}
+                    - name: Alert
+                      value: {{`{{.AlertNamespace}}`}}/{{`{{.AlertName}}`}}
+                    - name: Object
+                      value: {{`{{.InvolvedObjectKind}}`}}/{{`{{.InvolvedObjectNode}}`}}
+                    {{- if .Values.selfhealing.ticket.enabled }}
+                    - name: OP_ENDPOINT
+                      valueFrom:
+                        secretKeyRef:
+                          name: aegis-selfhealing
+                          key: OP_ENDPOINT
+                    - name: AppID
+                      valueFrom:
+                        secretKeyRef:
+                          name: aegis-selfhealing
+                          key: AppID
+                    - name: Token
+                      valueFrom:
+                        secretKeyRef:
+                          name: aegis-selfhealing
+                          key: Token
+                    - name: Ranstr
+                      valueFrom:
+                        secretKeyRef:
+                          name: aegis-selfhealing
+                          key: Ranstr
+                    {{- end }}
+                    volumeMounts:
+                    - name: config
+                      mountPath: /selfhealing/config/
+                      readOnly: true
+                  volumes:
+                  - name: config
+                    configMap:
+                      defaultMode: 0777
+                      name: aegis-priority
+                  dnsPolicy: {{ .Values.selfhealing.dnsPolicy }}
+                  restartPolicy: Never
+                  serviceAccount: aegis-workflow
+                  serviceAccountName: aegis-workflow
+{{- end }}

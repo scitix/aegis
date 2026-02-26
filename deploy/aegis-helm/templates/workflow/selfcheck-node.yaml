@@ -1,3 +1,4 @@
+{{- if .Values.selfhealing.enable }}
 apiVersion: aegis.io/v1alpha1
 kind: AegisAlertOpsRule
 metadata:
@@ -47,3 +48,4 @@ spec:
             export node={{ "{{ .InvolvedObjectNode }}" }}
             kubectl taint nodes $node scitix.ai/nodecheck-
             kubectl cordon $node
+{{- end }}

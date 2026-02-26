@@ -14,8 +14,6 @@ type SelfHealingConfig struct {
 	EnableLeaderElection bool
 	KubeClient           kubernetes.Interface
 	AlertClient          alertclientset.Interface
-	Registry             string
-	Repository           string
 }
 
 func LoadConfig() *SelfHealingConfig {
