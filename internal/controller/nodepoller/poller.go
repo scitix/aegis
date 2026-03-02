@@ -39,6 +39,9 @@ type PollerConfig struct {
 	// Namespace of the priority ConfigMap (default "monitoring").
 	PriorityNamespace string
 
+	// ConfigMap data key for priority config (default "priority").
+	PriorityConfigKey string
+
 	// Alert creation fields passed through from main controller config.
 	PublishNamespace        string
 	SystemParas             map[string]string
@@ -65,6 +68,9 @@ func (c *PollerConfig) applyDefaults() {
 	}
 	if c.PriorityNamespace == "" {
 		c.PriorityNamespace = "monitoring"
+	}
+	if c.PriorityConfigKey == "" {
+		c.PriorityConfigKey = "priority.conf"
 	}
 }
 
@@ -142,13 +148,18 @@ func (p *NodeStatusPoller) Run(ctx context.Context, kubeClient kubernetes.Interf
 
 // fullSync queries Prometheus, classifies nodes, and fires rising-edge alerts.
 func (p *NodeStatusPoller) fullSync(ctx context.Context) {
+	klog.V(4).Info("nodepoller: starting fullSync")
+
 	statuses, err := p.promClient.ListNodeStatusesWithQuery(ctx, "aegis_node_status_condition")
 	if err != nil {
 		klog.Errorf("nodepoller: prometheus query failed: %v", err)
 		return
 	}
 
+	klog.V(4).Infof("nodepoller: fetched %d raw statuses from Prometheus", len(statuses))
+
 	result := classify(statuses, p.nodeLister, p.priority)
+	klog.Infof("nodepoller: classification complete - criticalSet=%d, cordonOnlySet=%d", len(result.criticalSet), len(result.cordonOnlySet))
 
 	p.cacheLock.Lock()
 	defer p.cacheLock.Unlock()
@@ -156,12 +167,15 @@ func (p *NodeStatusPoller) fullSync(ctx context.Context) {
 	// --- criticalSet edge detection ---
 	// Rising edges (new nodes in criticalSet not in criticalCache)
 	triggered := 0
+	skipped := 0
 	for node, nodeStatuses := range result.criticalSet {
 		ver := statusVersion(nodeStatuses)
 		if existing, ok := p.criticalCache[node]; ok {
 			if existing.version == ver {
+				skipped++
 				continue // no change, noop
 			}
+			klog.V(4).Infof("nodepoller: node %s status version changed (%d -> %d), updating cache", node, existing.version, ver)
 			// version changed: update entry but do NOT re-trigger
 			existing.lastStatuses = nodeStatuses
 			existing.version = ver
@@ -173,6 +187,7 @@ func (p *NodeStatusPoller) fullSync(ctx context.Context) {
 			break
 		}
 
+		klog.V(2).Infof("nodepoller: critical rising edge detected for node %s with %d conditions", node, len(nodeStatuses))
 		id, err := p.onCriticalRisingEdge(ctx, node, nodeStatuses)
 		if err != nil {
 			klog.Errorf("nodepoller: failed to create NodeCriticalIssue alert for node %s: %v", node, err)
@@ -186,31 +201,44 @@ func (p *NodeStatusPoller) fullSync(ctx context.Context) {
 		}
 		triggered++
 	}
+	klog.V(4).Infof("nodepoller: criticalSet processing - triggered=%d, skipped=%d, total=%d", triggered, skipped, len(result.criticalSet))
 
 	// Falling edges (nodes that disappeared from criticalSet)
+	criticalFalling := 0
 	for node := range p.criticalCache {
 		if _, inCritical := result.criticalSet[node]; !inCritical {
+			klog.V(4).Infof("nodepoller: critical falling edge for node %s", node)
 			delete(p.criticalCache, node)
+			criticalFalling++
 		}
 	}
+	klog.V(4).Infof("nodepoller: criticalSet falling edges: %d removed from cache", criticalFalling)
 
 	// --- cordonOnlySet edge detection ---
+	cordonTriggered := 0
 	for node := range result.cordonOnlySet {
 		if _, ok := p.cordonOnlyCache[node]; !ok {
+			klog.V(2).Infof("nodepoller: cordon-only rising edge detected for node %s", node)
 			if _, err := p.onCordonOnlyRisingEdge(ctx, node); err != nil {
 				klog.Errorf("nodepoller: failed to create NodeCriticalIssueDisappeared alert for node %s: %v", node, err)
 				continue
 			}
 			p.cordonOnlyCache[node] = struct{}{}
+			cordonTriggered++
 		}
 	}
 
 	// Falling edges for cordon-only
+	cordonFalling := 0
 	for node := range p.cordonOnlyCache {
 		if _, inCordon := result.cordonOnlySet[node]; !inCordon {
+			klog.V(4).Infof("nodepoller: cordon-only falling edge for node %s", node)
 			delete(p.cordonOnlyCache, node)
+			cordonFalling++
 		}
 	}
+	klog.V(4).Infof("nodepoller: cordonOnlySet processing - triggered=%d, falling=%d", cordonTriggered, cordonFalling)
+	klog.V(4).Info("nodepoller: fullSync complete")
 }
 
 // criticalResync re-triggers NodeCriticalIssue alerts for nodes whose alert
@@ -219,8 +247,11 @@ func (p *NodeStatusPoller) criticalResync(ctx context.Context) {
 	p.cacheLock.Lock()
 	defer p.cacheLock.Unlock()
 
+	resyncCount := 0
 	for node, entry := range p.criticalCache {
-		if p.alertExists(ctx, entry.alertName) {
+		exists := p.alertExists(ctx, entry.alertName)
+		klog.V(4).Infof("nodepoller: criticalResync checking node %s - alert exists: %v", node, exists)
+		if exists {
 			continue
 		}
 		klog.Infof("nodepoller: resync: alert for node %s gone, recreating", node)
@@ -230,6 +261,12 @@ func (p *NodeStatusPoller) criticalResync(ctx context.Context) {
 			continue
 		}
 		entry.alertName = id
+		resyncCount++
+	}
+	if resyncCount == 0 {
+		klog.V(4).Infof("nodepoller: criticalResync complete - no alerts need resyncing (cache size: %d)", len(p.criticalCache))
+	} else {
+		klog.Infof("nodepoller: criticalResync complete - recreated %d alerts", resyncCount)
 	}
 }
 
@@ -248,48 +285,77 @@ func (p *NodeStatusPoller) cordonResync(ctx context.Context) {
 	}
 	p.cacheLock.RUnlock()
 
+	klog.V(4).Infof("nodepoller: cordonResync processing %d nodes (cordonOnly: %d, nodecheck: %d)",
+		len(nodes), len(p.cordonOnlyCache), len(p.nodecheckCache))
+
+	successCount := 0
 	for _, node := range nodes {
 		if _, err := p.onCordonOnlyRisingEdge(ctx, node); err != nil {
 			klog.Errorf("nodepoller: cordonResync: failed to retrigger for node %s: %v", node, err)
+		} else {
+			successCount++
 		}
 	}
+	klog.V(4).Infof("nodepoller: cordonResync complete - %d/%d nodes processed successfully", successCount, len(nodes))
 }
 
 // runNodeTaintWatcher watches node spec changes and fires NodeCheck alerts
 // when the scitix.ai/nodecheck taint appears.
 func (p *NodeStatusPoller) runNodeTaintWatcher(ctx context.Context, kubeClient kubernetes.Interface) {
+	klog.Info("nodepoller: starting node taint watcher")
+
 	factory := informers.NewSharedInformerFactory(kubeClient, 0)
 	nodeInformer := factory.Core().V1().Nodes().Informer()
 
 	seenTaints := make(map[string]bool) // node → has nodecheck taint
 
+	addCount, updateCount, deleteCount := 0, 0, 0
+
 	nodeInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
+		AddFunc: func(obj any) {
+			addCount++
+			if addCount%100 == 1 {
+				klog.V(4).Infof("nodepoller: taint watcher add handler called %d times", addCount)
+			}
 			node, ok := obj.(*corev1.Node)
 			if !ok {
+				klog.Warningf("nodepoller: add handler received non-node object: %T", obj)
 				return
 			}
 			p.checkNodecheckTaint(ctx, node, seenTaints)
 		},
-		UpdateFunc: func(_, newObj interface{}) {
+		UpdateFunc: func(_, newObj any) {
+			updateCount++
+			if updateCount%100 == 1 {
+				klog.V(4).Infof("nodepoller: taint watcher update handler called %d times", updateCount)
+			}
 			node, ok := newObj.(*corev1.Node)
 			if !ok {
+				klog.Warningf("nodepoller: update handler received non-node object: %T", newObj)
 				return
 			}
 			p.checkNodecheckTaint(ctx, node, seenTaints)
 		},
-		DeleteFunc: func(obj interface{}) {
+		DeleteFunc: func(obj any) {
+			deleteCount++
+			if deleteCount%100 == 1 {
+				klog.V(4).Infof("nodepoller: taint watcher delete handler called %d times", deleteCount)
+			}
 			node, ok := obj.(*corev1.Node)
 			if !ok {
+				klog.Warningf("nodepoller: delete handler received non-node object: %T", obj)
 				return
 			}
 			delete(seenTaints, node.Name)
+			klog.V(4).Infof("nodepoller: removed node %s from taint cache (deleted)", node.Name)
 		},
 	})
 
 	factory.Start(ctx.Done())
 	factory.WaitForCacheSync(ctx.Done())
+	klog.Info("nodepoller: node taint watcher cache synced")
 	<-ctx.Done()
+	klog.Info("nodepoller: node taint watcher stopped")
 }
 
 func (p *NodeStatusPoller) checkNodecheckTaint(ctx context.Context, node *corev1.Node, seenTaints map[string]bool) {
@@ -303,25 +369,30 @@ func (p *NodeStatusPoller) checkNodecheckTaint(ctx context.Context, node *corev1
 
 	wasPresent := seenTaints[node.Name]
 	if hasTaint && !wasPresent {
+		klog.V(2).Infof("nodepoller: detected nodecheck taint on node %s (rising edge)", node.Name)
 		seenTaints[node.Name] = true
 
 		// Only act when aegis.io/disable label is absent.
 		if node.Labels["aegis.io/disable"] == "true" {
+			klog.V(4).Infof("nodepoller: node %s has aegis.io/disable=true, skipping alert creation", node.Name)
 			return
 		}
 
 		p.cacheLock.Lock()
 		p.nodecheckCache[node.Name] = struct{}{}
 		p.cacheLock.Unlock()
+		klog.V(4).Infof("nodepoller: added node %s to nodecheckCache", node.Name)
 
 		if _, err := p.onCordonOnlyRisingEdge(ctx, node.Name); err != nil {
 			klog.Errorf("nodepoller: failed to create NodeCriticalIssueDisappeared alert for node %s: %v", node.Name, err)
 		}
-	} else if !hasTaint {
+	} else if !hasTaint && wasPresent {
+		klog.V(2).Infof("nodepoller: nodecheck taint removed from node %s (falling edge)", node.Name)
 		seenTaints[node.Name] = false
 
 		p.cacheLock.Lock()
 		delete(p.nodecheckCache, node.Name)
 		p.cacheLock.Unlock()
+		klog.V(4).Infof("nodepoller: removed node %s from nodecheckCache", node.Name)
 	}
 }

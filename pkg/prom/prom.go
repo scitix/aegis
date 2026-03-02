@@ -52,15 +52,18 @@ func CreatePromClient(endpoint, token string) *PromAPI {
 }
 
 func (a *PromAPI) Query(ctx context.Context, query string) (model.Value, error) {
+	klog.V(6).Infof("prom: executing query: %s", query)
 	result, warnings, err := a.API.Query(ctx, query, time.Now())
 	if err != nil {
+		klog.Errorf("prom: query failed: %s, error: %v", query, err)
 		return nil, err
 	}
 
 	if len(warnings) > 0 {
-		klog.V(4).Infof("Warnings: %v", warnings)
+		klog.Warningf("prom: query warnings for '%s': %v", query, warnings)
 	}
 
+	klog.V(6).Infof("prom: query result type: %v", result.Type())
 	return result, nil
 }
 
@@ -76,15 +79,18 @@ func (a *PromAPI) QueryRange(ctx context.Context, query string, offset string) (
 		Step:  time.Minute,
 	}
 
+	klog.V(6).Infof("prom: executing range query: %s, offset: %s", query, offset)
 	result, warnings, err := a.API.QueryRange(ctx, query, r)
 	if err != nil {
+		klog.Errorf("prom: range query failed: %s, error: %v", query, err)
 		return nil, err
 	}
 
 	if len(warnings) > 0 {
-		klog.V(4).Infof("Warnings: %v", warnings)
+		klog.Warningf("prom: range query warnings for '%s': %v", query, warnings)
 	}
 
+	klog.V(6).Infof("prom: range query result type: %v", result.Type())
 	return result, nil
 }
 

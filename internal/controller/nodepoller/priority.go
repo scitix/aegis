@@ -16,20 +16,27 @@ import (
 
 // PriorityWatcher watches the aegis-priority ConfigMap and hot-reloads priority config.
 type PriorityWatcher struct {
-	configs map[string]analysis.ConditionConfig
-	mu      sync.RWMutex
+	configs  map[string]analysis.ConditionConfig
+	configKey string // ConfigMap data key for priority config
+	mu       sync.RWMutex
 }
 
 // NewPriorityWatcher creates a PriorityWatcher. The instance should be created
 // once in the top-level controller and injected into both NodeStatusPoller and
 // DeviceAwareController so they share a single hot-reloaded config.
-func NewPriorityWatcher() *PriorityWatcher {
+// configKey is the ConfigMap data key to watch (e.g., "priority.conf").
+func NewPriorityWatcher(configKey string) *PriorityWatcher {
+	if configKey == "" {
+		configKey = "priority.conf"
+	}
 	return &PriorityWatcher{
-		configs: make(map[string]analysis.ConditionConfig),
+		configs:   make(map[string]analysis.ConditionConfig),
+		configKey: configKey,
 	}
 }
 
-// IsCritical returns true if the condition has priority in [0, Emergency].
+// IsCritical returns true if the condition has priority in [0, Emergency]
+// but excludes NodeCordon (priority=1) which is handled separately.
 func (w *PriorityWatcher) IsCritical(condition string) bool {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
@@ -37,7 +44,8 @@ func (w *PriorityWatcher) IsCritical(condition string) bool {
 	if !ok {
 		return false // unknown condition: conservative, do not trigger
 	}
-	return c.Priority <= analysis.Emergency
+	// Critical: priority <= Emergency, but exclude NodeCordon (priority=1)
+	return c.Priority <= analysis.Emergency && c.Priority != analysis.NodeCordon
 }
 
 // IsCordon returns true if the condition is exactly NodeCordon priority.
@@ -69,10 +77,9 @@ func (w *PriorityWatcher) GetIDMode(condition string) string {
 }
 
 func (w *PriorityWatcher) reload(data map[string]string) {
-	const key = "priority"
-	content, ok := data[key]
+	content, ok := data[w.configKey]
 	if !ok {
-		klog.Warningf("nodepoller: priority ConfigMap has no key %q, skipping reload", key)
+		klog.Warningf("nodepoller: priority ConfigMap has no key %q, skipping reload", w.configKey)
 		return
 	}
 

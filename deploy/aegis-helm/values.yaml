@@ -48,6 +48,7 @@ aegis:
     enable: true
     priorityConfigmap: aegis-priority
     priorityNamespace: monitoring
+    priorityConfigKey: priority.conf
 
   # Tolerations for the aegis pod.
   # Example:
