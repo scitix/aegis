@@ -172,6 +172,7 @@ func parse() (bool, *controller.Configuration, error) {
 	flags.Int("node-poller.max-alerts-per-round", 0, "max alerts per poll round (default 20)")
 	flags.String("node-poller.priority-configmap", "", "priority ConfigMap name (default \"aegis-priority\")")
 	flags.String("node-poller.priority-namespace", "", "priority ConfigMap namespace (default \"monitoring\")")
+	flags.String("node-poller.priority-configkey", "", "priority ConfigMap data key (default \"priority.conf\")")
 
 	flags.Bool("version", false, "Show release info.")
 
@@ -230,6 +231,7 @@ func parse() (bool, *controller.Configuration, error) {
 			MaxAlertsPerRound:    viper.GetInt("node-poller.max-alerts-per-round"),
 			PriorityConfigMap:    viper.GetString("node-poller.priority-configmap"),
 			PriorityNamespace:    viper.GetString("node-poller.priority-namespace"),
+			PriorityConfigKey:    viper.GetString("node-poller.priority-configkey"),
 		},
 	}
 

@@ -8,8 +8,8 @@ import (
 // don't need a live Kubernetes API server.
 func watcherFromContent(t *testing.T, content string) *PriorityWatcher {
 	t.Helper()
-	w := NewPriorityWatcher()
-	w.reload(map[string]string{"priority": content})
+	w := NewPriorityWatcher("")
+	w.reload(map[string]string{"priority.conf": content})
 	return w
 }
 
@@ -35,7 +35,7 @@ func TestPriorityWatcher_IsCritical(t *testing.T) {
 		want      bool
 	}{
 		{"NodeNotReady", true},   // priority 0
-		{"NodeCordon", true},     // priority 1
+		{"NodeCordon", false},    // priority 1, excluded from Critical (handled by IsCordon)
 		{"GpuHung", true},        // priority 3 ≤ Emergency(99)
 		{"GpuNvlinkError", true},    // priority 9
 		{"GpuMetricsHang", true},    // priority 99 == Emergency boundary → critical
@@ -125,7 +125,7 @@ func TestPriorityWatcher_HotReload(t *testing.T) {
 	}
 
 	// Reload with updated config: GpuHung priority raised to 200, AffectsLoad=false
-	w.reload(map[string]string{"priority": "GpuHung:200:false:-"})
+	w.reload(map[string]string{"priority.conf": "GpuHung:200:false:-"})
 
 	if w.IsCritical("GpuHung") {
 		t.Error("after reload: IsCritical(GpuHung) should be false (priority 200)")
@@ -142,7 +142,7 @@ func TestPriorityWatcher_HotReload(t *testing.T) {
 func TestPriorityWatcher_ReloadMissingKey(t *testing.T) {
 	w := watcherFromContent(t, testConfig)
 
-	// reload with a ConfigMap that has no "priority" key: config must be unchanged
+	// reload with a ConfigMap that has no "priority.conf" key: config must be unchanged
 	before := w.IsCritical("GpuHung")
 	w.reload(map[string]string{"other-key": "GpuHung:200:false:-"})
 	if w.IsCritical("GpuHung") != before {
@@ -154,7 +154,7 @@ func TestPriorityWatcher_ReloadInvalidContent(t *testing.T) {
 	w := watcherFromContent(t, testConfig)
 
 	// reload with unparseable content: config must be unchanged
-	w.reload(map[string]string{"priority": "BAD:::CONTENT:::TOO:::MANY"})
+	w.reload(map[string]string{"priority.conf": "BAD:::CONTENT:::TOO:::MANY"})
 	// GpuHung should still be resolvable from the original load
 	if !w.IsCritical("GpuHung") {
 		t.Error("reload with invalid content should leave config unchanged")
@@ -178,5 +178,28 @@ IBPortDown:999
 	}
 	if got := w.GetIDMode("GpuHung"); got != "-" {
 		t.Errorf("2-col format: DeviceIDMode should default to \"-\", got %q", got)
+	}
+}
+
+func TestPriorityWatcher_CustomConfigKey(t *testing.T) {
+	// Test that PriorityWatcher can use a custom ConfigMap key
+	w := NewPriorityWatcher("custom-config")
+
+	// Reload with custom key should work
+	w.reload(map[string]string{"custom-config": "GpuHung:3:true:all"})
+	if !w.IsCritical("GpuHung") {
+		t.Error("custom key: GpuHung should be critical")
+	}
+
+	// Reload with wrong key should not update config (default is "priority.conf", not "priority.conf.backup")
+	w.reload(map[string]string{"priority.conf.backup": "GpuHung:200:false:-"})
+	if !w.IsCritical("GpuHung") {
+		t.Error("wrong key: GpuHung should still be critical (config unchanged)")
+	}
+
+	// Reload with correct key should update config
+	w.reload(map[string]string{"custom-config": "GpuHung:200:false:-"})
+	if w.IsCritical("GpuHung") {
+		t.Error("custom key reload: GpuHung should no longer be critical")
 	}
 }

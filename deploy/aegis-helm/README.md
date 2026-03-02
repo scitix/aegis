@@ -114,6 +114,7 @@ helm upgrade aegis ./deploy/aegis-helm \
 | `aegis.nodePoller.enable` | 启用 Node Poller | `false` |
 | `aegis.nodePoller.priorityConfigmap` | priority 配置的 ConfigMap 名称 | `aegis-priority` |
 | `aegis.nodePoller.priorityNamespace` | priority ConfigMap 所在 namespace | `monitoring` |
+| `aegis.nodePoller.priorityConfigKey` | priority ConfigMap 中的 data key | `priority.conf` |
 
 > 启用 Node Poller 时，建议同时启用 `selfhealing.enable`，以便自动创建 `aegis-priority` ConfigMap。
 

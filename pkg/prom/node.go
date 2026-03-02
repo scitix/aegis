@@ -66,7 +66,9 @@ func (p *PromAPI) ListNodeStatusesWithQuery(ctx context.Context, query string) (
 		return nil, err
 	}
 
-	return resolveNodesStatus(value), nil
+	statuses := resolveNodesStatus(value)
+	klog.V(4).Infof("prom: ListNodeStatusesWithQuery returned %d statuses for query: %s", len(statuses), query)
+	return statuses, nil
 }
 
 func (p *PromAPI) ListNodesWithQuery(ctx context.Context, query string) ([]string, error) {
@@ -99,7 +101,9 @@ func resolveNodesStatus(value model.Value) []AegisNodeStatus {
 
 	switch value.Type() {
 	case model.ValVector:
-		for _, val := range value.(model.Vector) {
+		vector := value.(model.Vector)
+		klog.V(6).Infof("prom: resolving %d vector samples", len(vector))
+		for _, val := range vector {
 			metric := val.Metric
 			condition := string(metric["condition"])
 			node := string(metric["node"])
@@ -113,12 +117,13 @@ func resolveNodesStatus(value model.Value) []AegisNodeStatus {
 			if code != "" {
 				c, err := strconv.Atoi(code)
 				if err != nil {
-					klog.Errorf("error conv %s to int: %s", code, err)
+					klog.Errorf("prom: error converting code %s to int: %s", code, err)
 				} else {
 					count = c
 				}
 			}
 
+			klog.V(6).Infof("prom: resolved node=%s, condition=%s, type=%s, id=%s, value=%d", node, condition, ty, id, count)
 			nodes = append(nodes, AegisNodeStatus{
 				Name:      node,
 				Type:      ty,
@@ -130,6 +135,7 @@ func resolveNodesStatus(value model.Value) []AegisNodeStatus {
 			})
 		}
 	default:
+		klog.V(4).Infof("prom: unexpected value type: %v", value.Type())
 		return nil
 	}
 

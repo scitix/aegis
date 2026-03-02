@@ -42,6 +42,7 @@ data:
       enable: {{ .Values.aegis.nodePoller.enable }}
       priority-configmap: {{ .Values.aegis.nodePoller.priorityConfigmap }}
       priority-namespace: {{ .Values.aegis.nodePoller.priorityNamespace }}
+      priority-configkey: {{ .Values.aegis.nodePoller.priorityConfigKey }}
 
     {{- if .Values.ai.enabled }}
     ai:

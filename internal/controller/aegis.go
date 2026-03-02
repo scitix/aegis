@@ -216,7 +216,7 @@ func NewAegisController(cfg *Configuration) (*AegisController, error) {
 
 	// PriorityWatcher is a single shared instance: nodepoller drives its
 	// ConfigMap watch; device_aware consumes it via the ConditionLookup interface.
-	priorityWatcher := nodepoller.NewPriorityWatcher()
+	priorityWatcher := nodepoller.NewPriorityWatcher(cfg.NodePoller.PriorityConfigKey)
 
 	deviceawareController, err := deviceaware.NewController(cfg.Client, nodeInformer, prometheus, priorityWatcher)
 	if err != nil {
