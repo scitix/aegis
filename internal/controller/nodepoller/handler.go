@@ -88,6 +88,7 @@ func (p *NodeStatusPoller) createAlert(ctx context.Context, node, alertType stri
 			InvolvedObject: alertv1alpha1.AegisAlertObject{
 				Kind: alertv1alpha1.NodeKind,
 				Name: node,
+				Node: node,
 			},
 			Details: details,
 		},
