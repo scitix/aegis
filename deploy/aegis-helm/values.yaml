@@ -1,13 +1,13 @@
 registry: registry-ap-southeast.scitix.ai
 
-cluster: arise
+cluster: example-cluster
 region: ""
 orgname: ""
 
 ingress:
-  enabled: true
-  host: console.scitix.ai
-  path: /scitix/arise/aegis
+  enabled: false
+  host: api.example.com
+  path: /example
 
 aegis:
   image:
@@ -45,7 +45,7 @@ aegis:
     enable: false
 
   nodePoller:
-    enable: false
+    enable: true
     priorityConfigmap: aegis-priority
     priorityNamespace: monitoring
 
@@ -135,7 +135,7 @@ selfhealing:
     nonhardware: ""
 
 ai:
-  enabled: true
+  enabled: false
   provider: openai
   model:
   password:
