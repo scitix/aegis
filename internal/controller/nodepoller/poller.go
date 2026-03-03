@@ -249,12 +249,12 @@ func (p *NodeStatusPoller) criticalResync(ctx context.Context) {
 
 	resyncCount := 0
 	for node, entry := range p.criticalCache {
-		exists := p.alertExists(ctx, entry.alertName)
-		klog.V(4).Infof("nodepoller: criticalResync checking node %s - alert exists: %v", node, exists)
+		exists := p.activeAlertExists(ctx, node, alertTypeNodeCriticalIssue)
+		klog.V(4).Infof("nodepoller: criticalResync checking node %s - active alert exists: %v", node, exists)
 		if exists {
 			continue
 		}
-		klog.Infof("nodepoller: resync: alert for node %s gone, recreating", node)
+		klog.Infof("nodepoller: resync: active alert for node %s gone, recreating", node)
 		id, err := p.onCriticalRisingEdge(ctx, node, entry.lastStatuses)
 		if err != nil {
 			klog.Errorf("nodepoller: resync: failed to recreate alert for node %s: %v", node, err)

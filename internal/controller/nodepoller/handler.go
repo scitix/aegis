@@ -118,21 +118,16 @@ func (p *NodeStatusPoller) createAlert(ctx context.Context, node, alertType stri
 	return id, nil
 }
 
-// alertExists returns true if the AegisAlert identified by uuid still exists.
-func (p *NodeStatusPoller) alertExists(ctx context.Context, alertUUID string) bool {
-	req, err := labels.NewRequirement("uuid", selection.Equals, []string{alertUUID})
+// activeAlertExists returns true if an active AegisAlert for the given node and alertType exists.
+// An alert is considered active when its OpsStatus is neither Succeeded nor Failed.
+func (p *NodeStatusPoller) activeAlertExists(ctx context.Context, node, alertType string) bool {
+	active, err := p.findActiveAlert(ctx, node, alertType)
 	if err != nil {
-		klog.V(4).Infof("nodepoller: alertExists failed to create requirement for uuid=%s: %v", alertUUID, err)
+		klog.V(4).Infof("nodepoller: activeAlertExists error for node=%s type=%s: %v", node, alertType, err)
 		return false
 	}
-	sel := labels.NewSelector().Add(*req)
-	existing, err := p.alertInterface.ListAlertWithLabelSelector(ctx, p.cfg.PublishNamespace, sel)
-	if err != nil {
-		klog.V(4).Infof("nodepoller: alertExists list error for uuid=%s: %v", alertUUID, err)
-		return false
-	}
-	exists := len(existing) > 0
-	klog.V(6).Infof("nodepoller: alertExists check for uuid=%s: %v (found %d alerts)", alertUUID, exists, len(existing))
+	exists := active != nil
+	klog.V(6).Infof("nodepoller: activeAlertExists check for node=%s type=%s: %v", node, alertType, exists)
 	return exists
 }
 
