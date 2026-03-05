@@ -78,7 +78,7 @@ spec:
                     {{`{{ if .claimTicket }}`}}
                     - --ticket.claim=true
                     {{`{{ end }}`}}
-                    - --ops.image={{ .Values.registry }}/{{ .Values.aegis.image.repository }}:{{ .Values.aegis.image.tag }}
+                    - --ops.image={{ .Values.registry }}/{{ .Values.aegis.opsImage.repository }}:{{ .Values.aegis.opsImage.tag }}
                     env:
                     - name: AEGIS_PRECHECK_TAINTS
                       value: {{ .Values.selfhealing.precheckTaints | quote }}
