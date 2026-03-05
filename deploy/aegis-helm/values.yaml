@@ -46,6 +46,14 @@ aegis:
 
   nodePoller:
     enable: true
+    # How often to query Prometheus and run edge detection (e.g. "10s", "30s").
+    pollInterval: "10s"
+    # How often to re-create alerts for critical nodes whose alert has been TTL-cleaned (e.g. "1h", "4h").
+    resyncInterval: "4h"
+    # How often to re-trigger cordon-only alerts (e.g. "10m", "30m").
+    cordonResyncInterval: "10m"
+    # Maximum number of rising-edge alerts created per poll round.
+    maxAlertsPerRound: 20
     priorityConfigmap: aegis-priority
     priorityNamespace: monitoring
     priorityConfigKey: priority.conf
@@ -88,14 +96,6 @@ prometheus:
 
 selfhealing:
   enable: false
-
-  image:
-    repository: k8s/aegis-selfhealing
-    tag: ""
-
-  opsImage:
-    repository: k8s/aegis
-    tag: ""
 
   level: 0
   hostNetwork: false

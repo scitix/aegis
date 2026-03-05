@@ -62,7 +62,7 @@ spec:
                   {{ end }}
                   containers:
                   - name: selfhealing-ops
-                    image: {{ .Values.registry }}/{{ .Values.selfhealing.image.repository }}:{{ .Values.selfhealing.image.tag }}
+                    image: {{ .Values.registry }}/{{ .Values.aegis.image.repository }}:{{ .Values.aegis.image.tag }}
                     imagePullPolicy: Always
                     command:
                     - /aegis/aegis-selfhealing
@@ -78,7 +78,7 @@ spec:
                     {{`{{ if .claimTicket }}`}}
                     - --ticket.claim=true
                     {{`{{ end }}`}}
-                    - --ops.image={{ .Values.registry }}/{{ .Values.selfhealing.opsImage.repository }}:{{ .Values.selfhealing.opsImage.tag }}
+                    - --ops.image={{ .Values.registry }}/{{ .Values.aegis.image.repository }}:{{ .Values.aegis.image.tag }}
                     env:
                     - name: AEGIS_PRECHECK_TAINTS
                       value: {{ .Values.selfhealing.precheckTaints | quote }}

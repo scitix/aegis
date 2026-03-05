@@ -49,7 +49,7 @@ func (m *NodeTicketManager) Reset(ctx context.Context) error {
 }
 
 func (m *NodeTicketManager) CanDealWithTicket(ctx context.Context) bool {
-	return m.ticket == nil || m.ticket.Supervisor == m.user
+	return m.ticket == nil || m.ticket.Supervisor == "" || m.ticket.Supervisor == m.user
 }
 
 func (m *NodeTicketManager) GetTicketCondition(ctx context.Context) string {

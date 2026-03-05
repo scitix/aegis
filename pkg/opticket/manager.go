@@ -77,7 +77,7 @@ func (t *OpTicketManager) Reset(ctx context.Context) error {
 }
 
 func (t *OpTicketManager) CanDealWithTicket(ctx context.Context) bool {
-	return t.ticket == nil || t.ticket.Supervisor == t.user
+	return t.ticket == nil || t.ticket.Supervisor == "" || t.ticket.Supervisor == t.user
 }
 
 func (t *OpTicketManager) GetTicketCondition(ctx context.Context) string {

@@ -157,10 +157,6 @@ helm upgrade aegis ./deploy/aegis-helm \
 | 参数 | 说明 | 默认值 |
 |---|---|---|
 | `selfhealing.enable` | 总开关 | `false` |
-| `selfhealing.image.repository` | 自愈二进制镜像 repository | `k8s/aegis-selfhealing` |
-| `selfhealing.image.tag` | 自愈二进制镜像 tag | `""` |
-| `selfhealing.opsImage.repository` | Ops Job 执行镜像 repository（registry 复用全局） | `k8s/aegis` |
-| `selfhealing.opsImage.tag` | Ops Job 执行镜像 tag | `""` |
 | `selfhealing.level` | 自愈激进度（0 = 保守，>0 = 激进） | `0` |
 | `selfhealing.hostNetwork` | 自愈 Job 是否使用 hostNetwork | `false` |
 | `selfhealing.dnsPolicy` | 自愈 Job DNS 策略 | `ClusterFirst` |
@@ -279,10 +275,6 @@ aegis:
 
 selfhealing:
   enable: true
-  image:
-    tag: v3.0.0-xxx
-  opsImage:
-    tag: ops-xxx
   level: 0
 
   # 仅启用 GPU 和节点基础自愈
