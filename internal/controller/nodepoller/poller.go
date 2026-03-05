@@ -24,7 +24,7 @@ type PollerConfig struct {
 	// How often to query Prometheus and run edge detection (default 10s).
 	PollInterval time.Duration
 
-	// How often to re-trigger all critical-cache entries (default 1h).
+	// How often to re-trigger all critical-cache entries (default 4h).
 	ResyncInterval time.Duration
 
 	// How often to re-trigger all cordon-only-cache entries (default 10min).
@@ -55,7 +55,7 @@ func (c *PollerConfig) applyDefaults() {
 		c.PollInterval = 10 * time.Second
 	}
 	if c.ResyncInterval == 0 {
-		c.ResyncInterval = 1 * time.Hour
+		c.ResyncInterval = 4 * time.Hour
 	}
 	if c.CordonResyncInterval == 0 {
 		c.CordonResyncInterval = 10 * time.Minute

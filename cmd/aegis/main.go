@@ -167,7 +167,7 @@ func parse() (bool, *controller.Configuration, error) {
 
 	flags.Bool("node-poller.enable", false, "enable node active polling")
 	flags.Duration("node-poller.poll-interval", 0, "how often to query Prometheus (default 10s)")
-	flags.Duration("node-poller.resync-interval", 0, "how often to resync critical nodes (default 1h)")
+	flags.Duration("node-poller.resync-interval", 0, "how often to resync critical nodes (default 4h)")
 	flags.Duration("node-poller.cordon-resync-interval", 0, "how often to resync cordon-only nodes (default 10min)")
 	flags.Int("node-poller.max-alerts-per-round", 0, "max alerts per poll round (default 20)")
 	flags.String("node-poller.priority-configmap", "", "priority ConfigMap name (default \"aegis-priority\")")

@@ -40,6 +40,10 @@ data:
 
     node-poller:
       enable: {{ .Values.aegis.nodePoller.enable }}
+      poll-interval: {{ .Values.aegis.nodePoller.pollInterval }}
+      resync-interval: {{ .Values.aegis.nodePoller.resyncInterval }}
+      cordon-resync-interval: {{ .Values.aegis.nodePoller.cordonResyncInterval }}
+      max-alerts-per-round: {{ .Values.aegis.nodePoller.maxAlertsPerRound }}
       priority-configmap: {{ .Values.aegis.nodePoller.priorityConfigmap }}
       priority-namespace: {{ .Values.aegis.nodePoller.priorityNamespace }}
       priority-configkey: {{ .Values.aegis.nodePoller.priorityConfigKey }}
