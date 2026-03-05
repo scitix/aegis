@@ -89,14 +89,6 @@ prometheus:
 selfhealing:
   enable: false
 
-  image:
-    repository: k8s/aegis-selfhealing
-    tag: ""
-
-  opsImage:
-    repository: k8s/aegis
-    tag: ""
-
   level: 0
   hostNetwork: false
   dnsPolicy: ClusterFirst
